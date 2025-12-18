@@ -15,8 +15,12 @@ classdef segment
             obj.endpoint = inputArg2;
         end
 
-        function [center, radius] = geodesic_circonference(obj)
-            
+        function [center, radius] = geodesic_circonference(obj, draw_plot)
+
+            arguments
+                obj segment
+                draw_plot (1,1) int64 = 0
+            end
             
             % Calculate the midpoint of the segment
             midpoint = (obj.startpoint + obj.endpoint) / 2;
@@ -46,38 +50,39 @@ classdef segment
             % The radius of the circonference
             radius = sqrt(norm(midpoint+unit_vector_perp*ned)^2 - 1);
 
-            
-            % Create theta values for the circle
-            theta = linspace(0, 2 * pi, 100); % 100 points from 0 to 2*pi
-            
-            % Calculate x and y coordinates for the circumference
-            x = center(1) + radius * cos(theta);
-            y = center(2) + radius * sin(theta);
-            
-            % Plot the circle
-            plot(x, y, 'b-'); % Plot the circumference in blue
-            hold on;
-            plot(obj.startpoint(1), obj.startpoint(2), '*'); % Plot the segment in red
-            plot(obj.endpoint(1), obj.endpoint(2), '*g'); % Plot the segment in red
-            axis equal;
-            grid on;
-            title('Circle with 90-degree intersection at unit circumference');
-            xlabel('X-axis');
-
-
-
-            % Draw the unit circumference
-            unit_radius = 1; % Radius of the unit circle
-            unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
-            
-            % Generate points on the circumference of the unit circle
-            unit_x = unit_center(1) + unit_radius * cos(theta);
-            unit_y = unit_center(2) + unit_radius * sin(theta);
-            
-            % Plot the unit circle
-            plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
-            ylabel('Y-axis');
-            hold off
+            if draw_plot ~= 0
+                % Create theta values for the circle
+                theta = linspace(0, 2 * pi, 100); % 100 points from 0 to 2*pi
+                
+                % Calculate x and y coordinates for the circumference
+                x = center(1) + radius * cos(theta);
+                y = center(2) + radius * sin(theta);
+                
+                % Plot the circle
+                plot(x, y, 'b-'); % Plot the circumference in blue
+                hold on;
+                plot(obj.startpoint(1), obj.startpoint(2), '*'); % Plot the segment in red
+                plot(obj.endpoint(1), obj.endpoint(2), '*g'); % Plot the segment in red
+                axis equal;
+                grid on;
+                title('Circle with 90-degree intersection at unit circumference');
+                xlabel('X-axis');
+    
+    
+    
+                % Draw the unit circumference
+                unit_radius = 1; % Radius of the unit circle
+                unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
+                
+                % Generate points on the circumference of the unit circle
+                unit_x = unit_center(1) + unit_radius * cos(theta);
+                unit_y = unit_center(2) + unit_radius * sin(theta);
+                
+                % Plot the unit circle
+                plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
+                ylabel('Y-axis');
+                hold off
+            end
 
         end
 
