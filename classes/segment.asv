@@ -128,46 +128,29 @@ classdef segment
             % plot  Plot segment(s) in 2-D.
             %   H = plot(seg)
             %   plot(ax, seg, ...)
+            %
+            % Accepts LineSpec and name-value pairs. Returns line handles.
 
-            [center, radius] = geodesic_circonference(obj);
-            ang1 = angleCW2D([1;0], obj.startpoint - center);
-            ang2 = angleCW2D([1;0],  obj.endpoint - center);
-                
-            if ang1-ang2>pi
-                c=ang1;
-                ang1=ang2;
-                ang2=c;
+            % Detect axes handle as first arg
+            if ~isempty(varargin) && ishghandle(varargin{1}) && strcmp(get(varargin{1},'Type'),'axes')
+                ax = varargin{1};
+                varargin(1) = [];
+            else
+                ax = gca;
             end
 
-            theta = linspace(ang1, ang2, 1000);
-            x = center(1) + radius * cos(theta);
-            y = center(2) + radius * sin(theta);
-            
-            % Plot the arc
-            plot(x, y, 'b-');
-            hold on;
-            plot(obj.startpoint(1), obj.startpoint(2), '*');
-            plot(obj.endpoint(1), obj.endpoint(2), '*g');
-            axis equal;
-            grid on;
-            title('Segment');
-            xlabel('X-axis');
+            [center, radius] = geodesic_circonference(obj, draw_plot);
 
-            % Draw the unit circumference
-            unit_radius = 1; % Radius of the unit circle
-            unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
-            
-            % Generate points on the circumference of the unit circle
-            theta = linspace(0, 2*pi, 1000);
-            unit_x = unit_center(1) + unit_radius * cos(theta);
-            unit_y = unit_center(2) + unit_radius * sin(theta);
-            
-            % Plot the unit circle
-            plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
-            ylabel('Y-axis');
-            hold off
+            ang1 = angleCW2D(center, center - .startpoint);
+                
 
+            if ~holdState
+                hold(ax,'off');
+            end
 
+            if nargout>0
+                varargout{1} = h;
+            end
         end
 
     end
