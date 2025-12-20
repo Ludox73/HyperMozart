@@ -52,5 +52,26 @@ classdef hyp_isometry_2d
                 error('Input point must be a real number or a complex number.');
             end
         end
+
+        function [new_point,new_tg_vector] = apply_poincare_point_and_vector(obj,point,tg_vector)
+            flag_type='complex';
+            if all(size(point) == [2,1])
+                point = point(1)+point(2)*1i;
+                tg_vector=tg_vector(1)+tg_vector(2)*1i;
+                flag_type='vector';
+            end
+
+            if isnumeric(point) && isnumeric(tg_vector)
+                M = obj.poincare_model;
+                new_point = (M(1,1)*point+M(1,2))/(M(2,1)*point+M(2,2));
+                new_tg_vector = ( ( M(1,1)*M(2,2)  - M(1,2)*M(2,1) ) /(M(2,1)*point+M(2,2))^2 )*tg_vector;
+                if strcmp( flag_type,'vector' )
+                    new_point = [real(new_point); imag(new_point)];
+                    new_tg_vector = [real(new_tg_vector); imag(new_tg_vector)];
+                end
+            else
+                error('Input point must be a real number or a complex number.');
+            end
+        end
     end
 end

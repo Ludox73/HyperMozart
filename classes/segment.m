@@ -41,7 +41,9 @@ classdef segment
 
 
             % Find ned solving the equation of distances and
-            % perpedicularity
+            % perpedicularity:
+            % ned^2 + (segment_length / 2)^2 = norm(midpoint+unit_vector_perp*ned)^2 - 1;
+            
             numerator = (segment_length^2)/4 - norm(midpoint)^2 + 1;
             ned = numerator / (2 * midpoint' * unit_vector_perp);
 
@@ -124,22 +126,28 @@ classdef segment
             inv_seg = segment(seg.endpoint, seg.startpoint);
         end
 
-        function varargout = plot(obj, varargin)
+        function plot(obj, num_points)
             % plot  Plot segment(s) in 2-D.
             %   H = plot(seg)
             %   plot(ax, seg, ...)
-
-            [center, radius] = geodesic_circonference(obj);
-            ang1 = angleCW2D([1;0], obj.startpoint - center);
-            ang2 = angleCW2D([1;0],  obj.endpoint - center);
-                
-            if ang1-ang2>pi
-                c=ang1;
-                ang1=ang2;
-                ang2=c;
+            arguments
+                obj 
+                num_points = 1000
             end
 
-            theta = linspace(ang1, ang2, 1000);
+            [center, radius] = geodesic_circonference(obj);
+            ang1 = angleCW2D([1;0], obj.startpoint - center, "counterclockwise");
+            ang2 = angleCW2D([1;0],  obj.endpoint - center, "counterclockwise");
+            
+            if abs(ang1-ang2)>pi
+                if ang2>ang1
+                    ang2=ang2-2*pi;
+                else
+                    ang1 = ang1-2*pi;
+                end
+            end
+
+            theta = linspace(ang1, ang2, num_points);
             x = center(1) + radius * cos(theta);
             y = center(2) + radius * sin(theta);
             
