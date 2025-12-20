@@ -1,7 +1,16 @@
 visualize = true;
 if visualize
-    figure 
+    figure
+    points_for_geodesics=10;
 end
+
+Max_len_geodesic = 1000;
+curves_intersected = zeros(1, Max_len_geodesic);
+index_curves = 1;
+parameter_fundamental_domain=0.99;
+%Can choose standard, v1 or v2
+type_domain = "v2";
+
 a = rand(1)*2*pi;
 p_1 = 0.1*[sin(a);cos(a)];
 
@@ -10,9 +19,15 @@ tg_1 = (2/0.99)^2*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 
-fundamental_domain = cell(1,8);
-for ind = 0:7
-    fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
+if strcmp(type_domain, "standard")
+    fundamental_domain = cell(1,8); %#ok<UNRCH>
+    for ind = 0:7
+        fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
+    end
+elseif strcmp(type_domain, "v1")
+    fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain); %#ok<UNRCH>
+elseif strcmp(type_domain, "v2")
+    fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
 end
 
 collection_of_circles = cell(1,8);
@@ -71,6 +86,8 @@ if visualize
 end
 
 [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_circles);
+curves_intersected(index_curves) = side;
+index_curves=index_curves+1;
 to_avoid = mapping_of_sides(side,2);
 if visualize
     seg = segment(p0.point, point_and_vec_inters.point);
@@ -79,7 +96,7 @@ if visualize
 end
 travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
 
-while travelled_distance<1000
+while travelled_distance<Max_len_geodesic
     
         
     isometry_to_use = isometries_pairing_sides{side};
@@ -93,10 +110,12 @@ while travelled_distance<1000
     % end
 
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
+    curves_intersected(index_curves) = side;
+    index_curves=index_curves+1;
     to_avoid = mapping_of_sides(side,2);
     if visualize
         seg = segment(new_point, point_and_vec_inters.point);
-        seg.plot(10)
+        seg.plot(points_for_geodesics)
         hold on
     end
     
@@ -104,4 +123,8 @@ while travelled_distance<1000
 
 
 
+end
+
+for ind = 1:8
+    sum(curves_intersected == ind)
 end

@@ -2,6 +2,14 @@ visualize = false;
 if visualize
     figure 
 end
+
+Max_len_geodesic = 100000;
+curves_intersected = zeros(1, Max_len_geodesic);
+index_curves = 1;
+parameter_fundamental_domain=0;
+%Can choose standard, v1 or v2
+type_domain = "v2";
+
 a = rand(1)*2*pi;
 p_1 = 0.1*[sin(a);cos(a)];
 
@@ -10,10 +18,14 @@ tg_1 = (2/0.99)^2*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 
-fundamental_domain = cell(1,8);
-for ind = 0:7
-    fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
-end
+if strcmp(type_domain, "standard")
+
+
+elseif strcmp(type_domain, "v1")
+fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain);
+elseif strcmp(type_domain, "v2")
+fundamental_domain = fundamental_domain_S2_Ludo)_v2(parameter_fundamental_domain);
+
 
 collection_of_circles = cell(1,8);
 
@@ -71,15 +83,17 @@ if visualize
 end
 
 [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_circles);
+curves_intersected(index_curves) = side;
+index_curves=index_curves+1;
 to_avoid = mapping_of_sides(side,2);
 if visualize
     seg = segment(p0.point, point_and_vec_inters.point);
-    seg.plot(seg)
+    seg.plot()
     hold on
 end
 travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
 
-while travelled_distance<1000
+while travelled_distance<Max_len_geodesic
     
         
     isometry_to_use = isometries_pairing_sides{side};
@@ -87,21 +101,27 @@ while travelled_distance<1000
     
     new_point_and_tg = point_and_tg_vector(new_point,new_tg_vector);
     
-    if visualize
-        new_point_and_tg.plot()
-        hold on
-    end
+    % if visualize
+    %     new_point_and_tg.plot()
+    %     hold on
+    % end
 
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
+    curves_intersected(index_curves) = side;
+    index_curves=index_curves+1;
     to_avoid = mapping_of_sides(side,2);
     if visualize
         seg = segment(new_point, point_and_vec_inters.point);
-        seg.plot(seg)
+        seg.plot(10)
         hold on
     end
     
-    travelled_distance = travelled_distance + distance_two_points(new_point_and_tg.point,point_and_vec_inters.point)
+    travelled_distance = travelled_distance + distance_two_points(new_point_and_tg.point,point_and_vec_inters.point);
 
 
 
+end
+
+for ind = 1:8
+    sum(curves_intersected == ind)
 end

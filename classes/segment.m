@@ -115,11 +115,11 @@ classdef segment
 
         function ang = angle(seg1, seg2)
             % The angle to move the tangent vector in startpoint of seg1 to
-            % the tangent vector in startpoint of seg2
+            % the tangent vector in startpoint of seg2. Clockwise.
             assert(all(seg1.startpoint == seg2.startpoint));
             v1 = tangent_center_startpoint(seg1);
             v2 = tangent_center_startpoint(seg2);
-            ang = angleCW2D(v1, v2);
+            ang = angleCW2D(v1, v2, "clockwise");
         end
 
         function inv_seg = invert(seg)
