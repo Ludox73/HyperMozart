@@ -126,13 +126,15 @@ classdef segment
             inv_seg = segment(seg.endpoint, seg.startpoint);
         end
 
-        function plot(obj, num_points)
+        function plot(obj, num_points, draw_hyp_plane, arguments_plot)
             % plot  Plot segment(s) in 2-D.
             %   H = plot(seg)
             %   plot(ax, seg, ...)
             arguments
                 obj 
                 num_points = 1000
+                draw_hyp_plane = false
+                arguments_plot = '-b'
             end
 
             [center, radius] = geodesic_circonference(obj);
@@ -146,13 +148,14 @@ classdef segment
                     ang1 = ang1-2*pi;
                 end
             end
-
+            
+            
             theta = linspace(ang1, ang2, num_points);
             x = center(1) + radius * cos(theta);
             y = center(2) + radius * sin(theta);
             
             % Plot the arc
-            plot(x, y, 'b-');
+            plot(x, y, arguments_plot);
             hold on;
             plot(obj.startpoint(1), obj.startpoint(2), '*');
             plot(obj.endpoint(1), obj.endpoint(2), '*g');
@@ -161,19 +164,20 @@ classdef segment
             title('Segment');
             xlabel('X-axis');
 
-            % Draw the unit circumference
-            unit_radius = 1; % Radius of the unit circle
-            unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
-            
-            % Generate points on the circumference of the unit circle
-            theta = linspace(0, 2*pi, 1000);
-            unit_x = unit_center(1) + unit_radius * cos(theta);
-            unit_y = unit_center(2) + unit_radius * sin(theta);
-            
-            % Plot the unit circle
-            plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
-            ylabel('Y-axis');
-            hold off
+            if draw_hyp_plane
+                % Draw the unit circumference
+                unit_radius = 1; % Radius of the unit circle
+                unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
+                % Generate points on the circumference of the unit circle
+                theta = linspace(0, 2*pi, min(100,num_points));
+                unit_x = unit_center(1) + unit_radius * cos(theta);
+                unit_y = unit_center(2) + unit_radius * sin(theta);
+                
+                % Plot the unit circle
+                plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
+                ylabel('Y-axis');
+                hold off
+            end
 
 
         end

@@ -6,10 +6,11 @@ end
 
 Max_len_geodesic = 1000;
 curves_intersected = zeros(1, Max_len_geodesic);
+to_music= zeros(Max_len_geodesic, 2);
 index_curves = 1;
 parameter_fundamental_domain=0.99;
 %Can choose standard, v1 or v2
-type_domain = "v2";
+type_domain = "standard";
 
 a = rand(1)*2*pi;
 p_1 = 0.1*[sin(a);cos(a)];
@@ -74,9 +75,22 @@ if visualize
     draw_hyp_plane;
     hold on
     % p0.plot()
+    % for ind = 1:8
+    %     plot_circle(collection_of_circles{ind}{1}, collection_of_circles{ind}{2})
+    % end
+
+    Colors = {'b','r', 'b', 'r', 'y', 'g', 'y', 'g'};
+
     for ind = 1:8
-        plot_circle(collection_of_circles{ind}{1}, collection_of_circles{ind}{2})
+        if ind ~= 8
+            ind2=ind+1;
+        else
+            ind2=1;
+        end
+        segment(fundamental_domain{ind}, fundamental_domain{ind2}).plot(1000, false, Colors{ind})
+        hold on
     end
+    
 end
 
 if visualize
@@ -87,6 +101,8 @@ end
 
 [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_circles);
 curves_intersected(index_curves) = side;
+travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
+% to_music(index_curves, :) = [side, travelled_distance];
 index_curves=index_curves+1;
 to_avoid = mapping_of_sides(side,2);
 if visualize
@@ -94,8 +110,6 @@ if visualize
     seg.plot()
     hold on
 end
-travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
-
 while travelled_distance<Max_len_geodesic
     
         
@@ -110,19 +124,20 @@ while travelled_distance<Max_len_geodesic
     % end
 
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
+    
     curves_intersected(index_curves) = side;
+    dtp = distance_two_points(new_point_and_tg.point,point_and_vec_inters.point);
+    travelled_distance = travelled_distance + dtp
+    to_music(index_curves-1, :) = [to_avoid, dtp];
     index_curves=index_curves+1;
+    
     to_avoid = mapping_of_sides(side,2);
     if visualize
         seg = segment(new_point, point_and_vec_inters.point);
-        seg.plot(points_for_geodesics)
+        seg.plot(points_for_geodesics, false, Colors{side})
         hold on
     end
     
-    travelled_distance = travelled_distance + distance_two_points(new_point_and_tg.point,point_and_vec_inters.point)
-
-
-
 end
 
 for ind = 1:8
