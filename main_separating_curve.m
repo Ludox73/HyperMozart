@@ -1,16 +1,21 @@
+% Here we suppose that the x-axis correspond to a closed simple geodesic,
+% and we compute the intersections of a random geodesic with it.
+
 visualize = false;
 if visualize
     figure
     points_for_geodesics=10;
 end
 
-Max_len_geodesic = 1000000;
+Max_len_geodesic = 3000;
+to_cut = 2000; % We cut the initial part to start in a more random way.
+
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music= zeros(Max_len_geodesic, 2);
 index_curves = 1;
-parameter_fundamental_domain=0.99;
-%Can choose standard, v1 or v2
-type_domain = "standard";
+parameter_fundamental_domain=0.8;
+%Can choose standard or v1 for this at the moment
+type_domain = "v1";
 
 a = rand(1)*2*pi;
 p_1 = 0.1*[sin(a);cos(a)];
@@ -27,9 +32,10 @@ if strcmp(type_domain, "standard")
     end
 elseif strcmp(type_domain, "v1")
     fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain); %#ok<UNRCH>
-elseif strcmp(type_domain, "v2")
-    fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
+else
+    assert(false)
 end
+width_x_axis = fundamental_domain{1}(1);
 
 collection_of_circles = cell(1,8);
 
@@ -110,6 +116,8 @@ if visualize
     seg.plot()
     hold on
 end
+
+travelled_distance_before_intersection = 0;
 while travelled_distance<Max_len_geodesic
     
         
@@ -122,14 +130,31 @@ while travelled_distance<Max_len_geodesic
     %     new_point_and_tg.plot()
     %     hold on
     % end
-
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
     
+    
+
+
     curves_intersected(index_curves) = side;
     dtp = distance_two_points(new_point_and_tg.point,point_and_vec_inters.point);
     travelled_distance = travelled_distance + dtp
-    to_music(index_curves-1, :) = [to_avoid, dtp];
-    index_curves=index_curves+1;
+    
+    intersection_geodesic_x_axis = find_intersection_with_x_axis(new_point_and_tg, width_x_axis);
+    
+    if size(intersection_geodesic_x_axis,1) ~= 0
+        travelled_distance_before_intersection = travelled_distance_before_intersection + distance_two_points(new_point_and_tg.point,intersection_geodesic_x_axis);
+        if new_point_and_tg.point(2)>0
+            side_coming = 1;
+        else
+            side_coming = 2;
+        end
+        to_music(index_curves-1, :) = [side_coming, travelled_distance_before_intersection];
+        index_curves=index_curves+1;
+        travelled_distance_before_intersection = dtp - distance_two_points(new_point_and_tg.point,intersection_geodesic_x_axis);
+    else
+        travelled_distance_before_intersection = travelled_distance_before_intersection + dtp;
+    end
+
     
     to_avoid = mapping_of_sides(side,2);
     if visualize
@@ -143,3 +168,7 @@ end
 for ind = 1:8
     sum(curves_intersected == ind)
 end
+
+l = cumsum(to_music);
+idx = find(l(:,2) > to_cut, 1, 'first');
+to_music = to_music(idx:end, :);

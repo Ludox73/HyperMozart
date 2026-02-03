@@ -85,5 +85,6 @@ y = y / max(abs(y) + eps);
 % sound(y, fs);
 
 % Save to mp3 (optional)
-audiowrite('note_sequence.wav', y.', fs); % column vector required
-disp('Saved to note_sequence.wav');
+title_wav = 'separating_curve_v1_08.wav';
+audiowrite(title_wav, y.', fs); % column vector required
+disp(strcat('Saved to ',title_wav));
