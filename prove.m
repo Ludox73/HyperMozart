@@ -97,7 +97,7 @@ end
 
 if prova_identifier == 6
 
-    [vertices, all_sides] = rectangular_hexagon(2, 3, 2)
+    [vertices, all_sides] = rectangular_hexagon(2, 3, 2);
     
     collection_of_circles = cell(1,6);
 
@@ -111,6 +111,7 @@ if prova_identifier == 6
             ind2=1;
         end
         segment(vertices{ind}, vertices{ind2}).plot(1000, false)
+        hold on
     end
     
 end

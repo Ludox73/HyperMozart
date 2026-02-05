@@ -1,16 +1,5 @@
-function [outputArg1,outputArg2] = apply_upp_half_matrix(inputArg1,inputArg2)
+function point2 = apply_upp_half_matrix(M, point)
 %APPLY_UPP_HALF_MATRIX Summary of this function goes here
 %   Detailed explanation goes here
-arguments (Input)
-    inputArg1
-    inputArg2
-end
-
-arguments (Output)
-    outputArg1
-    outputArg2
-end
-
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+point2 =(M(1,1) * point + M(1,2))/(M(2,1) * point + M(2,2));
 end
