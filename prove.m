@@ -1,4 +1,4 @@
-prova_identifier = 5;
+prova_identifier = 6;
 
 if prova_identifier == 1
 
@@ -93,4 +93,25 @@ if prova_identifier == 5
 
 end
 
+
+
+if prova_identifier == 6
+
+    [vertices, all_sides] = rectangular_hexagon(2, 3, 2)
+    
+    collection_of_circles = cell(1,6);
+
+    draw_hyp_plane;
+    hold on
+
+    for ind = 1:6
+        if ind ~= 6
+            ind2=ind+1;
+        else
+            ind2=1;
+        end
+        segment(vertices{ind}, vertices{ind2}).plot(1000, false)
+    end
+    
+end
 

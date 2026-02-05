@@ -1,10 +1,10 @@
-visualize = false;
+visualize = true;
 if visualize
     figure
     points_for_geodesics=10;
 end
 
-Max_len_geodesic = 1000000;
+Max_len_geodesic = 1000;
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music= zeros(Max_len_geodesic, 2);
 index_curves = 1;
