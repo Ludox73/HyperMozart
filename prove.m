@@ -97,7 +97,7 @@ end
 
 if prova_identifier == 6
 
-    [vertices, all_sides] = rectangular_hexagon(2, 3, 2);
+    [vertices, all_sides] = rectangular_hexagon(1.2, 1.2, 1.2);
     
     collection_of_circles = cell(1,6);
 

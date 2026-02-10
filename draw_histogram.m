@@ -8,5 +8,5 @@ plot(x, f, 'o-')
 xlabel('Value')
 ylabel('Empirical CDF')
 title('std_from_south')
-xlim([0 40])
+xlim([0 10])
 grid on

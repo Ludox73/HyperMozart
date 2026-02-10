@@ -7,7 +7,7 @@ if visualize
     points_for_geodesics=10;
 end
 
-Max_len_geodesic = 3000;
+Max_len_geodesic = 100000;
 to_cut = 2000; % We cut the initial part to start in a more random way.
 
 curves_intersected = zeros(1, Max_len_geodesic);
@@ -21,7 +21,7 @@ a = rand(1)*2*pi;
 p_1 = 0.1*[sin(a);cos(a)];
 
 a = rand(1)*2*pi;
-tg_1 = (2/0.99)^2*[sin(a);cos(a)];
+tg_1 = (2/0.99)^(-2)*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 

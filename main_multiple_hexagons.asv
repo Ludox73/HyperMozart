@@ -1,48 +1,79 @@
-visualize = true;
-if visualize
-    figure
-    points_for_geodesics=10;
-end
+% NEED TO THINK HOW TO VISUALIZE
+% visualize = true;
+% if visualize
+%     figure
+%     points_for_geodesics=10;
+% end
 
+lengths_curves = [2, 2, 2]; % Insert values
+twisted_parameters = [1, 1, 1]; % Insert values in [0, 2pi)
 Max_len_geodesic = 1000;
+curves_to_compute_intersection_with = ["alpha"]; %The support for this is 
+% still limited. We only support 'alpha'.
+
+
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music= zeros(Max_len_geodesic, 2);
 index_curves = 1;
-parameter_fundamental_domain=0.99;
-%Can choose standard, v1 or v2
-type_domain = "standard";
+
+polytopes = {};
+
+polytopes{1} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
+polytopes{2} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
+polytopes{3} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+polytopes{4} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+
+% if strcmp(type_domain, "standard")
+%     fundamental_domain = cell(1,8); %#ok<UNRCH>
+%     for ind = 0:7
+%         fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
+%     end
+% elseif strcmp(type_domain, "v1")
+%     fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain); %#ok<UNRCH>
+% elseif strcmp(type_domain, "v2")
+%     fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
+% end
+
+p_1 =barycenter_cell_of_points(polytopes{1});
 
 a = rand(1)*2*pi;
-p_1 = 0.1*[sin(a);cos(a)];
-
-a = rand(1)*2*pi;
-tg_1 = (2/0.99)^(-2)*[sin(a);cos(a)];
+tg_1 = (2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 
-if strcmp(type_domain, "standard")
-    fundamental_domain = cell(1,8); %#ok<UNRCH>
-    for ind = 0:7
-        fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
+collection_of_collection_of_circles = cell(length(polytopes));
+
+for index_collection_of_collection = 1:length(polytopes)
+    num_sides = size(polytopes{1},1);
+    collection_of_circles = cell(1,num_sides);
+    
+    for ind = 1:num_sides
+        if ind == num_sides
+            ind2=1;
+        else
+            ind2=ind+1;
+        end
+        seg = segment(fundamental_domain{ind}, fundamental_domain{ind2});
+        [center, radius] = geodesic_circonference(seg);
+        collection_of_circles{ind} = {center, radius};
     end
-elseif strcmp(type_domain, "v1")
-    fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain); %#ok<UNRCH>
-elseif strcmp(type_domain, "v2")
-    fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
+    collection_of_collection_of_circles{index_collection_of_collection} = collection_of_circles;
 end
 
-collection_of_circles = cell(1,8);
+maps = {}
+%I want maps to contain in position {i}{j} the map from polyhedra i, side j
 
-for ind = 1:8
-    if ind == 8
-        ind2=1;
-    else
-        ind2=ind+1;
-    end
-    seg = segment(fundamental_domain{ind}, fundamental_domain{ind2});
-    [center, radius] = geodesic_circonference(seg);
-    collection_of_circles{ind} = {center, radius};
-end
+
+isometry_to_use = compute_isometry_with_twisted_parameter(polytopes{1}{1}, polytopes{1}{2}, polytopes{3}{1}, polytopes{3}{2}, polytopes{4}{2}, polytopes{4}{1}, twisted_parameters(1))
+maps{1}{1} = @(p, v) isometry_to_use.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
+
+
+
+
+isometry_to_use = isometry_H2_two_points_poincare(polytopes{1}{2}, polytopes{1}{3}, polytopes{2}{2}, polytopes{2}{3});
+maps{1}{2} = @(p, v) isometry_to_use.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
+
+
 
 %Set up the transformations
 isometries_pairing_sides = cell(1,8);

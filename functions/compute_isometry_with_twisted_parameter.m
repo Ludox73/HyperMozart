@@ -1,0 +1,15 @@
+function isometry = compute_isometry_with_twisted_parameter(point, p1, p2, q1, q2, q3, q4, twisted_parameter)
+%COMPUTE_ISOMETRY_WITH_TWISTED_PARAMETER TODO
+
+len_side = distance_two_points(p1,p2);
+
+translation_amount = len_side * (twisted_parameter / (2*pi));
+
+if translation_amount > distance_two_points(point,p2)
+    isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q3, q4, translation_amount-len_side);
+else
+    isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, translation_amount);
+end
+
+
+end
