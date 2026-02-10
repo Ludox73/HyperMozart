@@ -35,6 +35,7 @@ polytopes{4} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(3)/2, len
 % end
 
 p_1 =barycenter_cell_of_points(polytopes{1});
+polytope_index = 1;
 
 a = rand(1)*2*pi;
 tg_1 = (2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
@@ -61,10 +62,11 @@ for index_collection_of_collection = 1:length(polytopes)
 end
 
 maps = {}
+
 %I want maps to contain in position {i}{j} the map from polyhedra i, side j
 
 
-isometry_to_use = compute_isometry_with_twisted_parameter(point, polytopes{1}{1}, polytopes{1}{2}, polytopes{3}{1}, polytopes{3}{2}, polytopes{4}{2}, polytopes{4}{1}, twisted_parameters(1))
+[isometry_to_use, overshoot] = compute_isometry_with_twisted_parameter(point, polytopes{1}{1}, polytopes{1}{2}, polytopes{3}{1}, polytopes{3}{2}, polytopes{4}{2}, polytopes{4}{1}, twisted_parameters(1));
 maps{1}{1} = @(p, v) isometry_to_use.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
 
 
@@ -102,59 +104,59 @@ mapping_of_sides = [
     7 5;
     8 6];
 
-if visualize
-    draw_hyp_plane;
-    hold on
-    % p0.plot()
-    % for ind = 1:8
-    %     plot_circle(collection_of_circles{ind}{1}, collection_of_circles{ind}{2})
-    % end
+% if visualize
+%     draw_hyp_plane;
+%     hold on
+%     % p0.plot()
+%     % for ind = 1:8
+%     %     plot_circle(collection_of_circles{ind}{1}, collection_of_circles{ind}{2})
+%     % end
+% 
+%     Colors = {'b','r', 'b', 'r', 'y', 'g', 'y', 'g'};
+% 
+%     for ind = 1:8
+%         if ind ~= 8
+%             ind2=ind+1;
+%         else
+%             ind2=1;
+%         end
+%         segment(fundamental_domain{ind}, fundamental_domain{ind2}).plot(1000, false, Colors{ind})
+%         hold on
+%     end
+% 
+% end
 
-    Colors = {'b','r', 'b', 'r', 'y', 'g', 'y', 'g'};
+% if visualize
+%     [clol, rlol] =  geodesic_circonference_tg_vec(p0);
+%     % plot_circle(clol, rlol)
+%     hold on
+% end
 
-    for ind = 1:8
-        if ind ~= 8
-            ind2=ind+1;
-        else
-            ind2=1;
-        end
-        segment(fundamental_domain{ind}, fundamental_domain{ind2}).plot(1000, false, Colors{ind})
-        hold on
-    end
-    
-end
-
-if visualize
-    [clol, rlol] =  geodesic_circonference_tg_vec(p0);
-    % plot_circle(clol, rlol)
-    hold on
-end
-
-[point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_circles);
+[point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_collection_of_circles{polytope_index});
 curves_intersected(index_curves) = side;
 travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
 % to_music(index_curves, :) = [side, travelled_distance];
 index_curves=index_curves+1;
 to_avoid = mapping_of_sides(side,2);
-if visualize
-    seg = segment(p0.point, point_and_vec_inters.point);
-    seg.plot()
-    hold on
-end
+% if visualize
+%     seg = segment(p0.point, point_and_vec_inters.point);
+%     seg.plot()
+%     hold on
+% end
 while travelled_distance<Max_len_geodesic
     
         
-    isometry_to_use = isometries_pairing_sides{side};
+    [isometry_to_use, new_polytope_index] = compute_isometry_to_use_standard_decomposition_S2(point_and_vec_inters.point, polytope_index, side);
     [new_point,new_tg_vector] = isometry_to_use.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
     
     new_point_and_tg = point_and_tg_vector(new_point,new_tg_vector);
-    
+    polytope_index = new_polytope_index;
     % if visualize
     %     new_point_and_tg.plot()
     %     hold on
     % end
 
-    [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
+    [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_collection_of_circles{new_polytope_index}, to_avoid);
     
     curves_intersected(index_curves) = side;
     dtp = distance_two_points(new_point_and_tg.point,point_and_vec_inters.point);
