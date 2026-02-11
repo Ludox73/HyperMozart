@@ -1,9 +1,9 @@
-function [out_fund_dom_index, out_side_index, isometry] = pairing_standard(in_fund_domain_index, in_side_index, l1, l2, l3, t1, t2, t3, intersection_point, polytopes)
+function [out_fund_dom_index, out_side_index, isometry] = pairing_hexagon_standard_S2(in_fund_domain_index, in_side_index, t1, t2, t3, intersection_point, polytopes)
 %PAIRING_STANDARD This object contains the information of the gluing.
 % Given:
 % - The index of the fundamental domain
 % - The index of the side
-% - The lenghts and the twisted parameters
+% - The twisted parameters
 % - The point of intersection
 % - The polytopes
 % Returns:

@@ -5,12 +5,15 @@ len_side = distance_two_points(p1,p2);
 
 translation_amount = len_side * (twisted_parameter / (2*pi));
 
-if translation_amount > distance_two_points(point,p2)
+if translation_amount > distance_two_points(point,p2) + len_side
+    isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, - (2*len_side-translation_amount));
+    overshoot = 2;
+elseif translation_amount > distance_two_points(point,p2)
     isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q3, q4, translation_amount-len_side);
-    overshoot = true;
+    overshoot = 1;
 else
     isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, translation_amount);
-    overshoot = false;
+    overshoot = 0;
 end
 
 
