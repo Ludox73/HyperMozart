@@ -25,6 +25,10 @@ function [vertices, all_sides] = rectangular_hexagon(l1, l3, l5)
     for ind = 1:6
         aus = apply_upp_half_matrix([1.25, 0.5; 0, 1/1.25], V(ind));
         complex_vec_poincare = (aus - 1i) / (aus+ 1i);
+        % This is done to correct a problem given by two vertices being on the same
+        % vertical line.
+        complex_vec_poincare = exp(1i*0.2) * (complex_vec_poincare - (0.1231 + 0.3213*1i)) / (1- ((0.1231 - 0.3213*1i)*complex_vec_poincare));
+
         vertices{ind} = [real(complex_vec_poincare);imag(complex_vec_poincare)];
     end
 end

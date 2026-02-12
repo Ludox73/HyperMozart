@@ -1,5 +1,9 @@
 
-function f = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, translation_amount, varargin)
+function f = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, translation_amount, orientation)
+    if nargin < 6
+        orientation = "preserving";
+    end
+
     z1_poinc = p1(1) + p1(2)*1i;
     z2_poinc = p2(1) + p2(2)*1i;
     w1_poinc = q1(1) + q1(2)*1i;

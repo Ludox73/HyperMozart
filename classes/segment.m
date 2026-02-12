@@ -182,5 +182,15 @@ classdef segment
 
         end
 
+        function R = mirroring_isometry(obj)
+            z1 = obj.startpoint(1) + 1i * obj.startpoint(2);
+            z2 = obj.endpoint(1) + 1i * obj.endpoint(2);
+            
+            M = [1+z1*z2, -z1-z2; conj(-z1-z2), conj(1+z1*z2)];
+            
+            R = hyp_isometry_2d(M, []);
+
+        end
+
     end
 end
