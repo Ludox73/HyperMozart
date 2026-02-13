@@ -1,13 +1,9 @@
 % NEED TO THINK HOW TO VISUALIZE
-% visualize = true;
-% if visualize
-%     figure
-%     points_for_geodesics=10;
-% end
+visualize = true;
 
-lengths_curves = [2, 2, 3]; % Insert values
+lengths_curves = [10, 5, 3]; % Insert values
 twisted_parameters = [0, 0, 0]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100;
+Max_len_geodesic = 500;
 
 combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
@@ -15,7 +11,6 @@ combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1;
 
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music= zeros(Max_len_geodesic, 2);
-index_curves = 1;
 
 polytopes = {};
 
@@ -98,87 +93,114 @@ end
 %     hold on
 % end
 
-[point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_collection_of_circles{polytope_index});
-[out_fund_dom_index, out_side_index, isometry] = pairing_hexagon_standard_S2(polytope_index, side, t1, t2, t3, point_and_vec_inters.point, polytopes);
-
-% segment(p0, point_and_vec_inters).plot
-
-travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
-
-[new_point1,new_tg_vector1] = isometry.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
-
-if ismember([polytope_index, out_fund_dom_index], combination_noncoherent_orientation, 'rows')
-    if out_side_index == 6
-        index2 = 1;
-    else
-        index2 = out_side_index + 1;
-    end
-    z1_poinc = polytopes{polytope_index}{out_side_index}(1) + polytopes{polytope_index}{out_side_index}(2)*1i;
-    z2_poinc = polytopes{polytope_index}{index2}(1) + polytopes{polytope_index}{index2}(2)*1i;
-
-    z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
-    z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
-
-    x1 = real(z1);
-    y1 = imag(z1);
-    x2 = real(z2);
-    y2 = imag(z2);
-    c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
-    r=sqrt((x1-c)^2 + y1^2);
-    alpha = c-r;
-    beta = c+r;
-
-    M = [ 1 -alpha; 1 -beta];
-    J = [-1 0; 0 1];
-
-    np1_poinc = new_point1(1) + new_point1(2)*1i;
-    ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
-
-    np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
-    ntv1 = (1i + 1i)/(-np1_poinc + 1)^2 * ntv1_poinc;
-        
-
-    iso_R = hyp_isometry_2d([], inv(M)*J*M)
-    [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1)
-
-    back_np = (np - 1i)/(np + 1i);
-    back_ntv = (1i + 1i)/(1 * np + 1i)^2 * ntv;
-
-    new_point = [real(back_np); imag(back_np)];
-    new_tg_vector = [real(back_ntv); imag(back_ntv)];
-
-
-    % reflection_through_geodesic = segment(polytopes{polytope_index}{out_side_index}, polytopes{polytope_index}{index2}).mirroring_isometry
-    % 
-    % [new_point,new_tg_vector] = reflection_through_geodesic.apply_poincare_point_and_vector_orientation_reversing(new_point1,new_tg_vector1);
-    point_and_vec_init = point_and_tg_vector(new_point,new_tg_vector);
-    new_point1
-    new_point
-    new_tg_vector1
-    new_tg_vector
-else
-    point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
-end
-
-point_and_vec_init
-
-polytope_index = out_fund_dom_index;
-% to_music(index_curves, :) = [side, travelled_distance];
-index_curves=index_curves+1;
-to_avoid = out_side_index;
-% if visualize
-%     seg = segment(p0.point, point_and_vec_inters.point);
-%     seg.plot()
-%     hold on
+% [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_collection_of_circles{polytope_index});
+% [out_fund_dom_index, out_side_index, isometry] = pairing_hexagon_standard_S2(polytope_index, side, t1, t2, t3, point_and_vec_inters.point, polytopes);
+% 
+% % segment(p0, point_and_vec_inters).plot
+% 
+% travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
+% 
+% [new_point1,new_tg_vector1] = isometry.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
+% 
+% if ismember([polytope_index, out_fund_dom_index], combination_noncoherent_orientation, 'rows')
+%     if out_side_index == 6
+%         index2 = 1;
+%     else
+%         index2 = out_side_index + 1;
+%     end
+%     z1_poinc = polytopes{polytope_index}{out_side_index}(1) + polytopes{polytope_index}{out_side_index}(2)*1i;
+%     z2_poinc = polytopes{polytope_index}{index2}(1) + polytopes{polytope_index}{index2}(2)*1i;
+% 
+%     z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
+%     z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
+% 
+%     x1 = real(z1);
+%     y1 = imag(z1);
+%     x2 = real(z2);
+%     y2 = imag(z2);
+%     c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
+%     r=sqrt((x1-c)^2 + y1^2);
+%     alpha = c-r;
+%     beta = c+r;
+% 
+%     M = [ 1 -alpha; 1 -beta];
+%     J = [-1 0; 0 1];
+% 
+%     np1_poinc = new_point1(1) + new_point1(2)*1i;
+%     ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
+% 
+%     np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
+%     ntv1 = (1i + 1i)/(-np1_poinc + 1)^2 * ntv1_poinc;
+% 
+% 
+%     iso_R = hyp_isometry_2d([], inv(M)*J*M)
+%     [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1)
+% 
+%     back_np = (np - 1i)/(np + 1i);
+%     back_ntv = (1i + 1i)/(1 * np + 1i)^2 * ntv;
+% 
+%     new_point = [real(back_np); imag(back_np)];
+%     new_tg_vector = [real(back_ntv); imag(back_ntv)];
+% 
+% 
+%     % reflection_through_geodesic = segment(polytopes{polytope_index}{out_side_index}, polytopes{polytope_index}{index2}).mirroring_isometry
+%     % 
+%     % [new_point,new_tg_vector] = reflection_through_geodesic.apply_poincare_point_and_vector_orientation_reversing(new_point1,new_tg_vector1);
+%     point_and_vec_init = point_and_tg_vector(new_point,new_tg_vector);
+%     new_point1
+%     new_point
+%     new_tg_vector1
+%     new_tg_vector
+% else
+%     point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
 % end
+% 
+% point_and_vec_init
+% 
+% polytope_index = out_fund_dom_index;
+% % to_music(index_curves, :) = [side, travelled_distance];
+% index_curves=index_curves+1;
+% to_avoid = out_side_index;
+% % if visualize
+% %     seg = segment(p0.point, point_and_vec_inters.point);
+% %     seg.plot()
+% %     hold on
+% % end
+% travelled_since_last_intersection = 0;
+% 
+% 
+% 
+% figure
+% subplot(2,2,polytope_index)
+% seg = segment(p0.point, point_and_vec_inters.point);
+% seg.plot()
+% hold on
+
+point_and_vec_init = p0;
 travelled_since_last_intersection = 0;
+travelled_distance=0;
+to_avoid = length(polytopes{1}) + 1;
+index_curves = 1;
 
-
-
-figure 
-seg = segment(p0.point, point_and_vec_inters.point);
-seg.plot()
-hold on
+if visualize == true
+    figure
+    Colors = {'b','r', 'b', 'r', 'r', 'r'};
+    for polytope_index_plot = 1:4
+        subplot(2,2,polytope_index_plot);
+        draw_hyp_plane;
+        hold on
+        for ind = 1:6
+            if ind ~= 6
+                ind2=ind+1;
+            else
+                ind2=1;
+            end
+            segment(polytopes{polytope_index_plot}{ind}, polytopes{polytope_index_plot}{ind2}).plot(1000, false, Colors{ind})
+            
+            hold on
+        end
+    end
+end
 
 while travelled_distance<Max_len_geodesic
     % Start the cicle with:
@@ -189,41 +211,14 @@ while travelled_distance<Max_len_geodesic
 
     % Here we compute the new intersection
 
-    draw_hyp_plane;
-    hold on
-    polytope_index
-    point_and_vec_init.tg_vector
-    plot(point_and_vec_init.point(1), point_and_vec_init.point(2), 'o')
-    hold on
-    Colors = {'b','r', 'b', 'r', 'r', 'r', 'y', 'g'};
-    for ind = 1:6
-    if ind ~= 6
-        ind2=ind+1;
-    else
-        ind2=1;
-    end
-    segment(polytopes{polytope_index}{ind}, polytopes{polytope_index}{ind2}).plot(1000, false, Colors{ind})
-    
-    hold on
-    end
-    
-    for ind = 1:6
-    if ind ~= 6
-        ind2=ind+1;
-    else
-        ind2=1;
-    end
-    segment(polytopes{3}{ind}, polytopes{3}{ind2}).plot(1000, false, Colors{ind})
-    
-    hold on
-    end
-
-
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
     
-
-    segment(point_and_vec_init.point, point_and_vec_inters.point).plot(1000, false, 'g')
-
+    if visualize == true
+        subplot(2,2,polytope_index)
+        hold on
+        plot(point_and_vec_init.point(1), point_and_vec_init.point(2), 'o')
+        segment(point_and_vec_init.point, point_and_vec_inters.point).plot(1000, false, 'g')
+    end
 
     % Here we add the data if necessary
     dtp = distance_two_points(point_and_vec_init.point,point_and_vec_inters.point);
@@ -240,7 +235,7 @@ while travelled_distance<Max_len_geodesic
     
     
     if ismember([polytope_index, side], combination_curve_count_intersections, 'rows') 
-        to_music(index_curves-1, :) = [polytope_index, travelled_since_last_intersection];
+        to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection];
         index_curves = index_curves + 1;
         travelled_since_last_intersection = 0;
     end
@@ -283,8 +278,8 @@ while travelled_distance<Max_len_geodesic
         ntv1 = (1i + 1i)/(-np1_poinc + 1)^2 * ntv1_poinc;
             
 
-        iso_R = hyp_isometry_2d([], inv(M)*J*M)
-        [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1)
+        iso_R = hyp_isometry_2d([], inv(M)*J*M);
+        [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1);
 
         back_np = (np - 1i)/(np + 1i);
         back_ntv = (1i + 1i)/(1 * np + 1i)^2 * ntv;
@@ -297,10 +292,6 @@ while travelled_distance<Max_len_geodesic
         % 
         % [new_point,new_tg_vector] = reflection_through_geodesic.apply_poincare_point_and_vector_orientation_reversing(new_point1,new_tg_vector1);
         point_and_vec_init = point_and_tg_vector(new_point,new_tg_vector);
-        new_point1
-        new_point
-        new_tg_vector1
-        new_tg_vector
     else
         point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
     end
