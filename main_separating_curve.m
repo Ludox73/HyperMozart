@@ -7,13 +7,20 @@ if visualize
     points_for_geodesics=10;
 end
 
+visualize_less_than = true;
+visualize_only_first_amount = 1;
+amount_less_than = 1.5976;
+
+
 Max_len_geodesic = 100000;
 to_cut = 2000; % We cut the initial part to start in a more random way.
+
+
 
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music= zeros(Max_len_geodesic, 2);
 index_curves = 1;
-parameter_fundamental_domain=0.8;
+parameter_fundamental_domain=0.4;
 %Can choose standard or v1 for this at the moment
 type_domain = "v1";
 
@@ -118,6 +125,12 @@ if visualize
 end
 
 travelled_distance_before_intersection = 0;
+
+points_for_drawing = {};
+
+first_cycle = true;
+number_visualized = 0;
+
 while travelled_distance<Max_len_geodesic
     
         
@@ -133,6 +146,7 @@ while travelled_distance<Max_len_geodesic
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(new_point_and_tg,collection_of_circles, to_avoid);
     
     
+    
 
 
     curves_intersected(index_curves) = side;
@@ -140,6 +154,8 @@ while travelled_distance<Max_len_geodesic
     travelled_distance = travelled_distance + dtp
     
     intersection_geodesic_x_axis = find_intersection_with_x_axis(new_point_and_tg, width_x_axis);
+
+    
     
     if size(intersection_geodesic_x_axis,1) ~= 0
         travelled_distance_before_intersection = travelled_distance_before_intersection + distance_two_points(new_point_and_tg.point,intersection_geodesic_x_axis);
@@ -150,10 +166,60 @@ while travelled_distance<Max_len_geodesic
         end
         to_music(index_curves-1, :) = [side_coming, travelled_distance_before_intersection];
         index_curves=index_curves+1;
+
+        if visualize_less_than && ~first_cycle==true
+            points_for_drawing{end+1} = new_point;
+            points_for_drawing{end+1} = intersection_geodesic_x_axis;
+
+            if travelled_distance_before_intersection < amount_less_than
+                figure;
+                draw_hyp_plane;
+                hold on
+                Colors = {'b','r', 'b', 'r', 'y', 'g', 'y', 'g'};
+                for ind = 1:8
+                    if ind ~= 8
+                        ind2=ind+1;
+                    else
+                        ind2=1;
+                    end
+                    segment(fundamental_domain{ind}, fundamental_domain{ind2}).plot(1000, false, Colors{ind})
+                    hold on
+                end
+
+            
+                for ind = 1:2:length(points_for_drawing)
+                    seg = segment(points_for_drawing{ind}, points_for_drawing{ind+1});
+                    seg.plot(1000, false, 'w')
+                end
+
+                number_visualized = number_visualized + 1;
+                if visualize_only_first_amount == number_visualized
+                    throw(MException("Break:Standard_break_of_script","First shorter geodesic found. We are interrupting the script."))
+                end
+            end
+        end
+
+        first_cycle = false;
         travelled_distance_before_intersection = dtp - distance_two_points(new_point_and_tg.point,intersection_geodesic_x_axis);
+        
+        points_for_drawing = {};
+        points_for_drawing{end+1} = intersection_geodesic_x_axis;
+        points_for_drawing{end+1} = point_and_vec_inters.point;
+
+
     else
         travelled_distance_before_intersection = travelled_distance_before_intersection + dtp;
+
+        if visualize_less_than == true
+            if travelled_distance_before_intersection < amount_less_than
+                points_for_drawing{end+1} = new_point;
+                points_for_drawing{end+1} = point_and_vec_inters.point;
+            end
+        end
+
     end
+
+    
 
     
     to_avoid = mapping_of_sides(side,2);
@@ -172,3 +238,7 @@ end
 l = cumsum(to_music);
 idx = find(l(:,2) > to_cut, 1, 'first');
 to_music = to_music(idx:end, :);
+
+to_music =  to_music(2:end, :);
+to_music = to_music(to_music(1:end,1) ~= 0, :);
+minimal_length_found = min(to_music(:,2))

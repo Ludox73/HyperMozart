@@ -5,7 +5,7 @@ function [vertices, all_sides] = rectangular_hexagon_centered(l1, l3, l5)
     % Calculates the vertices of a right-angled hyperbolic hexagon
     % Given three alternating side lengths l1, l3, l5.
     
-    throw(MException("function:bugged", "This function has shown unexpected behaviour. Do not use it."))
+    % throw(MException("function:bugged", "This function has shown unexpected behaviour. Do not use it."))
     % 1. Calculate missing side lengths using the Law of Cosines
     l2 = acosh((cosh(l1)*cosh(l3) + cosh(l5)) / (sinh(l1)*sinh(l3)));
     l4 = acosh((cosh(l3)*cosh(l5) + cosh(l1)) / (sinh(l3)*sinh(l5)));
@@ -40,12 +40,15 @@ function [vertices, all_sides] = rectangular_hexagon_centered(l1, l3, l5)
     
     %We here move the barycenter to the origin for better visualization
     bary = barycenter_cell_of_points(vertices);
-    bary_complex = bary(1) + 1i*bary(2);
+    bary_complex = bary(1) + 1i*bary(2)
+    bary_complex = -0.3-0.1742i
+    % I would like 
+    %  bary_complex = bary(1) + 1i*bary(2)
+    % but this bugs somehow.
 
     for ind = 1:6
         z = complex_vec_poincare{ind};
-        aus2 = (z - bary_complex)/(-z*conj(bary_complex) + 1);
-        aus2 = exp(1i*0.2) * (aus2);
+        aus2 = exp(1i*0.2) * ((z - bary_complex)/(-z*conj(bary_complex) + 1));
         vertices{ind} = [real(aus2); imag(aus2)];
     end
 

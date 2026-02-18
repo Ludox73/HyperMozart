@@ -6,15 +6,15 @@ visualize = f;
 points_draw_geodesics = 1000;
 % This flah is used to create new figures and visualize geodesics that last
 % less than the specified amount.
-visualize_less_than = t;
-visualize_only_first_amount = 10;
-amount_less_than = 4.66;
-visualize_only_one_side = "west"; %Choose "east", "west" or "both"
+visualize_less_than =t;
+visualize_only_first_amount = 1;
+amount_less_than = 1.711;
+visualize_only_one_side = "east"; %Choose "east", "west" or "both"
 
 
-lengths_curves = [2, 2, 5]; % Insert values
-twisted_parameters = [1, 0, 2*pi-1]; % Insert values in [0, 2pi)
-Max_len_geodesic = 50000;
+lengths_curves = [5, 2, 5]; % Insert values
+twisted_parameters = [1, 2, 3]; % Insert values in [0, 2pi)
+Max_len_geodesic = 100000;
 
 combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
@@ -25,10 +25,10 @@ to_music= zeros(Max_len_geodesic, 2);
 
 polytopes = {};
 
-polytopes{1} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-polytopes{2} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-polytopes{3} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
-polytopes{4} = rectangular_hexagon(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+polytopes{1} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
+polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
+polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
 
 
 
@@ -48,7 +48,7 @@ t3 = twisted_parameters(3);
 %     fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
 % end
 
-p_1 = barycenter_cell_of_points(polytopes{1});
+p_1 = barycenter_cell_of_points(polytopes{1})
 polytope_index = 1;
 
 a = rand(1)*2*pi;
@@ -156,13 +156,12 @@ while travelled_distance<Max_len_geodesic
         
         if visualize_less_than && ~first_cycle==true && flag_correct_side
             if travelled_since_last_intersection < amount_less_than
-                figure;
-                draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
+                fig2;
                 
                 for ind = 1:2:length(points_for_drawing)
                     subplot(2,2, points_for_drawing{ind}{2})
                     seg = segment(points_for_drawing{ind}{1}, points_for_drawing{ind+1}{1});
-                    seg.plot(points_draw_geodesics, false, 'y')
+                    seg.plot(points_draw_geodesics, false, 'r')
                 end
     
                 

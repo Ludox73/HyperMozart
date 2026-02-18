@@ -1,7 +1,7 @@
 figure
 
 provenience_to_music = "hexagons";
-which_part = "west";
+which_part = "east";
 parameters_for_title = strcat(string(mat2str(lengths_curves)), string(mat2str(twisted_parameters)));
 
 if strcmp(provenience_to_music, "hexagons")
