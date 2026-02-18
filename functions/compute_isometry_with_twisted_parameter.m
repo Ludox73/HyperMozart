@@ -6,7 +6,7 @@ end
 
 len_side = distance_two_points(p1,p2);
 
-translation_amount = len_side * (twisted_parameter / (2*pi));
+translation_amount = 2*len_side * (twisted_parameter / (2*pi));
 
 if translation_amount > distance_two_points(point,p2) + len_side
     isometry = isometry_H2_two_points_with_translation_poincare(p1, p2, q1, q2, - (2*len_side-translation_amount), orientation);

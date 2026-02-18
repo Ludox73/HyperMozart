@@ -185,7 +185,9 @@ elseif all([in_fund_domain_index, in_side_index] == [4, 1])
     end
 
 elseif all([in_fund_domain_index, in_side_index] == [4, 3])
+
     [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{4}{3}, polytopes{4}{4}, polytopes{4}{6}, polytopes{4}{5}, polytopes{3}{5}, polytopes{3}{6}, t3);
+    
     if overshoot == 0 ||  overshoot == 2
         out_fund_dom_index = 4;
         out_side_index = 5;

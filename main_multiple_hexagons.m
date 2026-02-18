@@ -6,13 +6,14 @@ visualize = f;
 points_draw_geodesics = 1000;
 % This flah is used to create new figures and visualize geodesics that last
 % less than the specified amount.
-visualize_less_than = f;
-visualize_only_first = f;
-amount_less_than = 3.04;
+visualize_less_than = t;
+visualize_only_first_amount = 10;
+amount_less_than = 4.66;
+visualize_only_one_side = "west"; %Choose "east", "west" or "both"
 
 
-lengths_curves = [2, 2, 3]; % Insert values
-twisted_parameters = [1, 1, 1]; % Insert values in [0, 2pi)
+lengths_curves = [2, 2, 5]; % Insert values
+twisted_parameters = [1, 0, 2*pi-1]; % Insert values in [0, 2pi)
 Max_len_geodesic = 50000;
 
 combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
@@ -91,6 +92,9 @@ if visualize_less_than == true
     points_for_drawing = {};
 end
 
+first_cycle= true;
+number_visualized = 0;
+
 while travelled_distance<Max_len_geodesic
     % Start the cicle with:
     % - point_and_vec_init
@@ -135,7 +139,22 @@ while travelled_distance<Max_len_geodesic
         to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection];
         index_curves = index_curves + 1;
         
-        if visualize_less_than
+        flag_correct_side = false;
+        if strcmp(visualize_only_one_side, "east")
+            if (polytope_index == 1 || polytope_index == 2)
+                flag_correct_side = true;
+            end
+        elseif strcmp(visualize_only_one_side, "west")
+            if (polytope_index == 3 || polytope_index == 4)
+                flag_correct_side = true;
+            end
+        elseif strcmp(visualize_only_one_side, "both")
+            flag_correct_side = true;
+        else
+            throw(MException("variable_value:unexpected", "Unexpected value for variable visualize_only_one_side. Supported strings are east, west, and both."))
+        end
+        
+        if visualize_less_than && ~first_cycle==true && flag_correct_side
             if travelled_since_last_intersection < amount_less_than
                 figure;
                 draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
@@ -150,14 +169,17 @@ while travelled_distance<Max_len_geodesic
                 if visualize
                     fig1;
                 end
-                if visualize_only_first
+
+                number_visualized = number_visualized + 1;
+                if visualize_only_first_amount == number_visualized
                     throw(MException("Break:Standard_break_of_script","First shorter geodesic found. We are interrupting the script."))
                 end
             end
-            points_for_drawing = {};
         end
 
         travelled_since_last_intersection = 0;
+        points_for_drawing = {};
+        first_cycle = false;
     end
 
 
@@ -231,6 +253,12 @@ while travelled_distance<Max_len_geodesic
     
 end
 
+
+to_music =  to_music(2:end, :);
+to_music = to_music(to_music(1:end,1) ~= 0, :);
+
+min_east_side = min( min(to_music(to_music(:,1) == 1, 2)), min(to_music(to_music(:,1) == 2, 2)))
+min_west_side = min( min(to_music(to_music(:,1) == 3, 2)), min(to_music(to_music(:,1) == 4, 2)))
 % for ind = 1:8
 %     sum(curves_intersected == ind)
 % end
