@@ -1,9 +1,19 @@
-% NEED TO THINK HOW TO VISUALIZE
-visualize = true;
+t=true
+f=false
 
-lengths_curves = [10, 5, 3]; % Insert values
-twisted_parameters = [0, 0, 0]; % Insert values in [0, 2pi)
-Max_len_geodesic = 500;
+% NEED TO THINK HOW TO VISUALIZE
+visualize = f;
+points_draw_geodesics = 1000;
+% This flah is used to create new figures and visualize geodesics that last
+% less than the specified amount.
+visualize_less_than = f;
+visualize_only_first = f;
+amount_less_than = 3.04;
+
+
+lengths_curves = [2, 2, 3]; % Insert values
+twisted_parameters = [1, 1, 1]; % Insert values in [0, 2pi)
+Max_len_geodesic = 50000;
 
 combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
@@ -37,7 +47,7 @@ t3 = twisted_parameters(3);
 %     fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
 % end
 
-p_1 =barycenter_cell_of_points(polytopes{1});
+p_1 = barycenter_cell_of_points(polytopes{1});
 polytope_index = 1;
 
 a = rand(1)*2*pi;
@@ -65,117 +75,6 @@ for index_collection_of_collection = 1:length(polytopes)
 end
 
 
-% if visualize
-%     draw_hyp_plane;
-%     hold on
-%     % p0.plot()
-%     % for ind = 1:8
-%     %     plot_circle(collection_of_circles{ind}{1}, collection_of_circles{ind}{2})
-%     % end
-% 
-%     Colors = {'b','r', 'b', 'r', 'y', 'g', 'y', 'g'};
-% 
-%     for ind = 1:8
-%         if ind ~= 8
-%             ind2=ind+1;
-%         else
-%             ind2=1;
-%         end
-%         segment(fundamental_domain{ind}, fundamental_domain{ind2}).plot(1000, false, Colors{ind})
-%         hold on
-%     end
-% 
-% end
-
-% if visualize
-%     [clol, rlol] =  geodesic_circonference_tg_vec(p0);
-%     % plot_circle(clol, rlol)
-%     hold on
-% end
-
-% [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(p0,collection_of_collection_of_circles{polytope_index});
-% [out_fund_dom_index, out_side_index, isometry] = pairing_hexagon_standard_S2(polytope_index, side, t1, t2, t3, point_and_vec_inters.point, polytopes);
-% 
-% % segment(p0, point_and_vec_inters).plot
-% 
-% travelled_distance = distance_two_points(p0.point,point_and_vec_inters.point);
-% 
-% [new_point1,new_tg_vector1] = isometry.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
-% 
-% if ismember([polytope_index, out_fund_dom_index], combination_noncoherent_orientation, 'rows')
-%     if out_side_index == 6
-%         index2 = 1;
-%     else
-%         index2 = out_side_index + 1;
-%     end
-%     z1_poinc = polytopes{polytope_index}{out_side_index}(1) + polytopes{polytope_index}{out_side_index}(2)*1i;
-%     z2_poinc = polytopes{polytope_index}{index2}(1) + polytopes{polytope_index}{index2}(2)*1i;
-% 
-%     z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
-%     z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
-% 
-%     x1 = real(z1);
-%     y1 = imag(z1);
-%     x2 = real(z2);
-%     y2 = imag(z2);
-%     c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
-%     r=sqrt((x1-c)^2 + y1^2);
-%     alpha = c-r;
-%     beta = c+r;
-% 
-%     M = [ 1 -alpha; 1 -beta];
-%     J = [-1 0; 0 1];
-% 
-%     np1_poinc = new_point1(1) + new_point1(2)*1i;
-%     ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
-% 
-%     np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
-%     ntv1 = (1i + 1i)/(-np1_poinc + 1)^2 * ntv1_poinc;
-% 
-% 
-%     iso_R = hyp_isometry_2d([], inv(M)*J*M)
-%     [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1)
-% 
-%     back_np = (np - 1i)/(np + 1i);
-%     back_ntv = (1i + 1i)/(1 * np + 1i)^2 * ntv;
-% 
-%     new_point = [real(back_np); imag(back_np)];
-%     new_tg_vector = [real(back_ntv); imag(back_ntv)];
-% 
-% 
-%     % reflection_through_geodesic = segment(polytopes{polytope_index}{out_side_index}, polytopes{polytope_index}{index2}).mirroring_isometry
-%     % 
-%     % [new_point,new_tg_vector] = reflection_through_geodesic.apply_poincare_point_and_vector_orientation_reversing(new_point1,new_tg_vector1);
-%     point_and_vec_init = point_and_tg_vector(new_point,new_tg_vector);
-%     new_point1
-%     new_point
-%     new_tg_vector1
-%     new_tg_vector
-% else
-%     point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
-% end
-% 
-% point_and_vec_init
-% 
-% polytope_index = out_fund_dom_index;
-% % to_music(index_curves, :) = [side, travelled_distance];
-% index_curves=index_curves+1;
-% to_avoid = out_side_index;
-% % if visualize
-% %     seg = segment(p0.point, point_and_vec_inters.point);
-% %     seg.plot()
-% %     hold on
-% % end
-% travelled_since_last_intersection = 0;
-% 
-% 
-% 
-% figure
-% subplot(2,2,polytope_index)
-% seg = segment(p0.point, point_and_vec_inters.point);
-% seg.plot()
-% hold on
-
 point_and_vec_init = p0;
 travelled_since_last_intersection = 0;
 travelled_distance=0;
@@ -183,23 +82,13 @@ to_avoid = length(polytopes{1}) + 1;
 index_curves = 1;
 
 if visualize == true
-    figure
-    Colors = {'b','r', 'b', 'r', 'r', 'r'};
-    for polytope_index_plot = 1:4
-        subplot(2,2,polytope_index_plot);
-        draw_hyp_plane;
-        hold on
-        for ind = 1:6
-            if ind ~= 6
-                ind2=ind+1;
-            else
-                ind2=1;
-            end
-            segment(polytopes{polytope_index_plot}{ind}, polytopes{polytope_index_plot}{ind2}).plot(1000, false, Colors{ind})
-            
-            hold on
-        end
-    end
+    fig1 = figure;
+
+    draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, 1000);
+end
+
+if visualize_less_than == true
+    points_for_drawing = {};
 end
 
 while travelled_distance<Max_len_geodesic
@@ -232,11 +121,42 @@ while travelled_distance<Max_len_geodesic
     %     seg.plot(points_for_geodesics, false, Colors{side})
     %     hold on
     % end
+
+    if visualize_less_than == true
+        if travelled_since_last_intersection < amount_less_than
+            points_for_drawing{end+1} = {point_and_vec_init.point, polytope_index};
+            points_for_drawing{end+1} = {point_and_vec_inters.point, polytope_index};
+        end
+    end
+    
     
     
     if ismember([polytope_index, side], combination_curve_count_intersections, 'rows') 
         to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection];
         index_curves = index_curves + 1;
+        
+        if visualize_less_than
+            if travelled_since_last_intersection < amount_less_than
+                figure;
+                draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
+                
+                for ind = 1:2:length(points_for_drawing)
+                    subplot(2,2, points_for_drawing{ind}{2})
+                    seg = segment(points_for_drawing{ind}{1}, points_for_drawing{ind+1}{1});
+                    seg.plot(points_draw_geodesics, false, 'y')
+                end
+    
+                
+                if visualize
+                    fig1;
+                end
+                if visualize_only_first
+                    throw(MException("Break:Standard_break_of_script","First shorter geodesic found. We are interrupting the script."))
+                end
+            end
+            points_for_drawing = {};
+        end
+
         travelled_since_last_intersection = 0;
     end
 

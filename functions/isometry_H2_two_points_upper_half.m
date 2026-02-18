@@ -19,7 +19,7 @@ function f = isometry_H2_two_points_upper_half(p1, p2, q1, q2, varargin)
 %   which yields 4 real equations. The solution space is 1D (up to scale).
 %   Normalize so that det = a*d - b*c = +1.
 
-% WRITTEN BY AI
+% WRITTEN BY AI, debugged
 
     pSwap = false;
     if ~isempty(varargin)
@@ -53,7 +53,11 @@ function f = isometry_H2_two_points_upper_half(p1, p2, q1, q2, varargin)
     end
 
     % Solve for the (1D) nullspace; robust to scaling
-    N = null(A, 'r'); % real nullspace basis
+    N = null(A); % real nullspace basis
+
+    %Here AI iserted a funny N = null(A, 'r'), justifying saying that we
+    %are considering real nullspace... Bah
+    
     if isempty(N) || size(N,2) ~= 1
         error('No unique real Möbius transform found; input may be degenerate.');
     end

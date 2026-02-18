@@ -22,13 +22,27 @@ function [vertices, all_sides] = rectangular_hexagon(l1, l3, l5)
     end
 
     vertices = cell(6,1);
+    complex_vec_poincare = cell(6,1);
     for ind = 1:6
-        aus = apply_upp_half_matrix([1.25, 0.5; 0, 1/1.25], V(ind));
-        complex_vec_poincare = (aus - 1i) / (aus+ 1i);
+
         % This is done to correct a problem given by two vertices being on the same
         % vertical line.
-        complex_vec_poincare = exp(1i*0.2) * (complex_vec_poincare - (0.1231 + 0.3213*1i)) / (1- ((0.1231 - 0.3213*1i)*complex_vec_poincare));
+        aus = apply_upp_half_matrix([1.25, 0.5; 0, 1/1.25], V(ind));
 
-        vertices{ind} = [real(complex_vec_poincare);imag(complex_vec_poincare)];
+
+        complex_vec_poincare{ind} = (aus - 1i) / (aus+ 1i);
+        vertices{ind} = [real(complex_vec_poincare{ind});imag(complex_vec_poincare{ind})];
     end
+    
+    %We here move the barycenter to the origin for better visualization
+    bary = barycenter_cell_of_points(vertices);
+    bary_complex = bary(1) + 1i*bary(2);
+
+    for ind = 1:6
+        z = complex_vec_poincare{ind};
+        aus2 = (z - bary_complex)/(-z*conj(bary_complex) + 1);
+        aus2 = exp(1i*0.2) * (aus2);
+        vertices{ind} = [real(aus2); imag(aus2)];
+    end
+
 end
