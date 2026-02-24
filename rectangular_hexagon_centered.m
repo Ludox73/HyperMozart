@@ -40,15 +40,11 @@ function [vertices, all_sides] = rectangular_hexagon_centered(l1, l3, l5)
     
     %We here move the barycenter to the origin for better visualization
     bary = barycenter_cell_of_points(vertices);
-    bary_complex = bary(1) + 1i*bary(2)
-    bary_complex = -0.3-0.1742i
-    % I would like 
-    %  bary_complex = bary(1) + 1i*bary(2)
-    % but this bugs somehow.
-
+    bary_complex = bary(1) + 1i*bary(2);
+    
     for ind = 1:6
         z = complex_vec_poincare{ind};
-        aus2 = exp(1i*0.2) * ((z - bary_complex)/(-z*conj(bary_complex) + 1));
+        aus2 = ((z - bary_complex)/(-z*conj(bary_complex) + 1));
         vertices{ind} = [real(aus2); imag(aus2)];
     end
 

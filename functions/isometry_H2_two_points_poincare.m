@@ -10,9 +10,7 @@ function f = isometry_H2_two_points_poincare(p1, p2, q1, q2, varargin)
     w1 = 1i*(1+w1_poinc)/(1-w1_poinc);
     w2 = 1i*(1+w2_poinc)/(1-w2_poinc);
 
-    L = isometry_H2_two_points_upper_half(z1, z2, w1, w2);
-
-    LM = [L.a, L.b; L.c, L.d];
+    LM = isometry_H2_two_points_upper_half(z1, z2, w1, w2);
 
     poinc_M=[1, -1i; 1, 1i]*LM*[1i, 1i; -1, 1];
 

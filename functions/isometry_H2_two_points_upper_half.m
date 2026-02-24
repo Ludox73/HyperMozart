@@ -10,8 +10,7 @@ function f = isometry_H2_two_points_upper_half(p1, p2, q1, q2, varargin)
 %
 % Output:
 %   f : struct with fields
-%       a,b,c,d  - real coefficients of the Möbius map (determinant = 1)
-%       apply    - function handle: w = f.apply(z) = (a*z + b) / (c*z + d)
+%       matrix that represent the transofrmation
 %
 % Method:
 %   Solve the homogeneous real-linear system for [a;b;c;d] from
@@ -78,6 +77,5 @@ function f = isometry_H2_two_points_upper_half(p1, p2, q1, q2, varargin)
     a = a * s; b = b * s; c = c * s; d = d * s;
 
     % Package result
-    f.a = a; f.b = b; f.c = c; f.d = d;
-    f.apply = @(z) (a .* z + b) ./ (c .* z + d);
+    f= [a, b ; c , d];
 end

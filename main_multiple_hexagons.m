@@ -1,12 +1,12 @@
-t=true
-f=false
+t=true;
+f=false;
 
 % NEED TO THINK HOW TO VISUALIZE
-visualize = f;
-points_draw_geodesics = 1000;
+visualize = t;
+points_draw_geodesics = 100;
 % This flah is used to create new figures and visualize geodesics that last
 % less than the specified amount.
-visualize_less_than =t;
+visualize_less_than = f;
 visualize_only_first_amount = 1;
 amount_less_than = 1.711;
 visualize_only_one_side = "east"; %Choose "east", "west" or "both"
@@ -14,7 +14,7 @@ visualize_only_one_side = "east"; %Choose "east", "west" or "both"
 
 lengths_curves = [5, 2, 5]; % Insert values
 twisted_parameters = [1, 2, 3]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100000;
+Max_len_geodesic = 100;
 
 combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
@@ -30,25 +30,11 @@ polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(
 polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
 polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
 
-
-
-
 t1 = twisted_parameters(1);
 t2 = twisted_parameters(2);
 t3 = twisted_parameters(3);
 
-% if strcmp(type_domain, "standard")
-%     fundamental_domain = cell(1,8); %#ok<UNRCH>
-%     for ind = 0:7
-%         fundamental_domain{ind+1} = 2^(-1/4) * [cos(pi/4*ind); sin(pi/4*ind)];
-%     end
-% elseif strcmp(type_domain, "v1")
-%     fundamental_domain = fundamental_domain_S2_Ludo(parameter_fundamental_domain); %#ok<UNRCH>
-% elseif strcmp(type_domain, "v2")
-%     fundamental_domain = fundamental_domain_S2_Ludo_v2(parameter_fundamental_domain);
-% end
-
-p_1 = barycenter_cell_of_points(polytopes{1})
+p_1 = barycenter_cell_of_points(polytopes{1});
 polytope_index = 1;
 
 a = rand(1)*2*pi;
@@ -85,7 +71,7 @@ index_curves = 1;
 if visualize == true
     fig1 = figure;
 
-    draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, 1000);
+    draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
 end
 
 if visualize_less_than == true
@@ -103,19 +89,21 @@ while travelled_distance<Max_len_geodesic
 
 
     % Here we compute the new intersection
-
+    
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
     
     if visualize == true
         subplot(2,2,polytope_index)
         hold on
         plot(point_and_vec_init.point(1), point_and_vec_init.point(2), 'o')
-        segment(point_and_vec_init.point, point_and_vec_inters.point).plot(1000, false, 'g')
+        segment(point_and_vec_init.point, point_and_vec_inters.point).plot(points_draw_geodesics, false, 'g')
     end
 
     % Here we add the data if necessary
     dtp = distance_two_points(point_and_vec_init.point,point_and_vec_inters.point);
-    travelled_distance = travelled_distance + dtp
+    travelled_distance = travelled_distance + dtp;
+    print_travelled_distance(travelled_distance, Max_len_geodesic)
+
     travelled_since_last_intersection = travelled_since_last_intersection + dtp;
     % to_music(index_curves-1, :) = [to_avoid, dtp];
     % index_curves=index_curves+1;
@@ -156,7 +144,8 @@ while travelled_distance<Max_len_geodesic
         
         if visualize_less_than && ~first_cycle==true && flag_correct_side
             if travelled_since_last_intersection < amount_less_than
-                fig2;
+                figure
+                draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
                 
                 for ind = 1:2:length(points_for_drawing)
                     subplot(2,2, points_for_drawing{ind}{2})
@@ -194,8 +183,11 @@ while travelled_distance<Max_len_geodesic
         else
             index2 = out_side_index + 1;
         end
-        z1_poinc = polytopes{polytope_index}{out_side_index}(1) + polytopes{polytope_index}{out_side_index}(2)*1i;
-        z2_poinc = polytopes{polytope_index}{index2}(1) + polytopes{polytope_index}{index2}(2)*1i;
+        p1 = polytopes{out_fund_dom_index}{out_side_index};
+        p2 = polytopes{out_fund_dom_index}{index2};
+
+        z1_poinc = p1(1) + p1(2)*1i;
+        z2_poinc = p2(1) + p2(2)*1i;
     
         z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
         z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
@@ -205,7 +197,9 @@ while travelled_distance<Max_len_geodesic
         x2 = real(z2);
         y2 = imag(z2);
         c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
+
         r=sqrt((x1-c)^2 + y1^2);
+
         alpha = c-r;
         beta = c+r;
 
@@ -216,23 +210,25 @@ while travelled_distance<Max_len_geodesic
         ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
 
         np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
-        ntv1 = (1i + 1i)/(-np1_poinc + 1)^2 * ntv1_poinc;
-            
-
-        iso_R = hyp_isometry_2d([], inv(M)*J*M);
+        ntv1 = 2i/(-np1_poinc + 1)^2 * ntv1_poinc;
+        
+        aus_M = M\J*M;
+        iso_R = hyp_isometry_2d([], aus_M);
         [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1);
-
+        
         back_np = (np - 1i)/(np + 1i);
-        back_ntv = (1i + 1i)/(1 * np + 1i)^2 * ntv;
+        back_ntv = (2i)/(1 * np + 1i)^2 * ntv;
 
         new_point = [real(back_np); imag(back_np)];
         new_tg_vector = [real(back_ntv); imag(back_ntv)];
-
-
-        % reflection_through_geodesic = segment(polytopes{polytope_index}{out_side_index}, polytopes{polytope_index}{index2}).mirroring_isometry
-        % 
-        % [new_point,new_tg_vector] = reflection_through_geodesic.apply_poincare_point_and_vector_orientation_reversing(new_point1,new_tg_vector1);
-        point_and_vec_init = point_and_tg_vector(new_point,new_tg_vector);
+        
+        if norm(new_point1 - new_point)>1e-6
+            warning("It looks that the mirroring is moving points on the segment. There may be an error here.")
+            value = norm(new_point1 - new_point)
+        end
+        
+        % We use new_point1 since it should not have been changed.
+        point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector);
     else
         point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
     end
