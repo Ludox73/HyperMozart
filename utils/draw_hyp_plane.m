@@ -13,6 +13,6 @@ unit_y = unit_center(2) + unit_radius * sin(theta);
 % Plot the unit circle
 plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
 
-axis equal;
+% axis equal;
 grid on;
 end

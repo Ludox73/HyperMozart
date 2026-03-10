@@ -1,4 +1,4 @@
-prova_identifier = 9;
+prova_identifier = 10;
 
 if prova_identifier == 1
 
@@ -199,4 +199,13 @@ for ind = 1:6
 end
 
 plot([0.01; f(1)], [0, f(2)]  )
+end
+
+if prova_identifier == 10
+fs = 44100;              % Frequenza di campionamento (Hz)
+t = 0:1/fs:0.1;            % Durata di 0.1 secondo
+f = 440;                 % Frequenza della nota (La4)
+nota = sin(2*pi*f*t);    % Generazione dell'onda sinusoidale
+
+sound(nota, fs);         % Riproduzione audio
 end

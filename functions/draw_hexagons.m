@@ -1,7 +1,9 @@
-function draw_hexagons(Colors, polytopes, number_points_drawing)
+function draw_hexagons(Styles, polytopes, number_points_drawing, styleIdx_pairing)
 %DRAW_HEXAGONS Draws the hexagons
 
 num_hexagons = length(polytopes);
+
+
 if num_hexagons == 4
     for polytope_index_plot = 1:4
             subplot(2,2,polytope_index_plot);
@@ -13,7 +15,7 @@ if num_hexagons == 4
                 else
                     ind2=1;
                 end
-                segment(polytopes{polytope_index_plot}{ind}, polytopes{polytope_index_plot}{ind2}).plot(number_points_drawing, false, Colors{ind})
+                segment(polytopes{polytope_index_plot}{ind}, polytopes{polytope_index_plot}{ind2}).plot(number_points_drawing, false, Styles{styleIdx_pairing(polytope_index_plot,ind)})
                 
                 hold on
             end

@@ -126,7 +126,7 @@ classdef segment
             inv_seg = segment(seg.endpoint, seg.startpoint);
         end
 
-        function plot(obj, num_points, draw_hyp_plane, arguments_plot)
+        function plot(obj, num_points, draw_hyp_plane, style_plot)
             % plot  Plot segment(s) in 2-D.
             %   H = plot(seg)
             %   plot(ax, seg, ...)
@@ -134,7 +134,7 @@ classdef segment
                 obj 
                 num_points = 1000
                 draw_hyp_plane = false
-                arguments_plot = '-b'
+                style_plot = {'r', '-',  2.5}
             end
 
             [center, radius] = geodesic_circonference(obj);
@@ -155,14 +155,10 @@ classdef segment
             y = center(2) + radius * sin(theta);
             
             % Plot the arc
-            plot(x, y, arguments_plot);
+            plot(x, y, 'Color', style_plot{1}, 'LineStyle', style_plot{2});
             hold on;
-            plot(obj.startpoint(1), obj.startpoint(2), '*');
-            plot(obj.endpoint(1), obj.endpoint(2), '*g');
-            axis equal;
-            grid on;
-            title('Segment');
-            xlabel('X-axis');
+            % plot(obj.startpoint(1), obj.startpoint(2), '*');
+            % plot(obj.endpoint(1), obj.endpoint(2), '*g');
 
             if draw_hyp_plane
                 % Draw the unit circumference
@@ -175,7 +171,73 @@ classdef segment
                 
                 % Plot the unit circle
                 plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
-                ylabel('Y-axis');
+                hold off
+            end
+
+
+        end
+
+        function C = plot_real_time(obj, num_points, draw_hyp_plane, style_plot, speed_geodesic)
+            % plot  Plot segment(s) in 2-D.
+            %   H = plot(seg)
+            %   plot(ax, seg, ...)
+            arguments
+                obj 
+                num_points = 1000
+                draw_hyp_plane = false
+                style_plot = {'r', '-',  2.5}
+                speed_geodesic = 1
+            end
+
+            [center, radius] = geodesic_circonference(obj);
+            ang1 = angleCW2D([1;0], obj.startpoint - center, "counterclockwise");
+            ang2 = angleCW2D([1;0],  obj.endpoint - center, "counterclockwise");
+            
+            if abs(ang1-ang2)>pi
+                if ang2>ang1
+                    ang2=ang2-2*pi;
+                else
+                    ang1 = ang1-2*pi;
+                end
+            end
+
+            length_segment = distance_two_points(obj.startpoint, obj.endpoint);
+            
+            
+            
+            
+            theta = linspace(ang1, ang2, num_points);
+            x = center(1) + radius * cos(theta);
+            y = center(2) + radius * sin(theta);
+            
+            % Plot the arc
+            C = animatedline('Color', 'k');
+            for k = 1:length(x)
+                addpoints(C, x(k), y(k));
+                
+                % Use drawnow to update the figure window
+                drawnow;
+                
+                % Optional: add pause to control speed
+                pause((1/speed_geodesic)*(length_segment/num_points)); 
+            end
+            % plot(x, y, 'Color', style_plot{1}, 'LineStyle', style_plot{2});
+
+            hold on;
+            % plot(obj.startpoint(1), obj.startpoint(2), '*');
+            % plot(obj.endpoint(1), obj.endpoint(2), '*g');
+
+            if draw_hyp_plane
+                % Draw the unit circumference
+                unit_radius = 1; % Radius of the unit circle
+                unit_center = [0;0]; % Center of the unit circle at the midpoint of the segment
+                % Generate points on the circumference of the unit circle
+                theta = linspace(0, 2*pi, min(100,num_points));
+                unit_x = unit_center(1) + unit_radius * cos(theta);
+                unit_y = unit_center(2) + unit_radius * sin(theta);
+                
+                % Plot the unit circle
+                plot(unit_x, unit_y, 'g--'); % Plot the unit circumference in green dashed line
                 hold off
             end
 

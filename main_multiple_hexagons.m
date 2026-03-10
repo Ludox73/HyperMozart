@@ -3,25 +3,37 @@ f=false;
 
 % NEED TO THINK HOW TO VISUALIZE
 visualize = t;
-points_draw_geodesics = 100;
+points_draw_geodesics = 10;
+speed_drawing_geodesic = 5;
+make_geodesics_grey_after = 2;
+delete_geodesics_after = 5;
 % This flah is used to create new figures and visualize geodesics that last
 % less than the specified amount.
 visualize_less_than = f;
 visualize_only_first_amount = 1;
-amount_less_than = 1.711;
+amount_less_than = 0.7594;
 visualize_only_one_side = "east"; %Choose "east", "west" or "both"
 
+notes_frequency = [440.00, 554.37, 659.25]; % A, C#, E
+how_long_note_played =0.1;
 
-lengths_curves = [5, 2, 5]; % Insert values
-twisted_parameters = [1, 2, 3]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100;
 
-combination_curve_count_intersections = [1, 1; 2, 1; 3, 1; 4, 1] ;
+
+lengths_curves = [5, 3, 1]; % Insert values
+twisted_parameters = [pi, pi, pi]; % Insert values in [0, 2pi)
+Max_len_geodesic = 1000;
+
+combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
+combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
+combination_curve_count_intersections3 = [3, 3; 3, 5; 4, 3; 4, 5] ;
+
+pause_time = 0;
+
 combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
 
 
 curves_intersected = zeros(1, Max_len_geodesic);
-to_music= zeros(Max_len_geodesic, 2);
+to_music= zeros(Max_len_geodesic, 3);
 
 polytopes = {};
 
@@ -70,8 +82,9 @@ index_curves = 1;
 
 if visualize == true
     fig1 = figure;
-
-    draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
+    Styles=curves_S2_styles();
+    draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
+    drawn_geodesics = {};
 end
 
 if visualize_less_than == true
@@ -86,6 +99,7 @@ while travelled_distance<Max_len_geodesic
     % - point_and_vec_init
     % - polytope_index
     % - to_avoid which is the side to avoid when computing the intersection
+    
 
 
     % Here we compute the new intersection
@@ -95,8 +109,14 @@ while travelled_distance<Max_len_geodesic
     if visualize == true
         subplot(2,2,polytope_index)
         hold on
-        plot(point_and_vec_init.point(1), point_and_vec_init.point(2), 'o')
-        segment(point_and_vec_init.point, point_and_vec_inters.point).plot(points_draw_geodesics, false, 'g')
+        % plot(point_and_vec_init.point(1), point_and_vec_init.point(2), 'o')
+        drawn_geodesics{end+1} = segment(point_and_vec_init.point, point_and_vec_inters.point).plot_real_time(points_draw_geodesics, false, {'r', '-',  1}, speed_drawing_geodesic);
+        if length(drawn_geodesics)>make_geodesics_grey_after
+            drawn_geodesics{end-make_geodesics_grey_after}.Color = [0.9, 0.9, 0.9];
+        end
+        if length(drawn_geodesics)>delete_geodesics_after
+            delete(drawn_geodesics{end-delete_geodesics_after});
+        end
     end
 
     % Here we add the data if necessary
@@ -123,8 +143,16 @@ while travelled_distance<Max_len_geodesic
     
     
     
-    if ismember([polytope_index, side], combination_curve_count_intersections, 'rows') 
-        to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection];
+    if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections2, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
+        if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows')
+            which_curve = 1;
+        elseif ismember([polytope_index, side], combination_curve_count_intersections2, 'rows')
+            which_curve = 2;
+        elseif ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
+            which_curve = 3;
+        end
+         
+        to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection, which_curve];
         index_curves = index_curves + 1;
         
         flag_correct_side = false;
@@ -145,12 +173,12 @@ while travelled_distance<Max_len_geodesic
         if visualize_less_than && ~first_cycle==true && flag_correct_side
             if travelled_since_last_intersection < amount_less_than
                 figure
-                draw_hexagons({'b','r', 'b', 'r', 'r', 'r'}, polytopes, points_draw_geodesics);
+                draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
                 
                 for ind = 1:2:length(points_for_drawing)
                     subplot(2,2, points_for_drawing{ind}{2})
                     seg = segment(points_for_drawing{ind}{1}, points_for_drawing{ind+1}{1});
-                    seg.plot(points_draw_geodesics, false, 'r')
+                    seg.plot(points_draw_geodesics, false)
                 end
     
                 
@@ -168,6 +196,7 @@ while travelled_distance<Max_len_geodesic
         travelled_since_last_intersection = 0;
         points_for_drawing = {};
         first_cycle = false;
+        play_note(notes_frequency, which_curve, how_long_note_played)
     end
 
 
@@ -222,7 +251,7 @@ while travelled_distance<Max_len_geodesic
         new_point = [real(back_np); imag(back_np)];
         new_tg_vector = [real(back_ntv); imag(back_ntv)];
         
-        if norm(new_point1 - new_point)>1e-6
+        if norm(new_point1 - new_point)>1e-4
             warning("It looks that the mirroring is moving points on the segment. There may be an error here.")
             value = norm(new_point1 - new_point)
         end
@@ -243,7 +272,8 @@ while travelled_distance<Max_len_geodesic
     % end
 
     
-    
+    drawnow
+    pause(pause_time)
     
     
 end
@@ -251,7 +281,7 @@ end
 
 to_music =  to_music(2:end, :);
 to_music = to_music(to_music(1:end,1) ~= 0, :);
-
+ 
 min_east_side = min( min(to_music(to_music(:,1) == 1, 2)), min(to_music(to_music(:,1) == 2, 2)))
 min_west_side = min( min(to_music(to_music(:,1) == 3, 2)), min(to_music(to_music(:,1) == 4, 2)))
 % for ind = 1:8
