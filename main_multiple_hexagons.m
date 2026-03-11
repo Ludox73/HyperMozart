@@ -2,9 +2,9 @@ t=true;
 f=false;
 
 % NEED TO THINK HOW TO VISUALIZE
-visualize = t;
+visualize = f;
 points_draw_geodesics = 10;
-speed_drawing_geodesic = 50;
+speed_drawing_geodesic = 2;
 make_geodesics_grey_after = 2;
 delete_geodesics_after = Inf;
 % This flah is used to create new figures and visualize geodesics that last
@@ -20,8 +20,8 @@ how_long_note_played =0.1;
 
 
 lengths_curves = [5, 3, 3]; % Insert values
-twisted_parameters = [pi, pi, pi]; % Insert values in [0, 2pi)
-Max_len_geodesic = 1000;
+twisted_parameters = [pi, 0.145, 0.145]; % Insert values in [0, 2pi)
+Max_len_geodesic = 100000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
@@ -117,6 +117,7 @@ while travelled_distance<Max_len_geodesic
         if length(drawn_geodesics)>delete_geodesics_after
             delete(drawn_geodesics{end-delete_geodesics_after});
         end
+        play_note_marimba(notes_frequency, which_curve, how_long_note_played)
     end
 
     % Here we add the data if necessary
@@ -196,7 +197,6 @@ while travelled_distance<Max_len_geodesic
         travelled_since_last_intersection = 0;
         points_for_drawing = {};
         first_cycle = false;
-        play_note_marimba(notes_frequency, which_curve, how_long_note_played)
     end
 
 

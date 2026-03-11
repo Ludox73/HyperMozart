@@ -1,4 +1,4 @@
-prova_identifier = 10;
+prova_identifier = 14;
 
 if prova_identifier == 1
 
@@ -208,4 +208,161 @@ f = 440;                 % Frequenza della nota (La4)
 nota = sin(2*pi*f*t);    % Generazione dell'onda sinusoidale
 
 sound(nota, fs);         % Riproduzione audio
+end
+
+if prova_identifier == 11
+
+s=0.1;
+y = -0.15;
+theta = 0.5;
+
+draw_hyp_plane
+hold on
+
+pv = point_and_tg_vector([0;y],[cos(theta); sin(theta)]);
+[center, radius] = pv.geodesic_circonference_tg_vec
+hold on
+
+sv = point_and_tg_vector([tanh(2*s);0],[0; 1]);
+[center2, radius2] = sv.geodesic_circonference_tg_vec
+
+s = find_intersection_circles(center, radius, center2, radius2)
+
+if isempty(s)
+    d = Inf
+elseif ~isempty(s)
+    found = false;
+    for h = 1:size(s,2)
+        point = s(:,h);
+        if norm(point)<1
+            found = 1
+            break
+        end
+    end
+    if ~found
+        throw(MException("unexpected", "There is an intersection but not in the plane. This is strange."))
+    end
+    d = distance_two_points([0;y], point)
+end
+
+hold off
+end
+
+if prova_identifier == 12
+
+% 1. Define the parameters
+N = 100000; % Number of samples
+s = min_east_side;
+length_geodesic = 2.5;
+function_fixed_s = @(y,theta) dist_function_with_translates(y, theta, s, length_geodesic);
+width_x = 5;
+
+
+
+% 2. Generate random variables (e.g., Uniform distributions)
+x = -width_x/2 + width_x * rand(N, 1);
+theta = -pi/2 + pi * rand(N, 1);
+
+% 3. Evaluate your function f(x, theta)
+vals = zeros(1,N);
+for ind = 1:N
+    vals(ind) = function_fixed_s(x(ind), theta(ind));
+    if mod(ind, 100000)==0
+        ind
+    end
+end
+% 4. Compute and Plot the Empirical CDF
+
+figure
+[f_vals, x_eval] = ecdf(vals);
+% f_vals = f_vals * ( width_x / length_geodesic );
+
+plot(x_eval, f_vals);
+xlabel('y'); ylabel('P(f(x, \theta) \leq y)');
+title('Empirical Cumulative Distribution Function');
+grid on;
+
+xlim([0,7])
+ylim([0,0.5])
+
+end
+
+if prova_identifier ==13
+
+% Define your function, for example:
+f = @(y,theta) dist_function(y, theta, s); 
+
+width_x = 20;
+
+
+% Define grid
+y = linspace(-width_x/2, width_x/2, 1000);
+theta = linspace(-pi/2+0.01, pi/2-0.01, 1000);
+[Y, THETA] = meshgrid(y, theta);
+
+% Evaluate function
+
+
+Z = NaN(length(theta), length(y));  % preallocate
+
+% Evaluate function point by point
+for i = 1:length(theta)
+    for j = 1:length(y)
+        val = f(y(j), theta(i));
+        if isfinite(val)
+            Z(i,j) = val;
+        end
+    end
+    i
+end
+
+% Plot
+figure;
+surf(Y, THETA, Z);   % 3D surface
+shading interp         % smooth color shading
+colorbar               % show color scale
+xlabel('y');
+ylabel('\theta');
+zlabel('f(y, \theta)');
+title('Function plot avoiding infinities');
+end
+
+
+if prova_identifier ==14
+
+f1 = f_vals;
+x1 = x_eval;
+f2 = fasd;
+x2 = xasd;
+
+% 1. Clean the data for both ECDFs
+idx1 = isfinite(x1) & isfinite(f1);
+x1_clean = x1(idx1);
+f1_clean = f1(idx1);
+
+idx2 = isfinite(x2) & isfinite(f2);
+x2_clean = x2(idx2);
+f2_clean = f2(idx2);
+
+% 1. Remove duplicates from both ECDFs
+% 'last' ensures we keep the highest CDF value for that specific X point
+[x1_u, idx1] = unique(x1_clean, 'last');
+f1_u = f1_clean(idx1);
+
+[x2_u, idx2] = unique(x2_clean, 'last');
+f2_u = f2_clean(idx2);
+
+% 2. Define the common x-grid
+x_common = unique([x1_u(:); x2_u(:)]);
+
+% 3. Interpolate using the unique sets
+f1_interp = interp1(x1_u, f1_u, x_common, 'previous', 0);
+f2_interp = interp1(x2_u, f2_u, x_common, 'previous', 0);
+
+figure
+% 4. Subtract
+f_diff = f2_interp - f1_interp;
+fasd = f_diff;
+xasd = x_common;
+stairs(x_common, f_diff);
 end

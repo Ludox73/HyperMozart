@@ -1,7 +1,7 @@
 figure
 
 provenience_to_music = "hexagons";
-which_part = "east";
+which_part = "west";
 parameters_for_title = strcat(string(mat2str(lengths_curves)), string(mat2str(twisted_parameters)));
 
 if strcmp(provenience_to_music, "hexagons")
@@ -28,8 +28,8 @@ end
 values_1 = to_music_helper(to_music_helper(:,1) == index_to_find, 2);
 
 
-[f, x] = ecdf(values_1);
-plot(x, f, 'o-')
+[fasd, xasd] = ecdf(values_1);
+plot(xasd, fasd, 'o-')
 
 xlabel('Value')
 ylabel('Empirical CDF')

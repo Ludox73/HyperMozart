@@ -42,7 +42,7 @@ classdef point_and_tg_vector
 
             if draw_plot ~= 0
                 % Create theta values for the circle
-                theta = linspace(0, 2 * pi, 1000); % 100 points from 0 to 2*pi
+                theta = linspace(0, 2 * pi, 100); % 100 points from 0 to 2*pi
                 
                 % Calculate x and y coordinates for the circumference
                 x = center(1) + radius * cos(theta);
@@ -50,9 +50,6 @@ classdef point_and_tg_vector
                 
                 % Plot the circle
                 plot(x, y, 'b-'); % Plot the circumference in blue
-                hold on;
-                plot(obj.startpoint(1), obj.startpoint(2), '*'); % Plot the segment in red
-                plot(obj.endpoint(1), obj.endpoint(2), '*g'); % Plot the segment in red
                 axis equal;
                 grid on;
                 title('Circle with 90-degree intersection at unit circumference');
