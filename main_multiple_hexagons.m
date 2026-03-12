@@ -19,9 +19,9 @@ how_long_note_played =0.1;
 
 
 
-lengths_curves = [12, 3, 3]; % Insert values
+lengths_curves = [5, 3, 3]; % Insert values
 twisted_parameters = [pi, 0, pi]; % Insert values in [0, 2pi)
-Max_len_geodesic = 500000;
+Max_len_geodesic = 200000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_curve_count_intersections2 = [0, 0] ;
@@ -50,7 +50,7 @@ p_1 = barycenter_cell_of_points(polytopes{1});
 polytope_index = 1;
 
 a = rand(1)*2*pi;
-tg_1 = (2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
+tg_1 = 20*(2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 

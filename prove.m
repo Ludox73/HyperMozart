@@ -409,7 +409,59 @@ set(gca, 'ColorScale', 'log')
 scatter(X, Y, [], Z, 'filled'); % 'filled' makes the points solid
 set(gca, 'ColorScale', 'log')
 grid on;
-title('Data Point Distribution');
+title('Waterfall');
 xlabel('X-axis');
 ylabel('Y-axis');
+ylim([0,pi])
+end
+
+if prova_identifier == 17
+
+% 1. Define the parameters
+N = 1000000; % Number of samples
+s = 2.35433;
+length_geodesic_actual = lengths_curves(1)
+length_geodesic_guessed = length(to_music)/Max_len_geodesic * 2 * pi * pi
+length_geodesic = length_geodesic_guessed;
+function_fixed_s = @(y,theta) dist_function(y, theta, s);
+width_x = 4*length_geodesic;
+
+
+
+% 2. Generate random variables (e.g., Uniform distributions)
+x = -width_x/2 + width_x * rand(N, 1);
+help = -pi/2+[Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y;Y];
+theta = help(1:N,:);
+
+% 3. Evaluate your function f(x, theta)
+vals1 = zeros(1,N);
+for ind = 1:N
+    vals1(ind) = function_fixed_s(x(ind), theta(ind));
+    if mod(ind, 100000)==0
+        ind
+    end
+end
+
+finitevals = vals1(isfinite(vals1));
+AL = width_x * pi;
+AB = length(finitevals)/N * AL;
+num_inf_to_add = round(((length_geodesic*pi)/AB)*length(finitevals))-length(finitevals);
+vals = [finitevals, Inf*ones(1,num_inf_to_add)];
+
+
+
+% 4. Compute and Plot the Empirical CDF
+
+hold on
+[f_vals, x_eval] = ecdf(vals);
+% f_vals = f_vals * ( width_x / length_geodesic );
+
+plot(x_eval, f_vals);
+xlabel('y'); ylabel('P(f(x, \theta) \leq y)');
+title('Empirical Cumulative Distribution Function');
+grid on;
+
+xlim([0,10])
+ylim([0,1])
+
 end
