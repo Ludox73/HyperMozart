@@ -1,4 +1,4 @@
-prova_identifier = 14;
+prova_identifier = 16;
 
 if prova_identifier == 1
 
@@ -251,11 +251,13 @@ end
 if prova_identifier == 12
 
 % 1. Define the parameters
-N = 100000; % Number of samples
+N = 1000000; % Number of samples
 s = min_east_side;
-length_geodesic = 2.5;
-function_fixed_s = @(y,theta) dist_function_with_translates(y, theta, s, length_geodesic);
-width_x = 5;
+length_geodesic_actual = lengths_curves(1)
+length_geodesic_guessed = length(to_music)/Max_len_geodesic * 2 * pi * pi
+length_geodesic = length_geodesic_guessed;
+function_fixed_s = @(y,theta) dist_function(y, theta, s);
+width_x = 4*length_geodesic;
 
 
 
@@ -264,13 +266,22 @@ x = -width_x/2 + width_x * rand(N, 1);
 theta = -pi/2 + pi * rand(N, 1);
 
 % 3. Evaluate your function f(x, theta)
-vals = zeros(1,N);
+vals1 = zeros(1,N);
 for ind = 1:N
-    vals(ind) = function_fixed_s(x(ind), theta(ind));
+    vals1(ind) = function_fixed_s(x(ind), theta(ind));
     if mod(ind, 100000)==0
         ind
     end
 end
+
+finitevals = vals1(isfinite(vals1));
+AL = width_x * pi;
+AB = length(finitevals)/N * AL;
+num_inf_to_add = round(((length_geodesic*pi)/AB)*length(finitevals))-length(finitevals);
+vals = [finitevals, Inf*ones(1,num_inf_to_add)];
+
+
+
 % 4. Compute and Plot the Empirical CDF
 
 figure
@@ -282,8 +293,8 @@ xlabel('y'); ylabel('P(f(x, \theta) \leq y)');
 title('Empirical Cumulative Distribution Function');
 grid on;
 
-xlim([0,7])
-ylim([0,0.5])
+xlim([0,10])
+ylim([0,1])
 
 end
 
@@ -365,4 +376,40 @@ f_diff = f2_interp - f1_interp;
 fasd = f_diff;
 xasd = x_common;
 stairs(x_common, f_diff);
+end
+
+if prova_identifier == 15
+
+F = fasd;
+x = xasd;
+
+% 2. Compute raw derivative (Method 1)
+dF = diff(F);
+dx = diff(x);
+deriv_raw = dF ./ dx;
+
+% 3. Smooth the derivative
+% Adjust 'windowSize' to control smoothness (e.g., 5 to 20)
+windowSize = 1000; 
+deriv_smooth = movmean(deriv_raw, windowSize);
+
+% 4. Plot
+plot(x(1:end-1), deriv_smooth);
+title('Smoothed Empirical Derivative');
+end
+
+if prova_identifier == 16
+
+X = points_to_understand_distribution(1:end-1,1);
+Y = points_to_understand_distribution(1:end-1,2);
+Z = points_to_understand_distribution(1:end-1,3);
+
+figure;
+set(gca, 'ColorScale', 'log')
+scatter(X, Y, [], Z, 'filled'); % 'filled' makes the points solid
+set(gca, 'ColorScale', 'log')
+grid on;
+title('Data Point Distribution');
+xlabel('X-axis');
+ylabel('Y-axis');
 end

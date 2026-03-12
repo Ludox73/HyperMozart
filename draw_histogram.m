@@ -1,7 +1,7 @@
 figure
 
 provenience_to_music = "hexagons";
-which_part = "west";
+which_part = "east";
 parameters_for_title = strcat(string(mat2str(lengths_curves)), string(mat2str(twisted_parameters)));
 
 if strcmp(provenience_to_music, "hexagons")
@@ -27,7 +27,9 @@ end
 
 values_1 = to_music_helper(to_music_helper(:,1) == index_to_find, 2);
 
+values_2 = to_music(:,2);
 
+figure 
 [fasd, xasd] = ecdf(values_1);
 plot(xasd, fasd, 'o-')
 
@@ -36,5 +38,6 @@ ylabel('Empirical CDF')
 titolo = strcat(provenience_to_music, " ", which_part, " ", parameters_for_title);
 title(titolo)
 xlim([0 10])
+ylim([0,1])
 grid on
 savefig(strcat("figs/autosaved/",titolo))

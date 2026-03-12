@@ -19,13 +19,13 @@ how_long_note_played =0.1;
 
 
 
-lengths_curves = [5, 3, 3]; % Insert values
-twisted_parameters = [pi, 0.145, 0.145]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100000;
+lengths_curves = [12, 3, 3]; % Insert values
+twisted_parameters = [pi, 0, pi]; % Insert values in [0, 2pi)
+Max_len_geodesic = 500000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
-combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
-combination_curve_count_intersections3 = [3, 3; 3, 5; 4, 3; 4, 5] ;
+combination_curve_count_intersections2 = [0, 0] ;
+combination_curve_count_intersections3 = [0, 0] ;
 
 pause_time = 0;
 
@@ -55,6 +55,8 @@ tg_1 = (2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
 p0=point_and_tg_vector(p_1,tg_1);
 
 collection_of_collection_of_circles = cell(length(polytopes));
+
+points_to_understand_distribution = [];
 
 for index_collection_of_collection = 1:length(polytopes)
     num_sides = size(polytopes{1},1);
@@ -94,6 +96,8 @@ end
 first_cycle= true;
 number_visualized = 0;
 
+current_percentage = 0;
+
 while travelled_distance<Max_len_geodesic
     % Start the cicle with:
     % - point_and_vec_init
@@ -104,6 +108,32 @@ while travelled_distance<Max_len_geodesic
 
     % Here we compute the new intersection
     
+    if polytope_index == 1 && to_avoid ==1
+        l = distance_two_points(point_and_vec_init.point, polytopes{1}{1});
+
+
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1});
+        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
+        angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
+
+        % angle = mod(atan2(point_and_vec_init.tg_vector(2),point_and_vec_init.tg_vector(1)), 2*pi);
+
+        points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
+    end
+    if polytope_index == 2 && to_avoid ==1
+        l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{2}{2});
+        
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1});
+        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
+        angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
+
+        % angle = mod(atan2(point_and_vec_init.tg_vector(2),point_and_vec_init.tg_vector(1)), 2*pi);
+
+        points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
+    end
+        
+
+
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
     
     if visualize == true
@@ -117,7 +147,6 @@ while travelled_distance<Max_len_geodesic
         if length(drawn_geodesics)>delete_geodesics_after
             delete(drawn_geodesics{end-delete_geodesics_after});
         end
-        play_note_marimba(notes_frequency, which_curve, how_long_note_played)
     end
 
     % Here we add the data if necessary
@@ -145,55 +174,66 @@ while travelled_distance<Max_len_geodesic
     
     
     if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections2, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
-        if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows')
-            which_curve = 1;
-        elseif ismember([polytope_index, side], combination_curve_count_intersections2, 'rows')
-            which_curve = 2;
-        elseif ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
-            which_curve = 3;
-        end
-         
-        to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection, which_curve];
-        index_curves = index_curves + 1;
-        
-        flag_correct_side = false;
-        if strcmp(visualize_only_one_side, "east")
-            if (polytope_index == 1 || polytope_index == 2)
-                flag_correct_side = true;
+        if ~first_cycle
+            if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows')
+                which_curve = 1;
+            elseif ismember([polytope_index, side], combination_curve_count_intersections2, 'rows')
+                which_curve = 2;
+            elseif ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
+                which_curve = 3;
             end
-        elseif strcmp(visualize_only_one_side, "west")
-            if (polytope_index == 3 || polytope_index == 4)
-                flag_correct_side = true;
+            if visualize
+                play_note_marimba(notes_frequency, which_curve, how_long_note_played)
             end
-        elseif strcmp(visualize_only_one_side, "both")
-            flag_correct_side = true;
-        else
-            throw(MException("variable_value:unexpected", "Unexpected value for variable visualize_only_one_side. Supported strings are east, west, and both."))
-        end
-        
-        if visualize_less_than && ~first_cycle==true && flag_correct_side
-            if travelled_since_last_intersection < amount_less_than
-                figure
-                draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
-                
-                for ind = 1:2:length(points_for_drawing)
-                    subplot(2,2, points_for_drawing{ind}{2})
-                    seg = segment(points_for_drawing{ind}{1}, points_for_drawing{ind+1}{1});
-                    seg.plot(points_draw_geodesics, false)
+             
+            to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection, which_curve];
+            index_curves = index_curves + 1;
+
+            if ~isempty(points_to_understand_distribution)
+                if points_to_understand_distribution(end, 3) == 0
+                    points_to_understand_distribution(end, 3) = travelled_since_last_intersection;
                 end
+            end
+            
+            flag_correct_side = false;
+            if strcmp(visualize_only_one_side, "east")
+                if (polytope_index == 1 || polytope_index == 2)
+                    flag_correct_side = true;
+                end
+            elseif strcmp(visualize_only_one_side, "west")
+                if (polytope_index == 3 || polytope_index == 4)
+                    flag_correct_side = true;
+                end
+            elseif strcmp(visualize_only_one_side, "both")
+                flag_correct_side = true;
+            else
+                throw(MException("variable_value:unexpected", "Unexpected value for variable visualize_only_one_side. Supported strings are east, west, and both."))
+            end
+            
+            if visualize_less_than ==true && flag_correct_side
+                if travelled_since_last_intersection < amount_less_than
+                    figure
+                    draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
+                    
+                    for ind = 1:2:length(points_for_drawing)
+                        subplot(2,2, points_for_drawing{ind}{2})
+                        seg = segment(points_for_drawing{ind}{1}, points_for_drawing{ind+1}{1});
+                        seg.plot(points_draw_geodesics, false)
+                    end
+        
+                    
+                    if visualize
+                        fig1;
+                    end
     
-                
-                if visualize
-                    fig1;
-                end
-
-                number_visualized = number_visualized + 1;
-                if visualize_only_first_amount == number_visualized
-                    throw(MException("Break:Standard_break_of_script","First shorter geodesic found. We are interrupting the script."))
+                    number_visualized = number_visualized + 1;
+                    if visualize_only_first_amount == number_visualized
+                        throw(MException("Break:Standard_break_of_script","First shorter geodesic found. We are interrupting the script."))
+                    end
                 end
             end
         end
-
+        
         travelled_since_last_intersection = 0;
         points_for_drawing = {};
         first_cycle = false;
@@ -275,6 +315,10 @@ while travelled_distance<Max_len_geodesic
     drawnow
     pause(pause_time)
     
+    if floor(100*travelled_distance/Max_len_geodesic) ~= current_percentage
+        fprintf('%d%% completed\n', floor(travelled_distance / Max_len_geodesic * 100))
+        current_percentage = floor(100*travelled_distance/Max_len_geodesic);
+    end
     
 end
 
