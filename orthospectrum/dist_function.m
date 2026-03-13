@@ -30,14 +30,6 @@ elseif ~isempty(s)
         end
     end
     if ~found
-        [0;y]
-        [cos(theta); sin(theta)]
-        s
-        center
-        radius
-        center2
-        radius2
-
         throw(MException("unexpected", "There is an intersection but not in the plane. This is strange."))
     end
     d = distance_two_points([0;y], point);

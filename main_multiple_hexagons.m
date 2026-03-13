@@ -21,7 +21,7 @@ how_long_note_played =0.1;
 
 lengths_curves = [5, 3, 3]; % Insert values
 twisted_parameters = [pi, 0, pi]; % Insert values in [0, 2pi)
-Max_len_geodesic = 200000;
+Max_len_geodesic = 1000000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_curve_count_intersections2 = [0, 0] ;
@@ -33,7 +33,7 @@ combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1;
 
 
 curves_intersected = zeros(1, Max_len_geodesic);
-to_music= zeros(Max_len_geodesic, 3);
+to_music = zeros(Max_len_geodesic, 2);
 
 polytopes = {};
 
@@ -106,8 +106,7 @@ while travelled_distance<Max_len_geodesic
     
 
 
-    % Here we compute the new intersection
-    
+    %This is to get a distribution of intersections
     if polytope_index == 1 && to_avoid ==1
         l = distance_two_points(point_and_vec_init.point, polytopes{1}{1});
 
@@ -131,9 +130,8 @@ while travelled_distance<Max_len_geodesic
 
         points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
     end
-        
 
-
+    % Here we compute the new intersection
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
     
     if visualize == true
@@ -186,7 +184,7 @@ while travelled_distance<Max_len_geodesic
                 play_note_marimba(notes_frequency, which_curve, how_long_note_played)
             end
              
-            to_music(index_curves, :) = [polytope_index, travelled_since_last_intersection, which_curve];
+            to_music(index_curves, :) = [travelled_since_last_intersection, which_curve];
             index_curves = index_curves + 1;
 
             if ~isempty(points_to_understand_distribution)
@@ -326,8 +324,9 @@ end
 to_music =  to_music(2:end, :);
 to_music = to_music(to_music(1:end,1) ~= 0, :);
  
-min_east_side = min( min(to_music(to_music(:,1) == 1, 2)), min(to_music(to_music(:,1) == 2, 2)))
-min_west_side = min( min(to_music(to_music(:,1) == 3, 2)), min(to_music(to_music(:,1) == 4, 2)))
+% This worked before. Now we do not save the side anymore.
+% min_east_side = min( min(to_music(to_music(:,1) == 1, 2)), min(to_music(to_music(:,1) == 2, 2)))
+% min_west_side = min( min(to_music(to_music(:,1) == 3, 2)), min(to_music(to_music(:,1) == 4, 2)))
 % for ind = 1:8
 %     sum(curves_intersected == ind)
 % end
