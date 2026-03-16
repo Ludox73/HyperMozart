@@ -1,5 +1,3 @@
-figure
-
 provenience_to_music = "hexagons";
 which_part = "east";
 parameters_for_title = strcat(string(mat2str(lengths_curves)), string(mat2str(twisted_parameters)));
@@ -27,10 +25,10 @@ end
 
 values_1 = to_music_helper(to_music_helper(:,1) == index_to_find, 2);
 
-values_2 = to_music(:,2);
+values_2 = to_music(:,1);
 
 figure 
-[fasd, xasd] = ecdf(values_1);
+[fasd, xasd] = ecdf(values_2);
 plot(xasd, fasd, 'o-')
 
 xlabel('Value')
@@ -40,4 +38,4 @@ title(titolo)
 xlim([0 10])
 ylim([0,1])
 grid on
-savefig(strcat("figs/autosaved/",titolo))
+% savefig(strcat("figs/autosaved/",titolo))

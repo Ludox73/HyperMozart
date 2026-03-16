@@ -25,7 +25,6 @@ function [x_out, f_out] = subtract_cumufuns(x1, f1, x2, f2)
     f1_interp = interp1(x1_u, f1_u, x_common, 'previous', 0);
     f2_interp = interp1(x2_u, f2_u, x_common, 'previous', 0);
     
-    figure
     % 4. Subtract
     f_diff = f2_interp - f1_interp;
     f_out = f_diff;
