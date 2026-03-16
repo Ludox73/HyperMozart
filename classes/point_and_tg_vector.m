@@ -20,7 +20,7 @@ classdef point_and_tg_vector
             % velocity tg_vector
             arguments
                 obj point_and_tg_vector
-                draw_plot (1,1) int64 = 0
+                draw_plot = false
             end
 
             midpoint = obj.point;
@@ -40,7 +40,7 @@ classdef point_and_tg_vector
             % The radius of the circonference
             radius = sqrt(norm(midpoint+unit_vector_perp*ned)^2 - 1);
 
-            if draw_plot ~= 0
+            if draw_plot
                 % Create theta values for the circle
                 theta = linspace(0, 2 * pi, 100); % 100 points from 0 to 2*pi
                 

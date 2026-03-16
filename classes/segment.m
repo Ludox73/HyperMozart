@@ -119,7 +119,7 @@ classdef segment
             assert(all(seg1.startpoint == seg2.startpoint));
             v1 = tangent_center_startpoint(seg1);
             v2 = tangent_center_startpoint(seg2);
-            ang = angleCW2D(v1, v2, "clockwise");
+            ang = angleCW2D(v1, v2);
         end
 
         function inv_seg = invert(seg)
@@ -138,8 +138,8 @@ classdef segment
             end
 
             [center, radius] = geodesic_circonference(obj);
-            ang1 = angleCW2D([1;0], obj.startpoint - center, "counterclockwise");
-            ang2 = angleCW2D([1;0],  obj.endpoint - center, "counterclockwise");
+            ang1 = angleCW2D([1;0], obj.startpoint - center, false);
+            ang2 = angleCW2D([1;0],  obj.endpoint - center, false);
             
             if abs(ang1-ang2)>pi
                 if ang2>ang1
@@ -190,8 +190,8 @@ classdef segment
             end
 
             [center, radius] = geodesic_circonference(obj);
-            ang1 = angleCW2D([1;0], obj.startpoint - center, "counterclockwise");
-            ang2 = angleCW2D([1;0],  obj.endpoint - center, "counterclockwise");
+            ang1 = angleCW2D([1;0], obj.startpoint - center, false);
+            ang2 = angleCW2D([1;0],  obj.endpoint - center, false);
             
             if abs(ang1-ang2)>pi
                 if ang2>ang1

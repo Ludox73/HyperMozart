@@ -17,8 +17,6 @@ function intersectionPoints = find_intersection_circles(center1, radius1, center
     midpoint = center1 + (a / d) * (center2 - center1);
     
     % Calculate the intersection points
-    intersection1 = midpoint + (h / d) * [center2(2) - center1(2); center1(1) - center2(1)];
-    intersection2 = midpoint - (h / d) * [center2(2) - center1(2); center1(1) - center2(1)];
-    
-    intersectionPoints = [intersection1, intersection2];
+    help = (h / d) * [center2(2) - center1(2); center1(1) - center2(1)];
+    intersectionPoints = [midpoint + help, midpoint - help];
 end

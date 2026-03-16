@@ -1,12 +1,12 @@
 
-function ang = angleCW2D(v1, v2, direction)
-% angleCW2D Returns the clockwise angle from v1 to v2 in radians in
-% (0,...,2pi)
+function ang = angleCW2D(v1, v2, going_clockwise)
+% angleCW2D Returns the clockwise (or counterclockwise if the corresponding
+%  flag is false) angle from v1 to v2 in radians in (0,...,2pi)
 % v1, v2: 1x2 vectors
     arguments
-        v1 (2,1) double
-        v2 (2,1) double
-        direction string = "clockwise"
+        v1
+        v2
+        going_clockwise = true
     end
 
     % Validate input
@@ -15,21 +15,19 @@ function ang = angleCW2D(v1, v2, direction)
         error('Vectors must be non-zero.');
     end
 
-    % Normalize to avoid scaling effects
-    v1 = v1(:).' / norm(v1);
-    v2 = v2(:).' / norm(v2);
+    % I avoid normalizing since it takes time and should not be necessary.
+    % v1 = v1 / norm(v1);
+    % v2 = v2 / norm(v2);
 
     % Dot and 2D "cross" (determinant of [v1; v2])
     dp  = dot(v1, v2);
     det2 = v1(1)*v2(2) - v1(2)*v2(1);
 
     % Clockwise signed angle 
-    if strcmp(direction, "counterclockwise")
-        ang = mod(atan2(det2, dp),2*pi);
-    elseif strcmp(direction, "clockwise") 
+    if going_clockwise
         ang = 2*pi -  mod(atan2(det2, dp),2*pi);
     else
-        error('Invalid direction. Use "clockwise" or "counterclockwise".');
+        ang = mod(atan2(det2, dp),2*pi);
     end
 
 end

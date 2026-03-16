@@ -20,7 +20,7 @@ how_long_note_played =0.1;
 
 
 lengths_curves = [5, 3, 3]; % Insert values
-twisted_parameters = [pi, 0, pi]; % Insert values in [0, 2pi)
+twisted_parameters = [0, 0, 0]; % Insert values in [0, 2pi)
 Max_len_geodesic = 1000000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
@@ -170,14 +170,17 @@ while travelled_distance<Max_len_geodesic
     end
     
     
-    
-    if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections2, 'rows') || ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
+    intersects_curve_1 = is_row([polytope_index, side], combination_curve_count_intersections1);
+    intersects_curve_2 = is_row([polytope_index, side], combination_curve_count_intersections2);
+    intersects_curve_3 = is_row([polytope_index, side], combination_curve_count_intersections3);
+
+    if intersects_curve_1 || intersects_curve_2 || intersects_curve_3
         if ~first_cycle
-            if ismember([polytope_index, side], combination_curve_count_intersections1, 'rows')
+            if intersects_curve_1
                 which_curve = 1;
-            elseif ismember([polytope_index, side], combination_curve_count_intersections2, 'rows')
+            elseif intersects_curve_2
                 which_curve = 2;
-            elseif ismember([polytope_index, side], combination_curve_count_intersections3, 'rows')
+            elseif intersects_curve_3
                 which_curve = 3;
             end
             if visualize
@@ -244,7 +247,7 @@ while travelled_distance<Max_len_geodesic
 
     [new_point1,new_tg_vector1] = isometry.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
     
-    if ismember([polytope_index, out_fund_dom_index], combination_noncoherent_orientation, 'rows')
+    if is_row([polytope_index, out_fund_dom_index], combination_noncoherent_orientation)
         if out_side_index == 6
             index2 = 1;
         else
@@ -309,10 +312,11 @@ while travelled_distance<Max_len_geodesic
     %     hold on
     % end
 
-    
-    drawnow
-    pause(pause_time)
-    
+    if visualize
+        drawnow
+        pause(pause_time)
+    end
+
     if floor(100*travelled_distance/Max_len_geodesic) ~= current_percentage
         fprintf('%d%% completed\n', floor(travelled_distance / Max_len_geodesic * 100))
         current_percentage = floor(100*travelled_distance/Max_len_geodesic);
