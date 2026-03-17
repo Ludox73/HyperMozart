@@ -2,10 +2,11 @@
 % For every angle theta = 0:0.1:2*pi, start a geodesic at the barycenter
 % of polytope 1 and follow it until it crosses 2 walls. Draw each geodesic
 % in its own color on the standard 4-hexagon figure.
-
+for tw=0:1:6
+    for indexpol=1:4
 %% Parameters — edit these as needed
 lengths_curves    = [5, 3, 3];
-twisted_parameters = [0, 6.28, 0];
+twisted_parameters = [tw, 0, 0];
 points_draw = 200;
 
 %% Build polytopes
@@ -39,8 +40,7 @@ end
 Styles = curves_S2_styles();
 styleFunc = @(x,y) get_hexagon_style_separating(x,y);
 
-fig = figure('Color', 'w', 'Name', 'Geodesic Fan Test', 'NumberTitle', 'off', ...
-    'Position', [50 50 1000 800]);
+figure
 
 ax_arr = gobjects(1,4);
 for pi_idx = 1:4
@@ -69,12 +69,12 @@ for pi_idx = 1:4
 end
 
 %% Generate colors for each geodesic
-theta_values = 1:0.1:2;
+theta_values = -1:0.1:2;
 n_geodesics = length(theta_values);
 colors = hsv(n_geodesics);  % distinct color per geodesic
 
 %% Barycenter of polytope 1
-p_1 = barycenter_cell_of_points(polytopes{1});
+p_1 = barycenter_cell_of_points(polytopes{indexpol});
 
 %% Trace each geodesic for 2 wall crossings
 num_walls_to_cross = 2;
@@ -87,7 +87,7 @@ for g_idx = 1:n_geodesics
     tg_1 = 20 * (2/(1-norm(p_1)^2))^(-2) * [cos(theta); sin(theta)];
     
     point_and_vec_init = point_and_tg_vector(p_1, tg_1);
-    polytope_index = 1;
+    polytope_index = indexpol;
     to_avoid = 7;  % no side to avoid at start
     
     for wall = 1:num_walls_to_cross
@@ -164,6 +164,8 @@ for g_idx = 1:n_geodesics
 end
 
 sgtitle(sprintf('Geodesic fan from barycenter of Polytope 1 — %d geodesics, %d twist', ...
-    n_geodesics, twisted_parameters(2)));
+    n_geodesics, tw));
 
 drawnow;
+    end
+end

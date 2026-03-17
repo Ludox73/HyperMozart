@@ -76,7 +76,7 @@ elseif all([in_fund_domain_index, in_side_index] == [4, 2])
 % We now move to the more complicated ones. 1st hexagon
 
 elseif all([in_fund_domain_index, in_side_index] == [1, 1])
-    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{1}{1}, polytopes{1}{2}, polytopes{3}{2}, polytopes{3}{1}, polytopes{4}{1}, polytopes{4}{2}, t1);
+    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{1}{1}, polytopes{1}{2}, polytopes{3}{2}, polytopes{3}{1}, polytopes{4}{2}, polytopes{4}{1}, t1);
     if overshoot == 0 ||  overshoot == 2
         out_fund_dom_index = 3;
         out_side_index = 1;
@@ -108,7 +108,7 @@ elseif all([in_fund_domain_index, in_side_index] == [1, 5])
 
 % 2nd hexagon
 elseif all([in_fund_domain_index, in_side_index] == [2, 1])
-    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{2}{1}, polytopes{2}{2}, polytopes{4}{2}, polytopes{4}{1}, polytopes{3}{1}, polytopes{3}{2}, t1);
+    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{2}{1}, polytopes{2}{2}, polytopes{4}{2}, polytopes{4}{1}, polytopes{3}{2}, polytopes{3}{1}, t1);
     if overshoot == 0 ||  overshoot == 2
         out_fund_dom_index = 4;
         out_side_index = 1;
@@ -142,7 +142,7 @@ elseif all([in_fund_domain_index, in_side_index] == [2, 5])
 % 3rd hexagon
 
 elseif all([in_fund_domain_index, in_side_index] == [3, 1])
-    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{3}{1}, polytopes{3}{2}, polytopes{1}{2}, polytopes{1}{1}, polytopes{2}{1}, polytopes{2}{2}, t1);
+    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{3}{1}, polytopes{3}{2}, polytopes{1}{2}, polytopes{1}{1}, polytopes{2}{2}, polytopes{2}{1}, t1);
     if overshoot == 0 ||  overshoot == 2
         out_fund_dom_index = 1;
         out_side_index = 1;
@@ -175,7 +175,7 @@ elseif all([in_fund_domain_index, in_side_index] == [3, 5])
 % 4th hexagon
 
 elseif all([in_fund_domain_index, in_side_index] == [4, 1])
-    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{4}{1}, polytopes{4}{2}, polytopes{2}{2}, polytopes{2}{1}, polytopes{1}{1}, polytopes{1}{2}, t1);
+    [isometry, overshoot] = compute_isometry_with_twisted_parameter(intersection_point, polytopes{4}{1}, polytopes{4}{2}, polytopes{2}{2}, polytopes{2}{1}, polytopes{1}{2}, polytopes{1}{1}, t1);
     if overshoot == 0 ||  overshoot == 2
         out_fund_dom_index = 2;
         out_side_index = 1;
