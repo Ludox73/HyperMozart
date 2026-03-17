@@ -53,6 +53,8 @@ for element_spectrum_index = 1:how_many_values
         title(sprintf('Spectrum element %d (min\\_length=%.4f)', ...
             element_spectrum_index, min_length));
         legend('Candidate CF', 'Previous residual', 'After subtraction');
+        xlim([0 25])
+        ylim([-0.2 1])
         drawnow;
     end
 end

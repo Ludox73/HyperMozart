@@ -32,7 +32,7 @@ s_low = x_finite(1);
 % Upper bound: first x where f_vals > 0.2
 idx_upper = find(f_finite > 0.2, 1, 'first');
 if isempty(idx_upper)
-    s_high = x_finite(end);
+    s_high = min(x_finite(end), 5);
 else
     s_high = x_finite(idx_upper);
 end

@@ -19,15 +19,15 @@ how_long_note_played =0.1;
 
 
 
-lengths_curves = [5, 3, 3]; % Insert values
-twisted_parameters = [pi/2, 1.5, 1.5]; % Insert values in [0, 2pi)
+lengths_curves = [5, 1.5, 3]; % Insert values
+twisted_parameters = [1.2, 1.2, 5.4]; % Insert values in [0, 2pi)
 Max_len_geodesic = 100000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
-% combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
-% combination_curve_count_intersections3 = [3, 3; 3, 5; 4, 3; 4, 5] ;
-combination_curve_count_intersections2 = [0, 0] ;
-combination_curve_count_intersections3 = [0, 0] ;
+combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
+combination_curve_count_intersections3 = [3, 3; 3, 5; 4, 3; 4, 5] ;
+% combination_curve_count_intersections2 = [0, 0] ;
+% combination_curve_count_intersections3 = [0, 0] ;
 
 
 pause_time = 0;

@@ -16,7 +16,7 @@ function [x_eval ,f_vals] = expected_cumufun_one_homotopy_class(distance, length
     finitevals = vals1(isfinite(vals1));
     AL = width_x * pi;
     AB = length(finitevals)/number_sample_points_approximate_density_single_homotopy_class * AL;
-    num_inf_to_add = round(((length_geodesic*pi)/AB)*length(finitevals))-length(finitevals);
+    num_inf_to_add = round(((length_geodesic*2*pi)/AB)*length(finitevals))-length(finitevals);
     
     vals = [finitevals, Inf*ones(1,num_inf_to_add)];
 
