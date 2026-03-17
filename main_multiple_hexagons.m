@@ -20,7 +20,7 @@ how_long_note_played =0.1;
 
 
 lengths_curves = [5, 3, 3]; % Insert values
-twisted_parameters = [3*pi/2, pi, pi]; % Insert values in [0, 2pi)
+twisted_parameters = [pi/2, 1.5, 1.5]; % Insert values in [0, 2pi)
 Max_len_geodesic = 100000;
 
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
@@ -32,8 +32,7 @@ combination_curve_count_intersections3 = [0, 0] ;
 
 pause_time = 0;
 
-combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3] ;
-combination_noncoherent_orientation = [1, 2; 2, 1;  3, 4;  4, 3] ;
+combination_noncoherent_orientation = [1, 2; 1, 4; 2, 1; 2, 3; 3, 2; 3, 4; 4, 1; 4, 3];
 
 
 curves_intersected = zeros(1, Max_len_geodesic);

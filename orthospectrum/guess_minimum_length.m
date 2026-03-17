@@ -1,87 +1,84 @@
-function min_length = guess_minimum_length(x_vals, f_vals, tol3, skip_count)
-%GUESS_MINIMUM_LENGTH x_vals and f_vals represent the cumulative
-%distribution function from which we are trying to get the length of the
-%shortest orthogonal geodesics.
+function min_length = guess_minimum_length(x_vals, f_vals, length_geodesic)
+%GUESS_MINIMUM_LENGTH Find the smallest distance s such that the expected
+%   CDF for a single homotopy class of distance s is everywhere <= the
+%   empirical cumulative distribution function (x_vals, f_vals).
 %
-%   skip_count: number of threshold-crossing regions to skip before
-%   accepting a candidate. This is used when a previous guess turned out
-%   to be too small (subtraction produced negative residuals).
+%   Uses binary search over the interval [lowest x_val, first x where
+%   f_vals > 0.2]. Sample points increase from 10000 to 100000 across
+%   10 rounds of binary search for speed then accuracy.
 %
-%   The guess is always constrained to be BEFORE f_vals reaches 0.1.
+%   Arguments:
+%     x_vals, f_vals    — the current empirical CDF
+%     length_geodesic   — guessed length of the closed geodesic
 
 arguments
-    x_vals 
-    f_vals 
-    tol3 = 0.1;
-    skip_count = 0;
+    x_vals
+    f_vals
+    length_geodesic
 end
 
-x_vals = x_vals(2:end);
-f_vals = f_vals(2:end);
+num_rounds = 15.;
+n_samples_start = 200000;
+n_samples_end   = 200000;
 
-% 1. Define a new uniform x-axis
-x_new = (min(x_vals) : 0.01 : max(x_vals))';
-f_new = zeros(size(x_new));
+% --- Determine search interval ---
+% Lower bound: first finite x value
+finite_mask = isfinite(x_vals) & isfinite(f_vals);
+x_finite = x_vals(finite_mask);
+f_finite = f_vals(finite_mask);
 
-% 2. Resample onto uniform grid
-window = 0.001;
-for i = 1:length(x_new)
-    x0 = x_new(i);
-    mask = (x_vals >= x0 - window) & (x_vals <= x0 + window);
-    if any(mask)
-        f_new(i) = mean(f_vals(mask));
+s_low = x_finite(1);
+
+% Upper bound: first x where f_vals > 0.2
+idx_upper = find(f_finite > 0.2, 1, 'first');
+if isempty(idx_upper)
+    s_high = x_finite(end);
+else
+    s_high = x_finite(idx_upper);
+end
+
+% Safety: ensure interval is valid
+if s_low >= s_high
+    min_length = s_low;
+    return;
+end
+
+% --- Prepare the empirical CDF for comparison ---
+% Clean and deduplicate for interpolation
+[x_emp_u, idx_u] = unique(x_finite, 'last');
+f_emp_u = f_finite(idx_u);
+
+% --- Binary search ---
+for round = 1:num_rounds
+    s_mid = (s_low + s_high) / 2;
+    
+    % Number of sample points increases linearly across rounds
+    n_samples = round_val(n_samples_start + (n_samples_end - n_samples_start) * (round - 1) / (num_rounds - 1));
+    
+    % Compute the expected CDF for candidate distance s_mid
+    [x_cand, f_cand] = expected_cumufun_one_homotopy_class(s_mid, length_geodesic, n_samples);
+    
+    % Check if f_cand <= f_empirical everywhere (on the candidate's x grid)
+    % Interpolate the empirical CDF onto the candidate's x values
+    f_emp_on_cand = interp1(x_emp_u, f_emp_u, x_cand, 'previous', 0);
+    
+    % The candidate CDF is valid if it is everywhere <= the empirical CDF
+    % (with a small tolerance for noise)
+    if all(f_cand <= f_emp_on_cand + 0.0001)
+        % Candidate fits under the empirical CDF → s_mid is valid,
+        % try to go smaller
+        s_high = s_mid;
     else
-        f_new(i) = NaN;
+        % Candidate exceeds the empirical CDF somewhere → s_mid is too small
+        s_low = s_mid;
     end
 end
 
-f_vals = f_new;
-x_vals = x_new;
+min_length = (s_low + s_high) / 2;
 
-% 3. Find the upper bound: the first x where f_vals reaches 0.05.
-%    The guess must come strictly before this point.
-f_cutoff = 0.05;
-upper_bound_idx = find(f_vals >= f_cutoff, 1, 'first');
-if isempty(upper_bound_idx)
-    upper_bound_idx = length(f_vals);
 end
 
-% 4. Empirical Derivative (only up to the upper bound)
-dy = diff(f_vals(1:upper_bound_idx));
-dx = diff(x_vals(1:upper_bound_idx));
-df_dx = dy ./ dx;
 
-% 5. Find threshold crossings — places where the derivative first exceeds tol3.
-%    Each such crossing is a candidate for the minimum length.
-above_tol = df_dx > tol3;
-
-% Find all rising edges: transitions from below to above threshold
-crossings_found = 0;
-min_length = x_vals(upper_bound_idx);  % fallback: right at the cutoff
-
-for idx = 1:length(above_tol)
-    if above_tol(idx)
-        % Check if this is the start of a new region
-        % (first point, or previous point was below threshold)
-        if idx == 1 || ~above_tol(idx - 1)
-            crossings_found = crossings_found + 1;
-            if crossings_found > skip_count
-                min_length = x_vals(idx);
-                return;
-            end
-        end
-    end
-end
-
-% If we exhausted all crossings without finding enough to skip,
-% fall back to the last crossing found within the allowed range.
-if crossings_found > 0
-    for idx = length(above_tol):-1:1
-        if above_tol(idx) && (idx == 1 || ~above_tol(idx-1))
-            min_length = x_vals(idx);
-            return;
-        end
-    end
-end
-
+function v = round_val(x)
+    v = round(x);
 end
