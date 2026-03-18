@@ -26,8 +26,6 @@ Max_len_geodesic = 100000;
 combination_curve_count_intersections1 = [1, 1; 2, 1; 3, 1; 4, 1] ;
 combination_curve_count_intersections2 = [1, 3; 1, 5; 2, 3; 2, 5] ;
 combination_curve_count_intersections3 = [3, 3; 3, 5; 4, 3; 4, 5] ;
-% combination_curve_count_intersections2 = [0, 0] ;
-% combination_curve_count_intersections3 = [0, 0] ;
 
 
 pause_time = 0;
