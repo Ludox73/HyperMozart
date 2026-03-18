@@ -102,20 +102,35 @@ while travelled_distance<Max_len_geodesic
         vector_to_compute_angle = [-help_vector(2), help_vector(1)];
         angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
 
-        % angle = mod(atan2(point_and_vec_init.tg_vector(2),point_and_vec_init.tg_vector(1)), 2*pi);
-
         points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
     end
     if polytope_index == 2 && to_avoid ==1
         l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{2}{2});
         
-        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1});
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{2}{1}{1});
         vector_to_compute_angle = [-help_vector(2), help_vector(1)];
         angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
 
-        % angle = mod(atan2(point_and_vec_init.tg_vector(2),point_and_vec_init.tg_vector(1)), 2*pi);
-
         points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
+    end
+    if polytope_index == 3 && to_avoid ==1
+        l = distance_two_points(point_and_vec_init.point, polytopes{3}{1});
+
+
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{3}{1}{1});
+        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
+        angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
+
+        points_to_understand_distribution = [points_to_understand_distribution; l, -angle, 0];
+    end
+    if polytope_index == 4 && to_avoid ==1
+        l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{4}{2});
+        
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{4}{1}{1});
+        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
+        angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
+
+        points_to_understand_distribution = [points_to_understand_distribution; l, -angle, 0];
     end
 
     % Here we compute the new intersection

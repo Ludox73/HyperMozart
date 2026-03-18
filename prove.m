@@ -412,7 +412,7 @@ grid on;
 title('Waterfall');
 xlabel('X-axis');
 ylabel('Y-axis');
-ylim([0,pi])
+ylim([-pi,pi])
 end
 
 if prova_identifier == 17

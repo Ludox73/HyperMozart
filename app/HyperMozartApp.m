@@ -35,6 +35,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
         Curve2CheckBox               matlab.ui.control.CheckBox
         Curve3CheckBox               matlab.ui.control.CheckBox
 
+        % Distribution plot panel
+        DistributionPanel            matlab.ui.container.Panel
+        InfoDistButton               matlab.ui.control.Button
+        DrawDistButton               matlab.ui.control.Button
+        DistributionStatusLabel      matlab.ui.control.Label
+
         % Visualization options
         VisualizationPanel           matlab.ui.container.Panel
         VisualizeCheckBox            matlab.ui.control.CheckBox
@@ -72,6 +78,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
         MusicPanel                   matlab.ui.container.Panel
         SpeedMultLabel               matlab.ui.control.Label
         SpeedMultSpinner             matlab.ui.control.Spinner
+        MaxSongDurLabel              matlab.ui.control.Label
+        MaxSongDurSpinner            matlab.ui.control.Spinner
         PlayButton                   matlab.ui.control.Button
         StopMusicButton              matlab.ui.control.Button
         SaveWavButton                matlab.ui.control.Button
@@ -82,17 +90,20 @@ classdef HyperMozartApp < matlab.apps.AppBase
         HexTab                       matlab.ui.container.Tab
         CDFTab                       matlab.ui.container.Tab
         SurfaceTab                   matlab.ui.container.Tab
+        DistTab                      matlab.ui.container.Tab
         Ax1                          matlab.ui.control.UIAxes
         Ax2                          matlab.ui.control.UIAxes
         Ax3                          matlab.ui.control.UIAxes
         Ax4                          matlab.ui.control.UIAxes
         CDFAxes                      matlab.ui.control.UIAxes
         SurfaceAxes                  matlab.ui.control.UIAxes
+        DistAxes                     matlab.ui.control.UIAxes
     end
 
     % Internal state
     properties (Access = private)
         to_music                     % Result matrix from geodesic computation
+        points_distribution          % Nx3 matrix [position, angle, travel_time] for distribution plot
         StopRequested logical = false
         IsRunning     logical = false
         % Orthospectrum incremental state
@@ -159,7 +170,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 % Computation mode: long runs
                 app.MaxLenSpinner.Limits = [100 1e8];
                 app.MaxLenSpinner.Step = 100000;
-                app.MaxLenSpinner.Value = 1000000;
+                app.MaxLenSpinner.Value = 100000;
             end
         end
 
@@ -250,65 +261,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
             cla(ax3d);
             hold(ax3d, 'on');
 
-            Lib = curves_S2_styles();
-
-            S.z0_Q1 = Lib{4}; S.z0_Q2 = Lib{6}; S.z0_H2 = Lib{5};
-            S.z0_Q4 = Lib{1}; S.z0_H1 = Lib{3}; S.z0_Q3 = Lib{2};
-            S.y0_C1 = Lib{7}; S.y0_C2 = Lib{8}; S.x1_C  = Lib{9};
-
-            [x, y, z] = meshgrid(linspace(-0.6,2.6,150), linspace(-1.2,1.2,150), linspace(-1,1,100));
-            f_x = x .* (x-1).^2 .* (x-2);
-            r = 0.15;
-            V = (f_x + y.^2).^2 + z.^2 - r^2;
-
-            p = patch(ax3d, isosurface(x, y, z, V, 0));
-            set(p, 'FaceColor', [0.9 0.9 0.9], 'EdgeColor', 'none', 'FaceAlpha', 0.2);
-
-            % Curves on plane z = 0
-            C_z = contourc(linspace(-0.6,2.6,150), linspace(-1.2,1.2,150), V(:,:,50), [0 0]);
-            idx = 1; hole_styles = {S.z0_H1, S.z0_H2}; k_h = 1;
-            while idx < size(C_z, 2)
-                n = C_z(2, idx);
-                xc = C_z(1, idx+1:idx+n); yc = C_z(2, idx+1:idx+n); zc = zeros(size(xc));
-                if any(xc < 1) && any(xc > 1)
-                    q1=xc; q1(xc<1|yc<0)=NaN; plot3(ax3d,q1,yc,zc,'Color',S.z0_Q1{1},'LineStyle',S.z0_Q1{2},'LineWidth',S.z0_Q1{3},'LineJoin','chamfer');
-                    q2=xc; q2(xc<1|yc>=0)=NaN; plot3(ax3d,q2,yc,zc,'Color',S.z0_Q2{1},'LineStyle',S.z0_Q2{2},'LineWidth',S.z0_Q2{3},'LineJoin','chamfer');
-                    q3=xc; q3(xc>=1|yc<0)=NaN; plot3(ax3d,q3,yc,zc,'Color',S.z0_Q3{1},'LineStyle',S.z0_Q3{2},'LineWidth',S.z0_Q3{3},'LineJoin','chamfer');
-                    q4=xc; q4(xc>=1|yc>=0)=NaN; plot3(ax3d,q4,yc,zc,'Color',S.z0_Q4{1},'LineStyle',S.z0_Q4{2},'LineWidth',S.z0_Q4{3},'LineJoin','chamfer');
-                else
-                    st = hole_styles{mod(k_h-1,2)+1};
-                    plot3(ax3d,xc,yc,zc,'Color',st{1},'LineStyle',st{2},'LineWidth',st{3},'LineJoin','chamfer');
-                    k_h = k_h + 1;
-                end
-                idx = idx + n + 1;
+            if strcmp(app.GluingDropDown.Value, 'Nonseparating S2')
+                draw_genus2_surface_nonseparating_curve(ax3d);
+            else
+                draw_genus2_surface_separating_curve(ax3d);
             end
 
-            % Curves on plane y = 0
-            slice_y0 = squeeze(V(75,:,:))';
-            C_y = contourc(linspace(-0.6,2.6,150), linspace(-1,1,100), slice_y0, [0 0]);
-            y_st = {S.y0_C1, S.y0_C2}; i_y = 1; c_y = 0;
-            while i_y < size(C_y, 2) && c_y < 2
-                n = C_y(2, i_y); xc_y = C_y(1, i_y+1:i_y+n); zc_y = C_y(2, i_y+1:i_y+n);
-                st = y_st{c_y+1};
-                plot3(ax3d,xc_y, zeros(size(xc_y)), zc_y, 'Color',st{1},'LineStyle',st{2},'LineWidth',st{3},'LineJoin','chamfer');
-                i_y = i_y + n + 1; c_y = c_y + 1;
-            end
-
-            % Curve on plane x = 1
-            slice_x1 = squeeze(V(:,75,:));
-            C_x = contourc(linspace(-1.2,1.2,150), linspace(-1,1,100), slice_x1', [0 0]);
-            i_x = 1;
-            while i_x < size(C_x, 2)
-                n = C_x(2, i_x);
-                yc_x = C_x(1, i_x+1:i_x+n);
-                zc_x = C_x(2, i_x+1:i_x+n);
-                plot3(ax3d, ones(size(yc_x)), yc_x, zc_x, 'Color', S.x1_C{1}, 'LineStyle', S.x1_C{2}, 'LineWidth', S.x1_C{3}, 'LineJoin','chamfer');
-                i_x = i_x + n + 1;
-            end
-
-            daspect(ax3d, [1 1 1]); view(ax3d, -55, 30);
-            camlight(ax3d); lighting(ax3d, 'gouraud'); grid(ax3d, 'on');
-            title(ax3d, 'Genus 2 Surface with Separating Curve');
             hold(ax3d, 'off');
             drawnow;
         end
@@ -317,7 +275,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % Preview the 4 hexagons in the central panel using current L values
             lengths_curves = [app.L1Spinner.Value, app.L2Spinner.Value, app.L3Spinner.Value];
             points_draw = 200;
-            if strcmp(app.GluingDropDown.Value, 'Standard S2')
+            if strcmp(app.GluingDropDown.Value, 'Separating S2')
                 gluing_preview = create_gluing_standard_S2();
             else
                 gluing_preview = create_gluing_nonseparating_S2();
@@ -554,6 +512,54 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.MusicStatusLabel.Text = 'Stopping...';
         end
 
+        function InfoDistButtonPushed(app, ~)
+            msg = { ...
+                'INTERSECTION DISTRIBUTION', '', ...
+                'During the geodesic computation, every time the', ...
+                'geodesic crosses curve 1, its position in the', ...
+                'tangent bundle of curve 1 is recorded, together', ...
+                'with the time elapsed before the next crossing', ...
+                'of any active curve.', '', ...
+                'Each point in the scatter plot corresponds to one', ...
+                'such crossing. The X-axis shows the position along', ...
+                'curve 1, the Y-axis shows the angle of the geodesic', ...
+                'at that point, and the color encodes the travel time', ...
+                'to the next intersection (colder = faster).', '', ...
+                'The color scale is logarithmic.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Intersection Distribution', 'Icon', 'info');
+        end
+
+        function DrawDistButtonPushed(app, ~)
+            if isempty(app.points_distribution)
+                uialert(app.UIFigure, ...
+                    'No data available. Run geodesic computation first.', ...
+                    'No Data', 'Icon', 'warning');
+                return;
+            end
+
+            D = app.points_distribution;
+            D = D(1:end-1, :);   % drop last row (column 3 may still be 0)
+            D = D(D(:,3) > 0, :);
+
+            X = D(:,1);
+            Y = D(:,2);
+            Z = D(:,3);
+
+            ax = app.DistAxes;
+            cla(ax);
+            scatter(ax, X, Y, 18, Z, 'filled');
+            set(ax, 'ColorScale', 'log');
+            colorbar(ax);
+            grid(ax, 'on');
+            title(ax, 'Intersection Distribution');
+            xlabel(ax, 'Position on curve 1');
+            ylabel(ax, 'Angle');
+            ylim(ax, [-pi, pi]);
+            app.CenterTabGroup.SelectedTab = app.DistTab;
+            app.DistributionStatusLabel.Text = sprintf('%d points plotted.', size(D,1));
+            drawnow;
+        end
+
         function SaveWavButtonPushed(app, ~)
             if isempty(app.to_music)
                 app.MusicStatusLabel.Text = 'No data. Run geodesic first.';
@@ -569,7 +575,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.MusicStatusLabel.Text = 'Building audio...';
             drawnow;
 
-            max_duration = 10 * 60;  % 10 minutes in seconds
+            max_duration = app.MaxSongDurSpinner.Value * 60;
             max_samples = max_duration * fs;
             y = [];
             for i = 1:size(app.to_music, 1)
@@ -650,7 +656,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 geo_signals{k} = play_note_marimba(notes_frequency, k);
             end
 
-            if strcmp(app.GluingDropDown.Value, 'Standard S2')
+            if strcmp(app.GluingDropDown.Value, 'Separating S2')
                 gluing = create_gluing_standard_S2();
             else
                 gluing = create_gluing_nonseparating_S2();
@@ -755,12 +761,39 @@ classdef HyperMozartApp < matlab.apps.AppBase
             index_curves = 1;
             first_cycle = true;
             current_percentage = 0;
+            points_dist_local = [];
 
             while travelled_distance < Max_len_geodesic
 
                 % Check for stop request
                 if app.StopRequested
                     throw(MException('HyperMozart:UserStop', 'Stopped by user.'));
+                end
+
+                % Track distribution for curve 1 crossings
+                if polytope_index == 1 && to_avoid == 1
+                    l = distance_two_points(point_and_vec_init.point, polytopes{1}{1});
+                    hv = point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1};
+                    vca = [-hv(2), hv(1)];
+                    points_dist_local(end+1, :) = [l, angleCW2D(vca, point_and_vec_init.tg_vector), 0];
+                end
+                if polytope_index == 2 && to_avoid == 1
+                    l = lengths_curves(1)/2 + distance_two_points(point_and_vec_init.point, polytopes{2}{2});
+                    hv = point_and_vec_init.point - collection_of_collection_of_circles{2}{1}{1};
+                    vca = [-hv(2), hv(1)];
+                    points_dist_local(end+1, :) = [l, angleCW2D(point_and_vec_init.tg_vector, vca) - pi, 0];
+                end
+                if polytope_index == 3 && to_avoid == 1
+                    l = mod(twisted_parameters(1)/(2*pi)*lengths_curves(1) + distance_two_points(point_and_vec_init.point, polytopes{3}{1}), lengths_curves(1));
+                    hv = point_and_vec_init.point - collection_of_collection_of_circles{3}{1}{1};
+                    vca = [-hv(2), hv(1)];
+                    points_dist_local(end+1, :) = [l, -angleCW2D(vca, point_and_vec_init.tg_vector), 0];
+                end
+                if polytope_index == 4 && to_avoid == 1
+                    l = mod(twisted_parameters(1)/(2*pi)*lengths_curves(1) + lengths_curves(1)/2 + distance_two_points(point_and_vec_init.point, polytopes{4}{2}), lengths_curves(1));
+                    hv = point_and_vec_init.point - collection_of_collection_of_circles{4}{1}{1};
+                    vca = [-hv(2), hv(1)];
+                    points_dist_local(end+1, :) = [l, -(angleCW2D(point_and_vec_init.tg_vector, vca) - pi), 0];
                 end
 
                 % Compute next intersection
@@ -835,6 +868,11 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
                         to_music_local(index_curves, :) = [travelled_since_last_intersection, which_curve];
                         index_curves = index_curves + 1;
+
+                        % Fill travel time for the last distribution point
+                        if ~isempty(points_dist_local) && points_dist_local(end,3) == 0
+                            points_dist_local(end,3) = travelled_since_last_intersection;
+                        end
                     end
                     travelled_since_last_intersection = 0;
                     first_cycle = false;
@@ -915,6 +953,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             to_music_local = to_music_local(2:end, :);
             to_music_local = to_music_local(to_music_local(:,1) ~= 0, :);
             app.to_music = to_music_local;
+            app.points_distribution = points_dist_local;
 
             app.ProgressGauge.Value = 100;
             app.StatusLabel.Text = sprintf('Done. %d intersections recorded.', size(app.to_music, 1));
@@ -954,9 +993,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
             uilabel(app.ParametersPanel, 'Text', 'Surface type', ...
                 'Position', [10 492 95 22], 'FontWeight', 'bold');
             app.GluingDropDown = uidropdown(app.ParametersPanel, ...
-                'Items', {'Standard S2', 'Nonseparating S2'}, ...
+                'Items', {'Separating S2', 'Nonseparating S2'}, ...
                 'Position', [115 492 165 22], ...
-                'Value', 'Standard S2');
+                'Value', 'Separating S2');
 
             % --- Curve lengths ---
             y = 460;
@@ -1087,7 +1126,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.RunButton = uibutton(app.UIFigure, 'push');
             app.RunButton.Text = 'Run Geodesic Computation';
-            app.RunButton.Position = [10 100 200 35];
+            app.RunButton.Position = [10 62 200 28];
             app.RunButton.FontWeight = 'bold';
             app.RunButton.BackgroundColor = [0.3 0.7 0.3];
             app.RunButton.FontColor = [1 1 1];
@@ -1095,7 +1134,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             app.StopButton = uibutton(app.UIFigure, 'push');
             app.StopButton.Text = 'Stop';
-            app.StopButton.Position = [220 100 90 35];
+            app.StopButton.Position = [220 62 90 28];
             app.StopButton.FontWeight = 'bold';
             app.StopButton.BackgroundColor = [0.85 0.25 0.25];
             app.StopButton.FontColor = [1 1 1];
@@ -1103,14 +1142,39 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.StopButton.ButtonPushedFcn = createCallbackFcn(app, @StopButtonPushed, true);
 
             app.ProgressGauge = uigauge(app.UIFigure, 'linear');
-            app.ProgressGauge.Position = [10 55 300 45];
+            app.ProgressGauge.Position = [10 28 300 32];
             app.ProgressGauge.Limits = [0 100];
             app.ProgressGauge.Value = 0;
 
             app.StatusLabel = uilabel(app.UIFigure);
-            app.StatusLabel.Position = [10 35 300 25];
+            app.StatusLabel.Position = [10 8 300 18];
             app.StatusLabel.Text = 'Ready.';
             app.StatusLabel.FontColor = [0.2 0.2 0.6];
+
+            % =============================================================
+            %  LEFT COLUMN — Distribution Panel
+            % =============================================================
+            app.DistributionPanel = uipanel(app.UIFigure);
+            app.DistributionPanel.Title = 'Intersection Distribution';
+            app.DistributionPanel.Position = [10 94 300 53];
+            app.DistributionPanel.FontWeight = 'bold';
+
+            app.InfoDistButton = uibutton(app.UIFigure, 'push');
+            app.InfoDistButton.Text = char(9432);
+            app.InfoDistButton.Position = [270 138 35 22];
+            app.InfoDistButton.FontSize = 14;
+            app.InfoDistButton.Tooltip = 'Help: Intersection Distribution';
+            app.InfoDistButton.ButtonPushedFcn = createCallbackFcn(app, @InfoDistButtonPushed, true);
+
+            app.DrawDistButton = uibutton(app.DistributionPanel, 'push');
+            app.DrawDistButton.Text = 'Draw Distribution';
+            app.DrawDistButton.Position = [10 8 140 26];
+            app.DrawDistButton.ButtonPushedFcn = createCallbackFcn(app, @DrawDistButtonPushed, true);
+
+            app.DistributionStatusLabel = uilabel(app.DistributionPanel);
+            app.DistributionStatusLabel.Position = [158 10 130 18];
+            app.DistributionStatusLabel.Text = '';
+            app.DistributionStatusLabel.FontColor = [0.2 0.2 0.6];
 
             % =============================================================
             %  MIDDLE — Tab group with multiple views (x: 320..870)
@@ -1148,12 +1212,21 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             app.SurfaceAxes = uiaxes(app.SurfaceTab, 'Position', [20 20 510 810]);
 
+            % --- Distribution tab ---
+            app.DistTab = uitab(app.CenterTabGroup, 'Title', 'Distribution');
+
+            app.DistAxes = uiaxes(app.DistTab, 'Position', [40 40 480 780]);
+            title(app.DistAxes, 'Intersection Distribution');
+            xlabel(app.DistAxes, 'Position on curve 1');
+            ylabel(app.DistAxes, 'Angle');
+            grid(app.DistAxes, 'on');
+
             % =============================================================
             %  RIGHT COLUMN — Music Panel (x: 880..1290, top)
             % =============================================================
             app.MusicPanel = uipanel(app.UIFigure);
             app.MusicPanel.Title = 'Music';
-            app.MusicPanel.Position = [880 660 410 230];
+            app.MusicPanel.Position = [880 625 410 265];
             app.MusicPanel.FontWeight = 'bold';
 
             app.InfoMusicButton = uibutton(app.UIFigure, 'push');
@@ -1163,12 +1236,19 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.InfoMusicButton.Tooltip = 'Help: Music';
             app.InfoMusicButton.ButtonPushedFcn = createCallbackFcn(app, @InfoMusicButtonPushed, true);
 
-            ym = 180;
+            ym = 215;
             app.SpeedMultLabel = uilabel(app.MusicPanel, 'Text', 'Speed multiplier', ...
                 'Position', [10 ym 120 22]);
             app.SpeedMultSpinner = uispinner(app.MusicPanel, ...
                 'Position', [140 ym 100 22], 'Value', 10, ...
                 'Limits', [0.1 1000], 'Step', 1, 'ValueDisplayFormat', '%.1f');
+
+            ym = ym - 35;
+            app.MaxSongDurLabel = uilabel(app.MusicPanel, 'Text', 'Max song duration (min)', ...
+                'Position', [10 ym 155 22]);
+            app.MaxSongDurSpinner = uispinner(app.MusicPanel, ...
+                'Position', [175 ym 80 22], 'Value', 10, ...
+                'Limits', [1 10], 'Step', 1, 'ValueDisplayFormat', '%.0f');
 
             ym = ym - 40;
             app.PlayButton = uibutton(app.MusicPanel, 'push');
