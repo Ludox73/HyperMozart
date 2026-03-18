@@ -31,6 +31,14 @@ classdef HyperMozartApp < matlab.apps.AppBase
         MaxLenLabel                  matlab.ui.control.Label
         MaxLenSpinner                matlab.ui.control.Spinner
 
+        % Geodesic initial conditions panel
+        GeodesicPanel                matlab.ui.container.Panel
+        InfoGeodesicButton           matlab.ui.control.Button
+        InitCondLabel                matlab.ui.control.Label
+        InitCondDropDown             matlab.ui.control.DropDown
+        AngleLabel                   matlab.ui.control.Label
+        AngleSpinner                 matlab.ui.control.Spinner
+
         Curve1CheckBox               matlab.ui.control.CheckBox
         Curve2CheckBox               matlab.ui.control.CheckBox
         Curve3CheckBox               matlab.ui.control.CheckBox
@@ -185,8 +193,6 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'They control how the pairs of pants are glued.', '', ...
                 'Active curves — choose which curves are tracked', ...
                 'for intersection counting and sonification.', '', ...
-                'Max geodesic length — total hyperbolic arc', ...
-                'length of the geodesic to trace before stopping.', '', ...
                 'Draw Hexagons — preview the four right-angled', ...
                 'hexagons (fundamental domains) in the Poincaré disk.', '', ...
                 'Draw 3D Surface — render a 3D model of the', ...
@@ -534,6 +540,37 @@ classdef HyperMozartApp < matlab.apps.AppBase
             uialert(app.UIFigure, strjoin(msg, newline), 'Intersection Distribution', 'Icon', 'info');
         end
 
+        function InitCondDropDownChanged(app, ~)
+            % Enable angle spinner only for the fixed-angle option
+            if strcmp(app.InitCondDropDown.Value, 'Barycenter, fixed angle')
+                app.AngleSpinner.Enable = 'on';
+            else
+                app.AngleSpinner.Enable = 'off';
+            end
+        end
+
+        function InfoGeodesicButtonPushed(app, ~)
+            msg = { ...
+                'GEODESIC INITIAL CONDITIONS', '', ...
+                'Choose how the initial point and tangent vector', ...
+                'of the geodesic are selected.', '', ...
+                'Barycenter, random speed — start at the', ...
+                'barycenter of hexagon 1 with a random unit', ...
+                'tangent vector.', '', ...
+                'Barycenter, after 1000s — same as above, but', ...
+                'the geodesic is first run silently for 1000', ...
+                'hyperbolic length units before recording begins.', ...
+                'This provides a "warm-up" to move away from the', ...
+                'special starting geometry.', '', ...
+                'Barycenter, fixed angle — start at the', ...
+                'barycenter of hexagon 1 with the tangent vector', ...
+                'pointing at the given angle (in radians from', ...
+                'the horizontal axis).', '', ...
+                'Max geodesic length — total hyperbolic arc', ...
+                'length to trace before stopping.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Geodesic Initial Conditions', 'Icon', 'info');
+        end
+
         function DrawDistButtonPushed(app, ~)
             if isempty(app.points_distribution)
                 uialert(app.UIFigure, ...
@@ -692,7 +729,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
             p_1 = barycenter_cell_of_points(polytopes{1});
             polytope_index = 1;
 
-            a = rand(1)*2*pi;
+            init_cond = app.InitCondDropDown.Value;
+            if strcmp(init_cond, 'Barycenter, fixed angle')
+                a = app.AngleSpinner.Value;
+            else
+                a = rand(1)*2*pi;
+            end
             tg_1 = 20*(2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
             p0 = point_and_tg_vector(p_1, tg_1);
 
@@ -768,33 +810,41 @@ classdef HyperMozartApp < matlab.apps.AppBase
             current_percentage = 0;
             points_dist_local = [];
 
-            while travelled_distance < Max_len_geodesic
+            if strcmp(init_cond, 'Barycenter, after 1000s')
+                warmup_target = 1000;
+            else
+                warmup_target = 0;
+            end
+            warmup_accumulated = 0;
+            warmup_done = (warmup_target == 0);
+
+            while ~warmup_done || travelled_distance < Max_len_geodesic
 
                 % Check for stop request
                 if app.StopRequested
                     throw(MException('HyperMozart:UserStop', 'Stopped by user.'));
                 end
 
-                % Track distribution for curve 1 crossings
-                if polytope_index == 1 && to_avoid == 1
+                % Track distribution for curve 1 crossings (only after warmup)
+                if warmup_done && polytope_index == 1 && to_avoid == 1
                     l = distance_two_points(point_and_vec_init.point, polytopes{1}{1});
                     hv = point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1};
                     vca = [-hv(2), hv(1)];
                     points_dist_local(end+1, :) = [l, angleCW2D(vca, point_and_vec_init.tg_vector), 0];
                 end
-                if polytope_index == 2 && to_avoid == 1
+                if warmup_done && polytope_index == 2 && to_avoid == 1
                     l = lengths_curves(1)/2 + distance_two_points(point_and_vec_init.point, polytopes{2}{2});
                     hv = point_and_vec_init.point - collection_of_collection_of_circles{2}{1}{1};
                     vca = [-hv(2), hv(1)];
                     points_dist_local(end+1, :) = [l, angleCW2D(point_and_vec_init.tg_vector, vca) - pi, 0];
                 end
-                if polytope_index == 3 && to_avoid == 1
+                if warmup_done && polytope_index == 3 && to_avoid == 1
                     l = mod(twisted_parameters(1)/(2*pi)*lengths_curves(1) + distance_two_points(point_and_vec_init.point, polytopes{3}{1}), lengths_curves(1));
                     hv = point_and_vec_init.point - collection_of_collection_of_circles{3}{1}{1};
                     vca = [-hv(2), hv(1)];
                     points_dist_local(end+1, :) = [l, -angleCW2D(vca, point_and_vec_init.tg_vector), 0];
                 end
-                if polytope_index == 4 && to_avoid == 1
+                if warmup_done && polytope_index == 4 && to_avoid == 1
                     l = mod(twisted_parameters(1)/(2*pi)*lengths_curves(1) + lengths_curves(1)/2 + distance_two_points(point_and_vec_init.point, polytopes{4}{2}), lengths_curves(1));
                     hv = point_and_vec_init.point - collection_of_collection_of_circles{4}{1}{1};
                     vca = [-hv(2), hv(1)];
@@ -805,8 +855,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain( ...
                     point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
 
-                % Visualization
-                if visualize
+                % Visualization (skipped during warmup)
+                if visualize && warmup_done
                     ax = appAxes{polytope_index};
                     hold(ax, 'on');
                     % Compute arc for this geodesic segment
@@ -847,13 +897,25 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
                 % Distance bookkeeping
                 dtp = distance_two_points(point_and_vec_init.point, point_and_vec_inters.point);
-                travelled_distance = travelled_distance + dtp;
-                travelled_since_last_intersection = travelled_since_last_intersection + dtp;
 
-                % Check curve intersections
-                intersects_curve_1 = is_row([polytope_index, side], curve_combinations_1);
-                intersects_curve_2 = is_row([polytope_index, side], curve_combinations_2);
-                intersects_curve_3 = is_row([polytope_index, side], curve_combinations_3);
+                if ~warmup_done
+                    warmup_accumulated = warmup_accumulated + dtp;
+                    if warmup_accumulated >= warmup_target
+                        warmup_done = true;
+                        first_cycle = true;
+                        travelled_since_last_intersection = 0;
+                        points_dist_local = [];
+                        index_curves = 1;
+                    end
+                else
+                    travelled_distance = travelled_distance + dtp;
+                    travelled_since_last_intersection = travelled_since_last_intersection + dtp;
+                end
+
+                % Check curve intersections (skip during warmup)
+                intersects_curve_1 = warmup_done && is_row([polytope_index, side], curve_combinations_1);
+                intersects_curve_2 = warmup_done && is_row([polytope_index, side], curve_combinations_2);
+                intersects_curve_3 = warmup_done && is_row([polytope_index, side], curve_combinations_3);
 
                 if intersects_curve_1 || intersects_curve_2 || intersects_curve_3
                     if ~first_cycle
@@ -941,15 +1003,25 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 to_avoid = out_side_index;
 
                 % Update progress
-                new_pct = floor(100 * travelled_distance / Max_len_geodesic);
-                if new_pct ~= current_percentage
-                    current_percentage = new_pct;
-                    app.ProgressGauge.Value = min(current_percentage, 100);
-                    app.StatusLabel.Text = sprintf('Running... %d%%', current_percentage);
-                    if visualize
-                        drawnow;
-                    else
+                if ~warmup_done
+                    new_warmup_pct = floor(100 * warmup_accumulated / warmup_target);
+                    if new_warmup_pct ~= current_percentage
+                        current_percentage = new_warmup_pct;
+                        app.ProgressGauge.Value = min(current_percentage, 100);
+                        app.StatusLabel.Text = sprintf('Warm-up: %.0f / %.0f', warmup_accumulated, warmup_target);
                         drawnow limitrate;
+                    end
+                else
+                    new_pct = floor(100 * travelled_distance / Max_len_geodesic);
+                    if new_pct ~= current_percentage
+                        current_percentage = new_pct;
+                        app.ProgressGauge.Value = min(current_percentage, 100);
+                        app.StatusLabel.Text = sprintf('Running... %d%%', current_percentage);
+                        if visualize
+                            drawnow;
+                        else
+                            drawnow limitrate;
+                        end
                     end
                 end
             end
@@ -983,7 +1055,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.ParametersPanel = uipanel(app.UIFigure);
             app.ParametersPanel.Title = 'Surface Parameters';
-            app.ParametersPanel.Position = [10 335 300 555];
+            app.ParametersPanel.Position = [10 380 300 510];
             app.ParametersPanel.FontWeight = 'bold';
 
             % Info button — parameters panel documentation
@@ -996,14 +1068,14 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             % --- Gluing selector ---
             uilabel(app.ParametersPanel, 'Text', 'Surface type', ...
-                'Position', [10 492 95 22], 'FontWeight', 'bold');
+                'Position', [10 440 95 22], 'FontWeight', 'bold');
             app.GluingDropDown = uidropdown(app.ParametersPanel, ...
                 'Items', {'Separating S2', 'Nonseparating S2'}, ...
-                'Position', [115 492 165 22], ...
+                'Position', [115 440 165 22], ...
                 'Value', 'Separating S2');
 
             % --- Curve lengths ---
-            y = 460;
+            y = 408;
             app.L1Label = uilabel(app.ParametersPanel, 'Text', 'L1 (curve 1 length)', ...
                 'Position', [10 y 140 22]);
             app.L1Spinner = uispinner(app.ParametersPanel, ...
@@ -1068,14 +1140,6 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Text', 'Curve 2', 'Position', [100 y 80 22], 'Value', true);
             app.Curve3CheckBox = uicheckbox(app.ParametersPanel, ...
                 'Text', 'Curve 3', 'Position', [190 y 80 22], 'Value', true);
-
-            % --- Max geodesic length ---
-            y = y - 45;
-            app.MaxLenLabel = uilabel(app.ParametersPanel, 'Text', 'Max geodesic length', ...
-                'Position', [10 y 140 22]);
-            app.MaxLenSpinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 100000, ...
-                'Limits', [100 1e8], 'Step', 10000, 'ValueDisplayFormat', '%.0f');
 
             % =============================================================
             %  LEFT COLUMN — Visualization Panel (x: 10..310)
@@ -1180,6 +1244,41 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.DistributionStatusLabel.Position = [158 10 130 18];
             app.DistributionStatusLabel.Text = '';
             app.DistributionStatusLabel.FontColor = [0.2 0.2 0.6];
+
+            % =============================================================
+            %  LEFT COLUMN — Geodesic Initial Conditions Panel
+            % =============================================================
+            app.GeodesicPanel = uipanel(app.UIFigure);
+            app.GeodesicPanel.Title = 'Geodesic';
+            app.GeodesicPanel.Position = [10 360 300 135];
+            app.GeodesicPanel.FontWeight = 'bold';
+
+            app.InfoGeodesicButton = uibutton(app.UIFigure, 'push');
+            app.InfoGeodesicButton.Text = char(9432);
+            app.InfoGeodesicButton.Position = [270 490 35 22];
+            app.InfoGeodesicButton.FontSize = 14;
+            app.InfoGeodesicButton.Tooltip = 'Help: Geodesic Initial Conditions';
+            app.InfoGeodesicButton.ButtonPushedFcn = createCallbackFcn(app, @InfoGeodesicButtonPushed, true);
+
+            app.MaxLenLabel = uilabel(app.GeodesicPanel, 'Text', 'Max geodesic length', ...
+                'Position', [10 90 140 22]);
+            app.MaxLenSpinner = uispinner(app.GeodesicPanel, ...
+                'Position', [158 90 122 22], 'Value', 100000, ...
+                'Limits', [100 1e8], 'Step', 10000, 'ValueDisplayFormat', '%.0f');
+
+            app.InitCondLabel = uilabel(app.GeodesicPanel, 'Text', 'Initial condition', ...
+                'Position', [10 58 115 22]);
+            app.InitCondDropDown = uidropdown(app.GeodesicPanel, ...
+                'Items', {'Barycenter, random speed', 'Barycenter, after 1000s', 'Barycenter, fixed angle'}, ...
+                'Position', [130 58 150 22], 'Value', 'Barycenter, random speed', ...
+                'ValueChangedFcn', createCallbackFcn(app, @InitCondDropDownChanged, true));
+
+            app.AngleLabel = uilabel(app.GeodesicPanel, 'Text', 'Angle (rad)', ...
+                'Position', [10 26 100 22]);
+            app.AngleSpinner = uispinner(app.GeodesicPanel, ...
+                'Position', [115 26 115 22], 'Value', 0, ...
+                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f', ...
+                'Enable', 'off');
 
             % =============================================================
             %  MIDDLE — Tab group with multiple views (x: 320..870)
