@@ -12,6 +12,17 @@ function gluing = create_gluing_standard_S2()
 
 gluing.name = 'standard_S2';
 
+% --- Visualization style -------------------------------------------------
+% hex_style(hex, side) returns the index into the Styles array used when
+% drawing side 'side' of hexagon 'hex'.
+gluing.hex_style = @get_hexagon_style_separating;
+
+% --- Hexagon shape data --------------------------------------------------
+% hex_curve_indices(i,:) = [c1, c2, c3] means hexagon i is built via
+% rectangular_hexagon_centered(L(c1)/2, L(c2)/2, L(c3)/2),
+% where L is the vector of curve lengths.
+gluing.hex_curve_indices = [1,2,2; 1,2,2; 1,3,3; 1,3,3];
+
 % --- Orientation-reversing pairs ----------------------------------------
 gluing.noncoherent_pairs = [1,2; 1,4; 2,1; 2,3; 3,2; 3,4; 4,1; 4,3];
 

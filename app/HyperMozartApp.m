@@ -316,15 +316,11 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % Preview the 4 hexagons in the central panel using current L values
             lengths_curves = [app.L1Spinner.Value, app.L2Spinner.Value, app.L3Spinner.Value];
             points_draw = 200;
-
-            polytopes = cell(1,4);
-            polytopes{1} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-            polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-            polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
-            polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+            gluing_preview = create_gluing_standard_S2();
+            polytopes = build_polytopes_from_gluing(gluing_preview, lengths_curves);
 
             Styles = curves_S2_styles();
-            styleFunc = @(x,y) get_hexagon_style_separating(x,y);
+            styleFunc = gluing_preview.hex_style;
             app.CenterTabGroup.SelectedTab = app.HexTab;
             appAxes = {app.Ax1, app.Ax2, app.Ax3, app.Ax4};
 
@@ -671,11 +667,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             curves_intersected = zeros(1, Max_len_geodesic);
             to_music_local = zeros(Max_len_geodesic, 2);
 
-            polytopes = cell(1,4);
-            polytopes{1} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-            polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-            polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
-            polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+            polytopes = build_polytopes_from_gluing(gluing, lengths_curves);
 
             p_1 = barycenter_cell_of_points(polytopes{1});
             polytope_index = 1;
@@ -708,7 +700,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 app.CenterTabGroup.SelectedTab = app.HexTab;
                 appAxes = {app.Ax1, app.Ax2, app.Ax3, app.Ax4};
                 Styles = curves_S2_styles();
-                styleFunc = @(x,y) get_hexagon_style_separating(x,y);
+                styleFunc = gluing.hex_style;
                 % Draw hexagons on the embedded axes
                 for pi_idx = 1:4
                     ax = appAxes{pi_idx};

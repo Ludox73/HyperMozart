@@ -21,7 +21,7 @@ how_long_note_played =0.1;
 
 lengths_curves = [5, 1.5, 3]; % Insert values
 twisted_parameters = [1.2, 1.2, 5.4]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100000;
+Max_len_geodesic = 1000000;
 
 pause_time = 0;
 
@@ -31,12 +31,7 @@ gluing = create_gluing_standard_S2();
 curves_intersected = zeros(1, Max_len_geodesic);
 to_music = zeros(Max_len_geodesic, 2);
 
-polytopes = {};
-
-polytopes{1} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
-polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
-polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
+polytopes = build_polytopes_from_gluing(gluing, lengths_curves);
 
 p_1 = barycenter_cell_of_points(polytopes{1});
 polytope_index = 1;
@@ -77,7 +72,7 @@ index_curves = 1;
 if visualize == true
     fig1 = figure;
     Styles=curves_S2_styles();
-    draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
+    draw_hexagons(Styles, polytopes, points_draw_geodesics, gluing.hex_style);
     drawn_geodesics = {};
 end
 
@@ -206,7 +201,7 @@ while travelled_distance<Max_len_geodesic
             if visualize_less_than ==true && flag_correct_side
                 if travelled_since_last_intersection < amount_less_than
                     figure
-                    draw_hexagons(Styles, polytopes, points_draw_geodesics, @(x,y) get_hexagon_style_separating(x,y));
+                    draw_hexagons(Styles, polytopes, points_draw_geodesics, gluing.hex_style);
                     
                     for ind = 1:2:length(points_for_drawing)
                         subplot(2,2, points_for_drawing{ind}{2})
