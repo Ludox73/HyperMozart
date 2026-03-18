@@ -6,8 +6,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
         % --- Left panel: Parameters ---
         ParametersPanel              matlab.ui.container.Panel
-        InfoButton                   matlab.ui.control.Button
+        InfoParamsButton             matlab.ui.control.Button
+        InfoVisButton                matlab.ui.control.Button
+        InfoMusicButton              matlab.ui.control.Button
+        InfoOrthButton               matlab.ui.control.Button
         DrawHexButton                matlab.ui.control.Button
+        Draw3DButton                 matlab.ui.control.Button
 
         L1Label                      matlab.ui.control.Label
         L1Spinner                    matlab.ui.control.Spinner
@@ -54,21 +58,35 @@ classdef HyperMozartApp < matlab.apps.AppBase
         CurveIndexDropDown           matlab.ui.control.DropDown
         ChiSigmaLabel                matlab.ui.control.Label
         ChiSigmaSpinner              matlab.ui.control.Spinner
-        HowManyLabel                 matlab.ui.control.Label
-        HowManySpinner               matlab.ui.control.Spinner
         SamplePointsLabel            matlab.ui.control.Label
         SamplePointsSpinner          matlab.ui.control.Spinner
         DrawOrthCheckBox             matlab.ui.control.CheckBox
+        SymmetricCheckBox            matlab.ui.control.CheckBox
         ComputeOrthButton            matlab.ui.control.Button
+        ResetOrthButton              matlab.ui.control.Button
         OrthStatusLabel              matlab.ui.control.Label
         OrthTable                    matlab.ui.control.Table
 
-        % Axes for the 4 hexagons (embedded in app)
-        HexPanel                     matlab.ui.container.Panel
+        % --- Right panel: Music ---
+        MusicPanel                   matlab.ui.container.Panel
+        SpeedMultLabel               matlab.ui.control.Label
+        SpeedMultSpinner             matlab.ui.control.Spinner
+        PlayButton                   matlab.ui.control.Button
+        StopMusicButton              matlab.ui.control.Button
+        SaveWavButton                matlab.ui.control.Button
+        MusicStatusLabel             matlab.ui.control.Label
+
+        % Central area: tab group with multiple views
+        CenterTabGroup               matlab.ui.container.TabGroup
+        HexTab                       matlab.ui.container.Tab
+        CDFTab                       matlab.ui.container.Tab
+        SurfaceTab                   matlab.ui.container.Tab
         Ax1                          matlab.ui.control.UIAxes
         Ax2                          matlab.ui.control.UIAxes
         Ax3                          matlab.ui.control.UIAxes
         Ax4                          matlab.ui.control.UIAxes
+        CDFAxes                      matlab.ui.control.UIAxes
+        SurfaceAxes                  matlab.ui.control.UIAxes
     end
 
     % Internal state
@@ -76,6 +94,16 @@ classdef HyperMozartApp < matlab.apps.AppBase
         to_music                     % Result matrix from geodesic computation
         StopRequested logical = false
         IsRunning     logical = false
+        % Orthospectrum incremental state
+        orth_x_vals                  % Current residual CDF x values
+        orth_f_vals                  % Current residual CDF f values
+        orth_length_geodesic         % Guessed geodesic length
+        orth_results                 % Array of found orthospectrum values
+        orth_percentages             % Array of homotopy class percentages
+        orth_snapshots               % Cell array of saved CDF plot data per element
+        orth_initialized logical = false
+        StopMusicRequested logical = false
+        marimba_signals              % Precomputed marimba signals for each curve
     end
 
     % =====================================================================
@@ -123,8 +151,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
         function VisualizeCheckBoxChanged(app, ~)
             if app.VisualizeCheckBox.Value
                 % Visualization mode: short runs
-                app.MaxLenSpinner.Limits = [10 100];
-                app.MaxLenSpinner.Step = 5;
+                app.MaxLenSpinner.Limits = [10 10000];
+                app.MaxLenSpinner.Step = 50;
                 app.MaxLenSpinner.Value = 50;
             else
                 % Computation mode: long runs
@@ -134,9 +162,92 @@ classdef HyperMozartApp < matlab.apps.AppBase
             end
         end
 
-        function InfoButtonPushed(app, ~)
-            % Open a new figure showing the genus-2 surface topology
-            % (adapted from draw_genus2_surface_separating_curve.m)
+        function InfoParamsButtonPushed(app, ~)
+            msg = { ...
+                'SURFACE PARAMETERS', '', ...
+                'Define the Fenchel–Nielsen coordinates of a', ...
+                'genus-2 hyperbolic surface with a separating curve.', '', ...
+                'L1, L2, L3 — half-lengths of the three simple', ...
+                'closed geodesics used in the decomposition.', '', ...
+                'T1, T2, T3 — twist parameters in [0, 2π).', ...
+                'They control how the pairs of pants are glued.', '', ...
+                'Active curves — choose which curves are tracked', ...
+                'for intersection counting and sonification.', '', ...
+                'Max geodesic length — total hyperbolic arc', ...
+                'length of the geodesic to trace before stopping.', '', ...
+                'Draw Hexagons — preview the four right-angled', ...
+                'hexagons (fundamental domains) in the Poincaré disk.', '', ...
+                'Draw 3D Surface — render a 3D model of the', ...
+                'genus-2 surface with the curves highlighted.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Surface Parameters', 'Icon', 'info');
+        end
+
+        function InfoVisButtonPushed(app, ~)
+            msg = { ...
+                'VISUALIZATION', '', ...
+                'Enable real-time drawing of geodesic arcs in', ...
+                'the Poincaré disk as the computation runs.', '', ...
+                'Points per geodesic — number of sample points', ...
+                'used to draw each arc (higher = smoother).', '', ...
+                'Drawing speed — animation speed multiplier.', ...
+                'Higher values make the arcs appear faster.', '', ...
+                'Grey-out after N — after N new arcs are drawn,', ...
+                'older arcs fade to light grey.', '', ...
+                'Delete after N — arcs older than N steps are', ...
+                'removed entirely to keep the display clean.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Visualization', 'Icon', 'info');
+        end
+
+        function InfoMusicButtonPushed(app, ~)
+            msg = { ...
+                'MUSIC', '', ...
+                'Sonify the geodesic: each time the geodesic', ...
+                'crosses a curve, the corresponding note plays.', '', ...
+                'Note assignment:', ...
+                '  Curve 1 → A4  (440 Hz)', ...
+                '  Curve 2 → C♯5 (554 Hz)', ...
+                '  Curve 3 → E5  (659 Hz)', '', ...
+                'Speed multiplier — scales playback speed.', ...
+                'A value of 10 means 10× faster than the', ...
+                'hyperbolic travel time between intersections.', '', ...
+                'Save WAV — export the full song as a .wav file.', ...
+                'Output is capped at 10 minutes.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Music', 'Icon', 'info');
+        end
+
+        function InfoOrthButtonPushed(app, ~)
+            msg = { ...
+                'ORTHOSPECTRUM COMPUTATION', '', ...
+                'Iteratively extract orthogeodesic lengths from', ...
+                'the empirical CDF of intersection distances.', '', ...
+                'The orthospectrum is computed for arcs that', ...
+                'emanate from the selected curve and lie in', ...
+                'the surface cut along all curves that were', ...
+                'active during the geodesic computation.', '', ...
+                'Curve index — which curve to analyse.', ...
+                'χ(Σ) — Euler characteristic (−2 for genus 2).', ...
+                'Sample points — Monte Carlo resolution for', ...
+                'the expected CDF of each homotopy class.', '', ...
+                'Compute Next Element — finds the shortest', ...
+                'remaining orthogeodesic via binary search,', ...
+                'subtracts its CDF contribution, then moves on.', '', ...
+                'Assume symmetric loops (2×) — assumes every', ...
+                'orthogeodesic has a twin of equal length.', ...
+                'This is expected on a genus-2 surface, since', ...
+                'each arc and its reverse count as two distinct', ...
+                'orthogeodesics.', '', ...
+                'Reset — clears all results and restarts the', ...
+                'computation from the original empirical CDF.'};
+            uialert(app.UIFigure, strjoin(msg, newline), 'Orthospectrum', 'Icon', 'info');
+        end
+
+        function Draw3DButtonPushed(app, ~)
+            % Draw the genus-2 surface on the embedded SurfaceAxes
+            app.CenterTabGroup.SelectedTab = app.SurfaceTab;
+
+            ax3d = app.SurfaceAxes;
+            cla(ax3d);
+            hold(ax3d, 'on');
 
             Lib = curves_S2_styles();
 
@@ -149,10 +260,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
             r = 0.15;
             V = (f_x + y.^2).^2 + z.^2 - r^2;
 
-            fig_info = figure('Color','w', 'Name','Genus 2 Surface — Topology Info', 'NumberTitle','off');
-            p = patch(isosurface(x, y, z, V, 0));
+            p = patch(ax3d, isosurface(x, y, z, V, 0));
             set(p, 'FaceColor', [0.9 0.9 0.9], 'EdgeColor', 'none', 'FaceAlpha', 0.2);
-            hold on;
 
             % Curves on plane z = 0
             C_z = contourc(linspace(-0.6,2.6,150), linspace(-1.2,1.2,150), V(:,:,50), [0 0]);
@@ -161,13 +270,13 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 n = C_z(2, idx);
                 xc = C_z(1, idx+1:idx+n); yc = C_z(2, idx+1:idx+n); zc = zeros(size(xc));
                 if any(xc < 1) && any(xc > 1)
-                    q1=xc; q1(xc<1|yc<0)=NaN; plot3(q1,yc,zc,'Color',S.z0_Q1{1},'LineStyle',S.z0_Q1{2},'LineWidth',S.z0_Q1{3});
-                    q2=xc; q2(xc<1|yc>=0)=NaN; plot3(q2,yc,zc,'Color',S.z0_Q2{1},'LineStyle',S.z0_Q2{2},'LineWidth',S.z0_Q2{3});
-                    q3=xc; q3(xc>=1|yc<0)=NaN; plot3(q3,yc,zc,'Color',S.z0_Q3{1},'LineStyle',S.z0_Q3{2},'LineWidth',S.z0_Q3{3});
-                    q4=xc; q4(xc>=1|yc>=0)=NaN; plot3(q4,yc,zc,'Color',S.z0_Q4{1},'LineStyle',S.z0_Q4{2},'LineWidth',S.z0_Q4{3});
+                    q1=xc; q1(xc<1|yc<0)=NaN; plot3(ax3d,q1,yc,zc,'Color',S.z0_Q1{1},'LineStyle',S.z0_Q1{2},'LineWidth',S.z0_Q1{3},'LineJoin','chamfer');
+                    q2=xc; q2(xc<1|yc>=0)=NaN; plot3(ax3d,q2,yc,zc,'Color',S.z0_Q2{1},'LineStyle',S.z0_Q2{2},'LineWidth',S.z0_Q2{3},'LineJoin','chamfer');
+                    q3=xc; q3(xc>=1|yc<0)=NaN; plot3(ax3d,q3,yc,zc,'Color',S.z0_Q3{1},'LineStyle',S.z0_Q3{2},'LineWidth',S.z0_Q3{3},'LineJoin','chamfer');
+                    q4=xc; q4(xc>=1|yc>=0)=NaN; plot3(ax3d,q4,yc,zc,'Color',S.z0_Q4{1},'LineStyle',S.z0_Q4{2},'LineWidth',S.z0_Q4{3},'LineJoin','chamfer');
                 else
                     st = hole_styles{mod(k_h-1,2)+1};
-                    plot3(xc,yc,zc,'Color',st{1},'LineStyle',st{2},'LineWidth',st{3});
+                    plot3(ax3d,xc,yc,zc,'Color',st{1},'LineStyle',st{2},'LineWidth',st{3},'LineJoin','chamfer');
                     k_h = k_h + 1;
                 end
                 idx = idx + n + 1;
@@ -180,16 +289,27 @@ classdef HyperMozartApp < matlab.apps.AppBase
             while i_y < size(C_y, 2) && c_y < 2
                 n = C_y(2, i_y); xc_y = C_y(1, i_y+1:i_y+n); zc_y = C_y(2, i_y+1:i_y+n);
                 st = y_st{c_y+1};
-                plot3(xc_y, zeros(size(xc_y)), zc_y, 'Color',st{1},'LineStyle',st{2},'LineWidth',st{3});
+                plot3(ax3d,xc_y, zeros(size(xc_y)), zc_y, 'Color',st{1},'LineStyle',st{2},'LineWidth',st{3},'LineJoin','chamfer');
                 i_y = i_y + n + 1; c_y = c_y + 1;
             end
 
             % Curve on plane x = 1
-            c_x1 = contourslice(x, y, z, V, 1, [], [], [0 0]);
-            set(c_x1, 'EdgeColor', S.x1_C{1}, 'LineStyle', S.x1_C{2}, 'LineWidth', S.x1_C{3});
+            slice_x1 = squeeze(V(:,75,:));
+            C_x = contourc(linspace(-1.2,1.2,150), linspace(-1,1,100), slice_x1', [0 0]);
+            i_x = 1;
+            while i_x < size(C_x, 2)
+                n = C_x(2, i_x);
+                yc_x = C_x(1, i_x+1:i_x+n);
+                zc_x = C_x(2, i_x+1:i_x+n);
+                plot3(ax3d, ones(size(yc_x)), yc_x, zc_x, 'Color', S.x1_C{1}, 'LineStyle', S.x1_C{2}, 'LineWidth', S.x1_C{3}, 'LineJoin','chamfer');
+                i_x = i_x + n + 1;
+            end
 
-            daspect([1 1 1]); view(-55, 30); camlight; lighting gouraud; grid on;
-            title('Genus 2 Surface with Separating Curve');
+            daspect(ax3d, [1 1 1]); view(ax3d, -55, 30);
+            camlight(ax3d); lighting(ax3d, 'gouraud'); grid(ax3d, 'on');
+            title(ax3d, 'Genus 2 Surface with Separating Curve');
+            hold(ax3d, 'off');
+            drawnow;
         end
 
         function DrawHexButtonPushed(app, ~)
@@ -205,7 +325,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             Styles = curves_S2_styles();
             styleFunc = @(x,y) get_hexagon_style_separating(x,y);
-            app.HexPanel.Visible = 'on';
+            app.CenterTabGroup.SelectedTab = app.HexTab;
             appAxes = {app.Ax1, app.Ax2, app.Ax3, app.Ax4};
 
             for pi_idx = 1:4
@@ -215,7 +335,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 axis(ax, 'equal');
                 % Poincare disk
                 theta_circ = linspace(0, 2*pi, 200);
-                plot(ax, cos(theta_circ), sin(theta_circ), 'k-', 'LineWidth', 1);
+                plot(ax, cos(theta_circ), sin(theta_circ), 'k-', 'LineWidth', 1,'LineJoin', 'chamfer');
                 % Hexagon edges
                 for s_idx = 1:6
                     if s_idx == 6, s_idx2 = 1; else, s_idx2 = s_idx + 1; end
@@ -229,7 +349,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                     th = linspace(a1, a2, points_draw);
                     sty = Styles{styleFunc(pi_idx, s_idx)};
                     plot(ax, ctr(1)+rad*cos(th), ctr(2)+rad*sin(th), ...
-                        'Color', sty{1}, 'LineStyle', sty{2}, 'LineWidth', sty{3});
+                        'Color', sty{1}, 'LineStyle', sty{2}, 'LineWidth', sty{3},'LineJoin', 'chamfer');
                 end
                 title(ax, sprintf('Polytope %d', pi_idx));
                 xlim(ax, [-1.1 1.1]);
@@ -244,34 +364,266 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 return;
             end
 
-            app.OrthStatusLabel.Text = 'Computing orthospectrum...';
+            % Initialize on first call or after reset
+            if ~app.orth_initialized
+                index_curve = str2double(app.CurveIndexDropDown.Value);
+                chi_sigma   = app.ChiSigmaSpinner.Value;
+                app.orth_length_geodesic = guess_length_geodesics_from_to_music( ...
+                    app.to_music, index_curve, chi_sigma);
+                [app.orth_x_vals, app.orth_f_vals] = compute_cumufun_from_to_music( ...
+                    app.to_music, index_curve);
+                app.orth_results = [];
+                app.orth_percentages = [];
+                app.orth_snapshots = {};
+                app.orth_initialized = true;
+                app.OrthTable.Data = [];
+            end
+
+            app.OrthStatusLabel.Text = 'Computing next element...';
             app.ComputeOrthButton.Enable = 'off';
             drawnow;
 
             try
-                index_curve = str2double(app.CurveIndexDropDown.Value);
-                chi_sigma   = app.ChiSigmaSpinner.Value;
-                how_many    = app.HowManySpinner.Value;
                 draw_flag   = app.DrawOrthCheckBox.Value;
+                symmetric   = app.SymmetricCheckBox.Value;
                 n_samples   = app.SamplePointsSpinner.Value;
 
-                orthospectrum = compute_orthospectrum( ...
-                    app.to_music, index_curve, chi_sigma, ...
-                    how_many, draw_flag, n_samples);
+                % Save backup for drawing
+                x_backup = app.orth_x_vals;
+                f_backup = app.orth_f_vals;
 
-                % Display in table
+                [min_length, x_new, f_new] = compute_next_orthospectrum_element( ...
+                    app.orth_x_vals, app.orth_f_vals, app.orth_length_geodesic, ...
+                    n_samples, false);  % never draw in external figure
+
+                % Compute candidate CDF (needed for percentage, drawing, and symmetric mode)
+                [x_cand, f_cand] = expected_cumufun_one_homotopy_class( ...
+                    min_length, app.orth_length_geodesic, n_samples);
+
+                % If symmetric: subtract 2x the candidate from backup instead
+                if symmetric
+                    f_cand_sub = 2 * f_cand;
+                    % Align endpoints
+                    x_vals_for_sub = app.orth_x_vals;
+                    if x_cand(end) < x_vals_for_sub(end)
+                        x_cand(end) = x_vals_for_sub(end);
+                    else
+                        x_vals_for_sub(end) = x_cand(end);
+                    end
+                    [x_new, f_new] = subtract_cumufuns(x_cand, f_cand_sub, x_vals_for_sub, app.orth_f_vals);
+                    pct = f_cand(end) * 200;  % 2x probability
+                else
+                    pct = f_cand(end) * 100;
+                end
+
+                % Update state
+                app.orth_x_vals = x_new;
+                app.orth_f_vals = f_new;
+                app.orth_results(end+1) = min_length;
+                app.orth_percentages(end+1) = pct;
+
+                % Save snapshot for this element (always, regardless of draw)
+                snap = struct();
+                snap.x_cand = x_cand; snap.x_cand(end) = 30;
+                snap.x_backup = x_backup; snap.x_backup(end) = 30;
+                snap.x_new = x_new; snap.x_new(end) = 30;
+                if symmetric
+                    snap.f_cand = f_cand_sub;
+                else
+                    snap.f_cand = f_cand;
+                end
+                snap.f_backup = f_backup;
+                snap.f_new = f_new;
+                snap.min_length = min_length;
+                snap.pct = pct;
+                app.orth_snapshots{end+1} = snap;
+
+                % Draw on embedded CDF axes if requested
+                if draw_flag
+                    app.drawOrthSnapshot(length(app.orth_snapshots));
+                end
+
+                % Update table
+                n = length(app.orth_results);
                 app.OrthTable.Data = table( ...
-                    (1:how_many)', orthospectrum, ...
-                    'VariableNames', {'Index', 'Length'});
+                    (1:n)', app.orth_results(:), app.orth_percentages(:), ...
+                    'VariableNames', {'Index', 'Length', 'Probability'});
 
                 app.OrthStatusLabel.Text = sprintf( ...
-                    'Done. Shortest orthogeodesic: %.6f', orthospectrum(1));
+                    'Element %d: %.6f (%.1f%%)', n, min_length, pct);
 
             catch ME
                 app.OrthStatusLabel.Text = ['Error: ' ME.message];
             end
 
             app.ComputeOrthButton.Enable = 'on';
+        end
+
+        function drawOrthSnapshot(app, idx)
+            % Draw the CDF snapshot for element idx on the embedded axes
+            if idx < 1 || idx > length(app.orth_snapshots)
+                return;
+            end
+            snap = app.orth_snapshots{idx};
+
+            app.CenterTabGroup.SelectedTab = app.CDFTab;
+            ax = app.CDFAxes;
+            cla(ax);
+            hold(ax, 'on');
+            plot(ax, snap.x_cand, snap.f_cand, 'b-', 'LineWidth', 1.5, 'LineJoin', 'chamfer');
+            plot(ax, snap.x_backup, snap.f_backup, 'k-', 'LineWidth', 1.5, 'LineJoin', 'chamfer');
+            plot(ax, snap.x_new, snap.f_new, 'r-', 'LineWidth', 1.5, 'LineJoin', 'chamfer');
+            hold(ax, 'off');
+            legend(ax, 'Candidate CF', 'Previous residual', 'After subtraction', ...
+                'Location', 'southeast');
+            title(ax, sprintf('Element %d (min\\_length=%.4f, %.1f%%)', idx, snap.min_length, snap.pct));
+            xlim(ax, [0 25]);
+            ylim(ax, [-0.2 1]);
+            grid(ax, 'on');
+            drawnow;
+        end
+
+        function OrthTableCellSelected(app, event)
+            % When user clicks a row in the orthospectrum table, show that snapshot
+            if isempty(event.Indices)
+                return;
+            end
+            row = event.Indices(1);
+            if row >= 1 && row <= length(app.orth_snapshots)
+                app.drawOrthSnapshot(row);
+            end
+        end
+
+        function ResetOrthButtonPushed(app, ~)
+            app.orth_initialized = false;
+            app.orth_x_vals = [];
+            app.orth_f_vals = [];
+            app.orth_length_geodesic = [];
+            app.orth_results = [];
+            app.orth_percentages = [];
+            app.orth_snapshots = {};
+            app.OrthTable.Data = [];
+            app.OrthStatusLabel.Text = 'Orthospectrum reset. Ready.';
+        end
+
+        function PlayButtonPushed(app, ~)
+            if isempty(app.to_music)
+                app.MusicStatusLabel.Text = 'No data. Run geodesic first.';
+                return;
+            end
+
+            app.StopMusicRequested = false;
+            app.PlayButton.Enable = 'off';
+            app.StopMusicButton.Enable = 'on';
+            speed = app.SpeedMultSpinner.Value;
+            notes_frequency = [440.00, 554.37, 659.25];
+            fs = 44100;
+
+            % Precompute marimba signals for each curve
+            app.MusicStatusLabel.Text = 'Precomputing sounds...';
+            drawnow;
+            signals = cell(1, length(notes_frequency));
+            for k = 1:length(notes_frequency)
+                signals{k} = play_note_marimba(notes_frequency, k);
+            end
+
+            app.MusicStatusLabel.Text = 'Playing...';
+            drawnow;
+
+            for i = 1:size(app.to_music, 1)
+                if app.StopMusicRequested
+                    break;
+                end
+                wait_time = app.to_music(i, 1) / speed;
+                which_curve = round(app.to_music(i, 2));
+
+                if which_curve >= 1 && which_curve <= length(signals)
+                    sound(signals{which_curve}, fs);
+                end
+                pause(wait_time);
+            end
+
+            app.PlayButton.Enable = 'on';
+            app.StopMusicButton.Enable = 'off';
+            app.MusicStatusLabel.Text = 'Playback finished.';
+        end
+
+        function StopMusicButtonPushed(app, ~)
+            app.StopMusicRequested = true;
+            app.MusicStatusLabel.Text = 'Stopping...';
+        end
+
+        function SaveWavButtonPushed(app, ~)
+            if isempty(app.to_music)
+                app.MusicStatusLabel.Text = 'No data. Run geodesic first.';
+                return;
+            end
+
+            speed = app.SpeedMultSpinner.Value;
+            notes_frequency = [440.00, 554.37, 659.25];
+            fs = 44100;
+            attack = 0.01;
+            release = 0.02;
+
+            app.MusicStatusLabel.Text = 'Building audio...';
+            drawnow;
+
+            max_duration = 10 * 60;  % 10 minutes in seconds
+            max_samples = max_duration * fs;
+            y = [];
+            for i = 1:size(app.to_music, 1)
+                wait_time = app.to_music(i, 1) / speed;
+                which_curve = round(app.to_music(i, 2));
+
+                if which_curve < 1 || which_curve > 3
+                    continue;
+                end
+
+                f = notes_frequency(which_curve);
+                dur = wait_time;
+                nSamples = max(1, round(dur * fs));
+                t = (0:nSamples-1) / fs;
+
+                % Marimba-like synthesis
+                fund = 1.0 * sin(2*pi*f*t) .* exp(-5 * t);
+                h4   = 0.4 * sin(2*pi*(f*4.01)*t) .* exp(-15 * t);
+                h10  = 0.15 * sin(2*pi*(f*10)*t) .* exp(-50 * t);
+                thud = 0.1 * rand(1, length(t)) .* exp(-100 * t);
+                seg = (fund + h4 + h10 + thud);
+
+                % Envelope
+                a = min(attack, dur/4);
+                r = min(release, dur/4);
+                na = round(a * fs);
+                nr = round(r * fs);
+                env = ones(1, nSamples);
+                if na > 0, env(1:na) = linspace(0, 1, na); end
+                if nr > 0, env(end-nr+1:end) = linspace(1, 0, nr); end
+
+                y = [y, seg .* env];
+
+                if length(y) >= max_samples
+                    y = y(1:max_samples);
+                    app.MusicStatusLabel.Text = 'Building audio... (10 min limit reached)';
+                    break;
+                end
+            end
+
+            if isempty(y)
+                app.MusicStatusLabel.Text = 'No audio generated.';
+                return;
+            end
+
+            y = y / max(abs(y) + eps);
+
+            [file, path] = uiputfile('*.wav', 'Save WAV file', 'hypermozart.wav');
+            if isequal(file, 0)
+                app.MusicStatusLabel.Text = 'Save cancelled.';
+                return;
+            end
+            filepath = fullfile(path, file);
+            audiowrite(filepath, y.', fs);
+            app.MusicStatusLabel.Text = sprintf('Saved to %s', file);
         end
 
         % =================================================================
@@ -290,7 +642,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
             delete_geodesics_after = app.DeleteAfterSpinner.Value;
 
             notes_frequency   = [440.00, 554.37, 659.25];
-            how_long_note_played = 0.1;
+            fs_audio = 44100;
+            % Precompute marimba signals for playback during visualization
+            geo_signals = cell(1, length(notes_frequency));
+            for k = 1:length(notes_frequency)
+                geo_signals{k} = play_note_marimba(notes_frequency, k);
+            end
 
             if app.Curve1CheckBox.Value
                 combination_curve_count_intersections1 = [1,1; 2,1; 3,1; 4,1];
@@ -352,7 +709,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % --- Visualization setup ---
             if visualize
                 cla(app.Ax1); cla(app.Ax2); cla(app.Ax3); cla(app.Ax4);
-                app.HexPanel.Visible = 'on';
+                app.CenterTabGroup.SelectedTab = app.HexTab;
                 appAxes = {app.Ax1, app.Ax2, app.Ax3, app.Ax4};
                 Styles = curves_S2_styles();
                 styleFunc = @(x,y) get_hexagon_style_separating(x,y);
@@ -363,7 +720,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                     axis(ax, 'equal');
                     % Draw Poincare disk
                     theta_circ = linspace(0, 2*pi, 200);
-                    plot(ax, cos(theta_circ), sin(theta_circ), 'k-', 'LineWidth', 1);
+                    plot(ax, cos(theta_circ), sin(theta_circ), 'k-', 'LineWidth', 1,'LineJoin', 'chamfer');
                     % Draw hexagon edges (replicate arc computation inline)
                     for s_idx = 1:6
                         if s_idx == 6
@@ -381,7 +738,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                         th = linspace(a1, a2, points_draw_geodesics);
                         sty = Styles{styleFunc(pi_idx, s_idx)};
                         plot(ax, ctr(1)+rad*cos(th), ctr(2)+rad*sin(th), ...
-                            'Color', sty{1}, 'LineStyle', sty{2}, 'LineWidth', sty{3});
+                            'Color', sty{1}, 'LineStyle', sty{2}, 'LineWidth', sty{3},'LineJoin', 'chamfer');
                     end
                     title(ax, sprintf('Polytope %d', pi_idx));
                     xlim(ax, [-1.1 1.1]);
@@ -390,7 +747,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 drawn_geodesics = {};
                 drawnow;
             else
-                app.HexPanel.Visible = 'off';
+                % No visualization — don't switch tabs
             end
 
             % --- Main loop ---
@@ -431,7 +788,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
                     % Animated drawing with explicit parent axes
                     len_seg = distance_two_points(seg_vis.startpoint, seg_vis.endpoint);
-                    h = animatedline(ax, 'Color', 'r', 'LineWidth', 1);
+                    h = animatedline(ax, 'Color', 'r');
                     for k = 1:length(xarc)
                         addpoints(h, xarc(k), yarc(k));
                         drawnow limitrate;
@@ -474,7 +831,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                         end
                         if visualize
                             try
-                                play_note_marimba(notes_frequency, which_curve, how_long_note_played);
+                                sound(geo_signals{which_curve}, fs_audio);
                             catch
                             end
                         end
@@ -588,64 +945,70 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.ParametersPanel.Position = [10 370 300 520];
             app.ParametersPanel.FontWeight = 'bold';
 
-            % Info button — shows genus-2 surface topology
-            app.InfoButton = uibutton(app.UIFigure, 'push');
-            app.InfoButton.Text = char(9432);  % circled "i" character
-            app.InfoButton.Position = [270 880 35 25];
-            app.InfoButton.FontSize = 14;
-            app.InfoButton.Tooltip = 'Show genus-2 surface topology';
-            app.InfoButton.ButtonPushedFcn = createCallbackFcn(app, @InfoButtonPushed, true);
+            % Info button — parameters panel documentation
+            app.InfoParamsButton = uibutton(app.UIFigure, 'push');
+            app.InfoParamsButton.Text = char(9432);
+            app.InfoParamsButton.Position = [270 880 35 25];
+            app.InfoParamsButton.FontSize = 14;
+            app.InfoParamsButton.Tooltip = 'Help: Surface Parameters';
+            app.InfoParamsButton.ButtonPushedFcn = createCallbackFcn(app, @InfoParamsButtonPushed, true);
 
             % --- Curve lengths ---
             y = 460;
             app.L1Label = uilabel(app.ParametersPanel, 'Text', 'L1 (curve 1 length)', ...
                 'Position', [10 y 140 22]);
             app.L1Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 5, ...
+                'Position', [160 y 120 22], 'Value', 4, ...
                 'Limits', [0.1 100], 'Step', 0.5, 'ValueDisplayFormat', '%.2f');
 
             y = y - 35;
             app.L2Label = uilabel(app.ParametersPanel, 'Text', 'L2 (curve 2 length)', ...
                 'Position', [10 y 140 22]);
             app.L2Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 3, ...
+                'Position', [160 y 120 22], 'Value', 2, ...
                 'Limits', [0.1 100], 'Step', 0.5, 'ValueDisplayFormat', '%.2f');
 
             y = y - 35;
             app.L3Label = uilabel(app.ParametersPanel, 'Text', 'L3 (curve 3 length)', ...
                 'Position', [10 y 140 22]);
             app.L3Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 3, ...
+                'Position', [160 y 120 22], 'Value', 3.5, ...
                 'Limits', [0.1 100], 'Step', 0.5, 'ValueDisplayFormat', '%.2f');
 
             % --- Draw hexagons preview button ---
             y = y - 32;
             app.DrawHexButton = uibutton(app.ParametersPanel, 'push');
             app.DrawHexButton.Text = 'Draw Hexagons';
-            app.DrawHexButton.Position = [55 y 170 25];
+            app.DrawHexButton.Position = [10 y 130 25];
             app.DrawHexButton.FontSize = 11;
             app.DrawHexButton.ButtonPushedFcn = createCallbackFcn(app, @DrawHexButtonPushed, true);
+
+            app.Draw3DButton = uibutton(app.ParametersPanel, 'push');
+            app.Draw3DButton.Text = 'Draw 3D Surface';
+            app.Draw3DButton.Position = [150 y 130 25];
+            app.Draw3DButton.FontSize = 11;
+            app.Draw3DButton.ButtonPushedFcn = createCallbackFcn(app, @Draw3DButtonPushed, true);
 
             % --- Twist parameters ---
             y = y - 45;
             app.T1Label = uilabel(app.ParametersPanel, 'Text', 'T1 (twist param 1)', ...
                 'Position', [10 y 140 22]);
             app.T1Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 0, ...
+                'Position', [160 y 120 22], 'Value', 1, ...
                 'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
 
             y = y - 35;
             app.T2Label = uilabel(app.ParametersPanel, 'Text', 'T2 (twist param 2)', ...
                 'Position', [10 y 140 22]);
             app.T2Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 0, ...
+                'Position', [160 y 120 22], 'Value', 4.5, ...
                 'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
 
             y = y - 35;
             app.T3Label = uilabel(app.ParametersPanel, 'Text', 'T3 (twist param 3)', ...
                 'Position', [10 y 140 22]);
             app.T3Spinner = uispinner(app.ParametersPanel, ...
-                'Position', [160 y 120 22], 'Value', 0, ...
+                'Position', [160 y 120 22], 'Value', 2, ...
                 'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
 
             % --- Active curves ---
@@ -653,9 +1016,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.Curve1CheckBox = uicheckbox(app.ParametersPanel, ...
                 'Text', 'Curve 1', 'Position', [10 y 80 22], 'Value', true);
             app.Curve2CheckBox = uicheckbox(app.ParametersPanel, ...
-                'Text', 'Curve 2', 'Position', [100 y 80 22], 'Value', false);
+                'Text', 'Curve 2', 'Position', [100 y 80 22], 'Value', true);
             app.Curve3CheckBox = uicheckbox(app.ParametersPanel, ...
-                'Text', 'Curve 3', 'Position', [190 y 80 22], 'Value', false);
+                'Text', 'Curve 3', 'Position', [190 y 80 22], 'Value', true);
 
             % --- Max geodesic length ---
             y = y - 45;
@@ -672,6 +1035,13 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.VisualizationPanel.Title = 'Visualization';
             app.VisualizationPanel.Position = [10 150 300 210];
             app.VisualizationPanel.FontWeight = 'bold';
+
+            app.InfoVisButton = uibutton(app.UIFigure, 'push');
+            app.InfoVisButton.Text = char(9432);
+            app.InfoVisButton.Position = [270 350 35 25];
+            app.InfoVisButton.FontSize = 14;
+            app.InfoVisButton.Tooltip = 'Help: Visualization';
+            app.InfoVisButton.ButtonPushedFcn = createCallbackFcn(app, @InfoVisButtonPushed, true);
 
             y = 160;
             app.VisualizeCheckBox = uicheckbox(app.VisualizationPanel, ...
@@ -728,7 +1098,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.StopButton.ButtonPushedFcn = createCallbackFcn(app, @StopButtonPushed, true);
 
             app.ProgressGauge = uigauge(app.UIFigure, 'linear');
-            app.ProgressGauge.Position = [10 65 300 25];
+            app.ProgressGauge.Position = [10 55 300 45];
             app.ProgressGauge.Limits = [0 100];
             app.ProgressGauge.Value = 0;
 
@@ -738,19 +1108,19 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.StatusLabel.FontColor = [0.2 0.2 0.6];
 
             % =============================================================
-            %  MIDDLE — Hexagon axes panel (x: 320..870)
+            %  MIDDLE — Tab group with multiple views (x: 320..870)
             % =============================================================
-            app.HexPanel = uipanel(app.UIFigure);
-            app.HexPanel.Title = 'Geodesic Visualization';
-            app.HexPanel.Position = [320 10 550 880];
-            app.HexPanel.FontWeight = 'bold';
-            app.HexPanel.Visible = 'off';
+            app.CenterTabGroup = uitabgroup(app.UIFigure);
+            app.CenterTabGroup.Position = [320 10 550 880];
 
-            axW = 240; axH = 350;
-            app.Ax1 = uiaxes(app.HexPanel, 'Position', [15,  470, axW, axH]);
-            app.Ax2 = uiaxes(app.HexPanel, 'Position', [280, 470, axW, axH]);
-            app.Ax3 = uiaxes(app.HexPanel, 'Position', [15,  50,  axW, axH]);
-            app.Ax4 = uiaxes(app.HexPanel, 'Position', [280, 50,  axW, axH]);
+            % --- Hexagons tab ---
+            app.HexTab = uitab(app.CenterTabGroup, 'Title', 'Hexagons');
+
+            axW = 240; axH = 380;
+            app.Ax1 = uiaxes(app.HexTab, 'Position', [15,  440, axW, axH]);
+            app.Ax2 = uiaxes(app.HexTab, 'Position', [280, 440, axW, axH]);
+            app.Ax3 = uiaxes(app.HexTab, 'Position', [15,  20,  axW, axH]);
+            app.Ax4 = uiaxes(app.HexTab, 'Position', [280, 20,  axW, axH]);
 
             for ax = [app.Ax1, app.Ax2, app.Ax3, app.Ax4]
                 ax.Box = 'on';
@@ -759,15 +1129,90 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 ax.YLim = [-1.1 1.1];
             end
 
+            % --- CDF Plots tab ---
+            app.CDFTab = uitab(app.CenterTabGroup, 'Title', 'CDF Plots');
+
+            app.CDFAxes = uiaxes(app.CDFTab, 'Position', [40 40 480 780]);
+            title(app.CDFAxes, 'Orthospectrum CDF');
+            xlabel(app.CDFAxes, 'Length');
+            ylabel(app.CDFAxes, 'CDF');
+            grid(app.CDFAxes, 'on');
+
+            % --- 3D Surface tab ---
+            app.SurfaceTab = uitab(app.CenterTabGroup, 'Title', '3D Surface');
+
+            app.SurfaceAxes = uiaxes(app.SurfaceTab, 'Position', [20 20 510 810]);
+
             % =============================================================
-            %  RIGHT COLUMN — Orthospectrum Panel (x: 880..1290)
+            %  RIGHT COLUMN — Music Panel (x: 880..1290, top)
+            % =============================================================
+            app.MusicPanel = uipanel(app.UIFigure);
+            app.MusicPanel.Title = 'Music';
+            app.MusicPanel.Position = [880 660 410 230];
+            app.MusicPanel.FontWeight = 'bold';
+
+            app.InfoMusicButton = uibutton(app.UIFigure, 'push');
+            app.InfoMusicButton.Text = char(9432);
+            app.InfoMusicButton.Position = [1255 880 35 25];
+            app.InfoMusicButton.FontSize = 14;
+            app.InfoMusicButton.Tooltip = 'Help: Music';
+            app.InfoMusicButton.ButtonPushedFcn = createCallbackFcn(app, @InfoMusicButtonPushed, true);
+
+            ym = 180;
+            app.SpeedMultLabel = uilabel(app.MusicPanel, 'Text', 'Speed multiplier', ...
+                'Position', [10 ym 120 22]);
+            app.SpeedMultSpinner = uispinner(app.MusicPanel, ...
+                'Position', [140 ym 100 22], 'Value', 10, ...
+                'Limits', [0.1 1000], 'Step', 1, 'ValueDisplayFormat', '%.1f');
+
+            ym = ym - 40;
+            app.PlayButton = uibutton(app.MusicPanel, 'push');
+            app.PlayButton.Text = 'Play';
+            app.PlayButton.Position = [10 ym 90 30];
+            app.PlayButton.FontWeight = 'bold';
+            app.PlayButton.BackgroundColor = [0.3 0.7 0.3];
+            app.PlayButton.FontColor = [1 1 1];
+            app.PlayButton.ButtonPushedFcn = createCallbackFcn(app, @PlayButtonPushed, true);
+
+            app.StopMusicButton = uibutton(app.MusicPanel, 'push');
+            app.StopMusicButton.Text = 'Stop';
+            app.StopMusicButton.Position = [110 ym 70 30];
+            app.StopMusicButton.FontWeight = 'bold';
+            app.StopMusicButton.BackgroundColor = [0.85 0.25 0.25];
+            app.StopMusicButton.FontColor = [1 1 1];
+            app.StopMusicButton.Enable = 'off';
+            app.StopMusicButton.ButtonPushedFcn = createCallbackFcn(app, @StopMusicButtonPushed, true);
+
+            app.SaveWavButton = uibutton(app.MusicPanel, 'push');
+            app.SaveWavButton.Text = 'Save WAV';
+            app.SaveWavButton.Position = [190 ym 110 30];
+            app.SaveWavButton.FontWeight = 'bold';
+            app.SaveWavButton.BackgroundColor = [0.2 0.4 0.8];
+            app.SaveWavButton.FontColor = [1 1 1];
+            app.SaveWavButton.ButtonPushedFcn = createCallbackFcn(app, @SaveWavButtonPushed, true);
+
+            ym = ym - 35;
+            app.MusicStatusLabel = uilabel(app.MusicPanel);
+            app.MusicStatusLabel.Position = [10 ym 380 22];
+            app.MusicStatusLabel.Text = 'Run geodesic computation first.';
+            app.MusicStatusLabel.FontColor = [0.2 0.2 0.6];
+
+            % =============================================================
+            %  RIGHT COLUMN — Orthospectrum Panel (x: 880..1290, bottom)
             % =============================================================
             app.OrthPanel = uipanel(app.UIFigure);
             app.OrthPanel.Title = 'Orthospectrum Computation';
-            app.OrthPanel.Position = [880 10 410 880];
+            app.OrthPanel.Position = [880 10 410 640];
             app.OrthPanel.FontWeight = 'bold';
 
-            y = 740;
+            app.InfoOrthButton = uibutton(app.UIFigure, 'push');
+            app.InfoOrthButton.Text = char(9432);
+            app.InfoOrthButton.Position = [1255 640 35 25];
+            app.InfoOrthButton.FontSize = 14;
+            app.InfoOrthButton.Tooltip = 'Help: Orthospectrum';
+            app.InfoOrthButton.ButtonPushedFcn = createCallbackFcn(app, @InfoOrthButtonPushed, true);
+
+            y = 500;
             app.CurveIndexLabel = uilabel(app.OrthPanel, 'Text', 'Curve index', ...
                 'Position', [10 y 120 22]);
             app.CurveIndexDropDown = uidropdown(app.OrthPanel, ...
@@ -782,33 +1227,39 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Limits', [-100 0], 'Step', 1);
 
             y = y - 35;
-            app.HowManyLabel = uilabel(app.OrthPanel, 'Text', 'How many values', ...
-                'Position', [10 y 120 22]);
-            app.HowManySpinner = uispinner(app.OrthPanel, ...
-                'Position', [140 y 80 22], 'Value', 5, ...
-                'Limits', [1 100], 'Step', 1);
-
-            y = y - 35;
-            app.SamplePointsLabel = uilabel(app.OrthPanel, 'Text', 'Sample points (density)', ...
-                'Position', [10 y 160 22]);
+            app.SamplePointsLabel = uilabel(app.OrthPanel, 'Text', 'Sample points (subtraction)', ...
+                'Position', [10 y 170 22]);
             app.SamplePointsSpinner = uispinner(app.OrthPanel, ...
-                'Position', [180 y 80 22], 'Value', 100000, ...
+                'Position', [190 y 80 22], 'Value', 100000, ...
                 'Limits', [1000 5000000], 'Step', 50000, 'ValueDisplayFormat', '%.0f');
 
             y = y - 35;
             app.DrawOrthCheckBox = uicheckbox(app.OrthPanel, ...
                 'Text', 'Draw intermediate CDF plots', ...
+                'Position', [10 y 250 22], 'Value', true);
+
+            y = y - 30;
+            app.SymmetricCheckBox = uicheckbox(app.OrthPanel, ...
+                'Text', 'Assume symmetric loops (2x)', ...
                 'Position', [10 y 250 22], 'Value', false);
 
             y = y - 40;
             app.ComputeOrthButton = uibutton(app.OrthPanel, 'push');
-            app.ComputeOrthButton.Text = 'Compute Orthospectrum';
-            app.ComputeOrthButton.Position = [10 y 220 35];
+            app.ComputeOrthButton.Text = 'Compute Next Element';
+            app.ComputeOrthButton.Position = [10 y 180 35];
             app.ComputeOrthButton.FontWeight = 'bold';
             app.ComputeOrthButton.BackgroundColor = [0.2 0.4 0.8];
             app.ComputeOrthButton.FontColor = [1 1 1];
             app.ComputeOrthButton.Enable = 'off';
             app.ComputeOrthButton.ButtonPushedFcn = createCallbackFcn(app, @ComputeOrthButtonPushed, true);
+
+            app.ResetOrthButton = uibutton(app.OrthPanel, 'push');
+            app.ResetOrthButton.Text = 'Reset';
+            app.ResetOrthButton.Position = [200 y 80 35];
+            app.ResetOrthButton.FontWeight = 'bold';
+            app.ResetOrthButton.BackgroundColor = [0.7 0.2 0.2];
+            app.ResetOrthButton.FontColor = [1 1 1];
+            app.ResetOrthButton.ButtonPushedFcn = createCallbackFcn(app, @ResetOrthButtonPushed, true);
 
             y = y - 30;
             app.OrthStatusLabel = uilabel(app.OrthPanel);
@@ -819,8 +1270,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
             y = y - 25;
             app.OrthTable = uitable(app.OrthPanel);
             app.OrthTable.Position = [10 10 380 y];
-            app.OrthTable.ColumnName = {'Index', 'Length'};
-            app.OrthTable.ColumnWidth = {60, 300};
+            app.OrthTable.ColumnName = {'Index', 'Length', 'Prob. %'};
+            app.OrthTable.ColumnWidth = {50, 200, 100};
+            app.OrthTable.CellSelectionCallback = createCallbackFcn(app, @OrthTableCellSelected, true);
 
             % --- Show figure ---
             app.UIFigure.Visible = 'on';

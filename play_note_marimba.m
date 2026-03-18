@@ -1,8 +1,9 @@
-function play_note_marimba(frequencies, noteIdx, how_long)
-%PLAY_NOTE Play a given note. Give a little marimba flavour.
+function final_signal = play_note_marimba(frequencies, noteIdx)
+%PLAY_NOTE_MARIMBA Generate a marimba-like signal for a given note.
+%   Returns the normalized signal. Call sound(final_signal, 44100) to play.
 fs = 44100;
 t = 0:1/fs:1.5;
-f= frequencies(noteIdx);  % Frequency
+f = frequencies(noteIdx);  % Frequency
 
 % 1. Fundamental: The "body" of the wood (slow decay)
 fund = 1.0 * sin(2*pi*f*t) .* exp(-5 * t);
@@ -31,7 +32,6 @@ envelope(1:samples_attack) = linspace(0, 1, samples_attack);
 
 final_signal = marimba .* envelope;
 
-% Normalize and Play
+% Normalize
 final_signal = final_signal / max(abs(final_signal));
-sound(final_signal, fs);
 end
