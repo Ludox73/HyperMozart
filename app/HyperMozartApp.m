@@ -649,23 +649,23 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 geo_signals{k} = play_note_marimba(notes_frequency, k);
             end
 
+            gluing = create_gluing_standard_S2();
+
             if app.Curve1CheckBox.Value
-                combination_curve_count_intersections1 = [1,1; 2,1; 3,1; 4,1];
+                curve_combinations_1 = gluing.curve_combinations{1};
             else
-                combination_curve_count_intersections1 = [0,0];
+                curve_combinations_1 = [0,0];
             end
             if app.Curve2CheckBox.Value
-                combination_curve_count_intersections2 = [1,3; 1,5; 2,3; 2,5];
+                curve_combinations_2 = gluing.curve_combinations{2};
             else
-                combination_curve_count_intersections2 = [0,0];
+                curve_combinations_2 = [0,0];
             end
             if app.Curve3CheckBox.Value
-                combination_curve_count_intersections3 = [3,3; 3,5; 4,3; 4,5];
+                curve_combinations_3 = gluing.curve_combinations{3};
             else
-                combination_curve_count_intersections3 = [0,0];
+                curve_combinations_3 = [0,0];
             end
-
-            combination_noncoherent_orientation = [1,2; 1,4; 2,1; 2,3; 3,2; 3,4; 4,1; 4,3];
 
             % --- Build polytopes ---
             curves_intersected = zeros(1, Max_len_geodesic);
@@ -676,10 +676,6 @@ classdef HyperMozartApp < matlab.apps.AppBase
             polytopes{2} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(2)/2, lengths_curves(2)/2);
             polytopes{3} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
             polytopes{4} = rectangular_hexagon_centered(lengths_curves(1)/2, lengths_curves(3)/2, lengths_curves(3)/2);
-
-            t1 = twisted_parameters(1);
-            t2 = twisted_parameters(2);
-            t3 = twisted_parameters(3);
 
             p_1 = barycenter_cell_of_points(polytopes{1});
             polytope_index = 1;
@@ -816,9 +812,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 travelled_since_last_intersection = travelled_since_last_intersection + dtp;
 
                 % Check curve intersections
-                intersects_curve_1 = is_row([polytope_index, side], combination_curve_count_intersections1);
-                intersects_curve_2 = is_row([polytope_index, side], combination_curve_count_intersections2);
-                intersects_curve_3 = is_row([polytope_index, side], combination_curve_count_intersections3);
+                intersects_curve_1 = is_row([polytope_index, side], curve_combinations_1);
+                intersects_curve_2 = is_row([polytope_index, side], curve_combinations_2);
+                intersects_curve_3 = is_row([polytope_index, side], curve_combinations_3);
 
                 if intersects_curve_1 || intersects_curve_2 || intersects_curve_3
                     if ~first_cycle
@@ -844,13 +840,13 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 end
 
                 % Compute pairing / next initial vector
-                [out_fund_dom_index, out_side_index, isometry] = pairing_hexagon_standard_S2( ...
-                    polytope_index, side, t1, t2, t3, point_and_vec_inters.point, polytopes);
+                [out_fund_dom_index, out_side_index, isometry] = pairing_from_gluing( ...
+                    gluing, polytope_index, side, twisted_parameters, point_and_vec_inters.point, polytopes);
 
                 [new_point1, new_tg_vector1] = isometry.apply_poincare_point_and_vector( ...
                     point_and_vec_inters.point, point_and_vec_inters.tg_vector);
 
-                if is_row([polytope_index, out_fund_dom_index], combination_noncoherent_orientation)
+                if is_row([polytope_index, out_fund_dom_index], gluing.noncoherent_pairs)
                     if out_side_index == 6
                         index2 = 1;
                     else
