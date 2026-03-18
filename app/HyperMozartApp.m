@@ -6,6 +6,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
         % --- Left panel: Parameters ---
         ParametersPanel              matlab.ui.container.Panel
+        GluingDropDown               matlab.ui.control.DropDown
         InfoParamsButton             matlab.ui.control.Button
         InfoVisButton                matlab.ui.control.Button
         InfoMusicButton              matlab.ui.control.Button
@@ -316,7 +317,11 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % Preview the 4 hexagons in the central panel using current L values
             lengths_curves = [app.L1Spinner.Value, app.L2Spinner.Value, app.L3Spinner.Value];
             points_draw = 200;
-            gluing_preview = create_gluing_standard_S2();
+            if strcmp(app.GluingDropDown.Value, 'Standard S2')
+                gluing_preview = create_gluing_standard_S2();
+            else
+                gluing_preview = create_gluing_nonseparating_S2();
+            end
             polytopes = build_polytopes_from_gluing(gluing_preview, lengths_curves);
 
             Styles = curves_S2_styles();
@@ -645,7 +650,11 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 geo_signals{k} = play_note_marimba(notes_frequency, k);
             end
 
-            gluing = create_gluing_standard_S2();
+            if strcmp(app.GluingDropDown.Value, 'Standard S2')
+                gluing = create_gluing_standard_S2();
+            else
+                gluing = create_gluing_nonseparating_S2();
+            end
 
             if app.Curve1CheckBox.Value
                 curve_combinations_1 = gluing.curve_combinations{1};
@@ -930,7 +939,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.ParametersPanel = uipanel(app.UIFigure);
             app.ParametersPanel.Title = 'Surface Parameters';
-            app.ParametersPanel.Position = [10 370 300 520];
+            app.ParametersPanel.Position = [10 335 300 555];
             app.ParametersPanel.FontWeight = 'bold';
 
             % Info button — parameters panel documentation
@@ -940,6 +949,14 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.InfoParamsButton.FontSize = 14;
             app.InfoParamsButton.Tooltip = 'Help: Surface Parameters';
             app.InfoParamsButton.ButtonPushedFcn = createCallbackFcn(app, @InfoParamsButtonPushed, true);
+
+            % --- Gluing selector ---
+            uilabel(app.ParametersPanel, 'Text', 'Surface type', ...
+                'Position', [10 492 95 22], 'FontWeight', 'bold');
+            app.GluingDropDown = uidropdown(app.ParametersPanel, ...
+                'Items', {'Standard S2', 'Nonseparating S2'}, ...
+                'Position', [115 492 165 22], ...
+                'Value', 'Standard S2');
 
             % --- Curve lengths ---
             y = 460;
