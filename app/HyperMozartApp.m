@@ -34,14 +34,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
         % Geodesic initial conditions panel
         GeodesicPanel                matlab.ui.container.Panel
         InfoGeodesicButton           matlab.ui.control.Button
-        InitCondLabel                matlab.ui.control.Label
-        InitCondDropDown             matlab.ui.control.DropDown
-        AngleLabel                   matlab.ui.control.Label
-        AngleSpinner                 matlab.ui.control.Spinner
-        SaveArcMinThreshLabel        matlab.ui.control.Label
-        SaveArcMinThreshSpinner      matlab.ui.control.Spinner
-        SaveArcThreshLabel           matlab.ui.control.Label
-        SaveArcThreshSpinner         matlab.ui.control.Spinner
+        InitCondButton               matlab.ui.control.Button
+        SaveArcFiltersButton         matlab.ui.control.Button
 
         Curve1CheckBox               matlab.ui.control.CheckBox
         Curve2CheckBox               matlab.ui.control.CheckBox
@@ -56,14 +50,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
         % Visualization options
         VisualizationPanel           matlab.ui.container.Panel
         VisualizeCheckBox            matlab.ui.control.CheckBox
-        PointsDrawLabel              matlab.ui.control.Label
-        PointsDrawSpinner            matlab.ui.control.Spinner
-        SpeedDrawLabel               matlab.ui.control.Label
-        SpeedDrawSpinner             matlab.ui.control.Spinner
-        GreyAfterLabel               matlab.ui.control.Label
-        GreyAfterSpinner             matlab.ui.control.Spinner
-        DeleteAfterLabel             matlab.ui.control.Label
-        DeleteAfterSpinner           matlab.ui.control.Spinner
+        VisDrawOptionsButton         matlab.ui.control.Button
 
         % Run button & status
         RunButton                    matlab.ui.control.Button
@@ -120,7 +107,17 @@ classdef HyperMozartApp < matlab.apps.AppBase
         ShortGeoLSpinner             matlab.ui.control.Spinner
         ShortGeoNLabel               matlab.ui.control.Label
         ShortGeoNSpinner             matlab.ui.control.Spinner
+        ShortGeoInitAngMinLabel      matlab.ui.control.Label
+        ShortGeoInitAngMinSpinner    matlab.ui.control.Spinner
+        ShortGeoInitAngMaxLabel      matlab.ui.control.Label
+        ShortGeoInitAngMaxSpinner    matlab.ui.control.Spinner
+        ShortGeoFinalAngMinLabel     matlab.ui.control.Label
+        ShortGeoFinalAngMinSpinner   matlab.ui.control.Spinner
+        ShortGeoFinalAngMaxLabel     matlab.ui.control.Label
+        ShortGeoFinalAngMaxSpinner   matlab.ui.control.Spinner
+        ShortGeoSlowCheckBox         matlab.ui.control.CheckBox
         ShortGeoRunButton            matlab.ui.control.Button
+        ShortGeoStopButton           matlab.ui.control.Button
         ShortGeoStatusLabel          matlab.ui.control.Label
     end
 
@@ -129,6 +126,21 @@ classdef HyperMozartApp < matlab.apps.AppBase
         to_music                     % Result matrix from geodesic computation
         points_distribution          % Nx3 matrix [position, angle, travel_time] for distribution plot
         inter_crossing_arcs          % Cell array of arcs between curve crossings (for short-geo drawing)
+        % Initial condition options (edited via dialog)
+        initCondMode  = 'Barycenter, random speed after 1000s'
+        initCondAngle = 0
+        % Visualization drawing options (edited via dialog)
+        visPointsPerGeo  = 10
+        visDrawingSpeed  = 2
+        visGreyAfterN    = 2
+        visDeleteAfterN  = Inf
+        % Save-arc filter values (edited via dialog)
+        saveArcMinLen      = 0
+        saveArcMaxLen      = Inf
+        saveArcInitAngMin  = 1.54
+        saveArcInitAngMax  = 1.60
+        saveArcFinalAngMin = 1.54
+        saveArcFinalAngMax = 1.60
         StopRequested logical = false
         IsRunning     logical = false
         % Orthospectrum incremental state
@@ -140,6 +152,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
         orth_snapshots               % Cell array of saved CDF plot data per element
         orth_initialized logical = false
         StopMusicRequested logical = false
+        ShortGeoStopRequested logical = false
         marimba_signals              % Precomputed marimba signals for each curve
     end
 
@@ -217,6 +230,45 @@ classdef HyperMozartApp < matlab.apps.AppBase
             uialert(app.UIFigure, strjoin(msg, newline), 'Surface Parameters', 'Icon', 'info');
         end
 
+        function VisDrawOptionsButtonPushed(app, ~)
+            dlg = uifigure('Name', 'Drawing Options', ...
+                'Position', [500 400 310 210], 'Resize', 'off');
+
+            uilabel(dlg, 'Text', 'Points per geodesic', 'Position', [10 168 140 22]);
+            sp_pts = uispinner(dlg, 'Position', [160 168 130 22], ...
+                'Value', app.visPointsPerGeo, 'Limits', [2 500], 'Step', 5);
+
+            uilabel(dlg, 'Text', 'Drawing speed', 'Position', [10 128 140 22]);
+            sp_spd = uispinner(dlg, 'Position', [160 128 130 22], ...
+                'Value', app.visDrawingSpeed, 'Limits', [0.1 100], ...
+                'Step', 0.5, 'ValueDisplayFormat', '%.1f');
+
+            uilabel(dlg, 'Text', 'Grey-out after N', 'Position', [10 88 140 22]);
+            sp_grey = uispinner(dlg, 'Position', [160 88 130 22], ...
+                'Value', app.visGreyAfterN, 'Limits', [1 1000], 'Step', 1);
+
+            uilabel(dlg, 'Text', 'Delete after N (Inf=never)', 'Position', [10 48 160 22]);
+            sp_del = uispinner(dlg, 'Position', [180 48 120 22], ...
+                'Value', app.visDeleteAfterN, 'Limits', [1 Inf], 'Step', 5);
+
+            uibutton(dlg, 'push', 'Text', 'OK', ...
+                'Position', [50 10 90 28], ...
+                'ButtonPushedFcn', @(~,~) uiresume(dlg));
+            uibutton(dlg, 'push', 'Text', 'Cancel', ...
+                'Position', [170 10 90 28], ...
+                'ButtonPushedFcn', @(~,~) close(dlg));
+
+            uiwait(dlg);
+
+            if isvalid(dlg)
+                app.visPointsPerGeo = sp_pts.Value;
+                app.visDrawingSpeed = sp_spd.Value;
+                app.visGreyAfterN   = sp_grey.Value;
+                app.visDeleteAfterN = sp_del.Value;
+                close(dlg);
+            end
+        end
+
         function InfoVisButtonPushed(app, ~)
             msg = { ...
                 'VISUALIZATION', '', ...
@@ -271,7 +323,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Compute Next Element — finds the shortest', ...
                 'remaining orthogeodesic via binary search,', ...
                 'subtracts its CDF contribution, then moves on.', '', ...
-                'Assume symmetric loops (2×) — assumes every', ...
+                'Assume symmetric arcs (2×) — assumes every', ...
                 'orthogeodesic has a twin of equal length.', ...
                 'This is expected on a genus-2 surface, since', ...
                 'each arc and its reverse count as two distinct', ...
@@ -553,6 +605,10 @@ classdef HyperMozartApp < matlab.apps.AppBase
             uialert(app.UIFigure, strjoin(msg, newline), 'Short Geodesics', 'Icon', 'info');
         end
 
+        function ShortGeoStopButtonPushed(app, ~)
+            app.ShortGeoStopRequested = true;
+        end
+
         function ShortGeoRunButtonPushed(app, ~)
             if isempty(app.inter_crossing_arcs)
                 uialert(app.UIFigure, ...
@@ -561,10 +617,14 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 return;
             end
 
-            L_min       = app.ShortGeoMinLSpinner.Value;
-            L_threshold = app.ShortGeoLSpinner.Value;
-            N_target    = app.ShortGeoNSpinner.Value;
-            pts         = app.PointsDrawSpinner.Value;
+            L_min        = app.ShortGeoMinLSpinner.Value;
+            L_threshold  = app.ShortGeoLSpinner.Value;
+            N_target     = app.ShortGeoNSpinner.Value;
+            pts          = app.visPointsPerGeo;
+            ia_min       = app.ShortGeoInitAngMinSpinner.Value;
+            ia_max       = app.ShortGeoInitAngMaxSpinner.Value;
+            fa_min       = app.ShortGeoFinalAngMinSpinner.Value;
+            fa_max       = app.ShortGeoFinalAngMaxSpinner.Value;
 
             % Draw hexagon backgrounds first
             DrawHexButtonPushed(app, []);
@@ -572,11 +632,23 @@ classdef HyperMozartApp < matlab.apps.AppBase
             appAxes = {app.Ax1, app.Ax2, app.Ax3, app.Ax4};
             arc_colors = {[0 0.45 0.74], [0.85 0.33 0.10], [0.47 0.67 0.19], [0.49 0.18 0.56]};
 
+            app.ShortGeoStopRequested = false;
+            app.ShortGeoStopButton.Enable = 'on';
+            app.ShortGeoRunButton.Enable = 'off';
+
             n_found = 0;
             for k = 1:length(app.inter_crossing_arcs)
+                if app.ShortGeoStopRequested, break; end
+
                 arc = app.inter_crossing_arcs{k};
 
                 if arc.length < L_min || arc.length >= L_threshold
+                    continue;
+                end
+                if arc.initial_angle < ia_min || arc.initial_angle > ia_max
+                    continue;
+                end
+                if arc.final_angle < fa_min || arc.final_angle > fa_max
                     continue;
                 end
 
@@ -584,6 +656,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 col = arc_colors{mod(n_found - 1, numel(arc_colors)) + 1};
 
                 for si = 1:length(arc.segments)
+                    if app.ShortGeoStopRequested, break; end
                     sd  = arc.segments{si};
                     p1  = sd{1};  p2 = sd{2};  pi_idx = sd{3};
                     ax  = appAxes{pi_idx};
@@ -597,6 +670,10 @@ classdef HyperMozartApp < matlab.apps.AppBase
                     th = linspace(a1, a2, pts);
                     plot(ax, ctr(1) + rad*cos(th), ctr(2) + rad*sin(th), ...
                         '-', 'Color', col, 'LineWidth', 1.5, 'LineJoin', 'chamfer');
+                    if app.ShortGeoSlowCheckBox.Value
+                        drawnow;
+                        pause(0.5);
+                    end
                 end
 
                 app.ShortGeoStatusLabel.Text = sprintf('Drew %d / %d', n_found, N_target);
@@ -607,7 +684,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 end
             end
 
-            if n_found == 0
+            app.ShortGeoStopButton.Enable = 'off';
+            app.ShortGeoRunButton.Enable = 'on';
+
+            if app.ShortGeoStopRequested
+                app.ShortGeoStatusLabel.Text = sprintf('Stopped. Drew %d arc(s).', n_found);
+            elseif n_found == 0
                 app.ShortGeoStatusLabel.Text = 'No arcs found with these parameters.';
             else
                 app.ShortGeoStatusLabel.Text = sprintf('Done. Drew %d arc(s).', n_found);
@@ -631,12 +713,100 @@ classdef HyperMozartApp < matlab.apps.AppBase
             uialert(app.UIFigure, strjoin(msg, newline), 'Intersection Distribution', 'Icon', 'info');
         end
 
-        function InitCondDropDownChanged(app, ~)
-            % Enable angle spinner only for the fixed-angle option
-            if strcmp(app.InitCondDropDown.Value, 'Barycenter, fixed angle')
-                app.AngleSpinner.Enable = 'on';
-            else
-                app.AngleSpinner.Enable = 'off';
+        function InitCondButtonPushed(app, ~)
+            dlg = uifigure('Name', 'Initial Conditions', ...
+                'Position', [500 420 320 160], 'Resize', 'off');
+
+            uilabel(dlg, 'Text', 'Mode', 'Position', [10 108 50 22]);
+            dd = uidropdown(dlg, ...
+                'Items', {'Barycenter, random speed', 'Barycenter, random speed after 1000s', 'Barycenter, fixed angle'}, ...
+                'Value', app.initCondMode, ...
+                'Position', [65 108 240 22]);
+
+            uilabel(dlg, 'Text', 'Angle (rad)', 'Position', [10 68 80 22]);
+            sp_ang = uispinner(dlg, 'Position', [95 68 130 22], ...
+                'Value', app.initCondAngle, ...
+                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f', ...
+                'Enable', matlab.lang.OnOffSwitchState(strcmp(app.initCondMode, 'Barycenter, fixed angle')));
+            dd.ValueChangedFcn = @(src,~) set(sp_ang, 'Enable', ...
+                matlab.lang.OnOffSwitchState(strcmp(src.Value, 'Barycenter, fixed angle')));
+
+            uibutton(dlg, 'push', 'Text', 'OK', ...
+                'Position', [50 16 90 28], ...
+                'ButtonPushedFcn', @(~,~) uiresume(dlg));
+            uibutton(dlg, 'push', 'Text', 'Cancel', ...
+                'Position', [180 16 90 28], ...
+                'ButtonPushedFcn', @(~,~) close(dlg));
+
+            uiwait(dlg);
+
+            if isvalid(dlg)
+                app.initCondMode  = dd.Value;
+                app.initCondAngle = sp_ang.Value;
+                close(dlg);
+            end
+        end
+
+        function SaveArcFiltersButtonPushed(app, ~)
+            dlg = uifigure('Name', 'Save Arc Filters', ...
+                'Position', [500 380 310 248], 'Resize', 'off');
+
+            uilabel(dlg, 'Text', 'Arc length:', 'Position', [10 206 75 22]);
+            sp_lmin = uispinner(dlg, 'Position', [90 206 90 22], ...
+                'Value', app.saveArcMinLen, 'Limits', [0 Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.4f');
+            uilabel(dlg, 'Text', 'to', 'Position', [184 206 18 22]);
+            sp_lmax = uispinner(dlg, 'Position', [205 206 95 22], ...
+                'Value', app.saveArcMaxLen, 'Limits', [0 Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.4f');
+
+            uilabel(dlg, 'Text', 'Init. angle [0, pi]:', 'Position', [10 166 72 22]);
+            sp_iamin = uispinner(dlg, 'Position', [90 166 90 22], ...
+                'Value', app.saveArcInitAngMin, 'Limits', [-Inf Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+            uilabel(dlg, 'Text', 'to', 'Position', [184 166 18 22]);
+            sp_iamax = uispinner(dlg, 'Position', [205 166 95 22], ...
+                'Value', app.saveArcInitAngMax, 'Limits', [-Inf Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+
+            uilabel(dlg, 'Text', 'Final angle [0, pi]:', 'Position', [10 126 72 22]);
+            sp_famin = uispinner(dlg, 'Position', [90 126 90 22], ...
+                'Value', app.saveArcFinalAngMin, 'Limits', [-Inf Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+            uilabel(dlg, 'Text', 'to', 'Position', [184 126 18 22]);
+            sp_famax = uispinner(dlg, 'Position', [205 126 95 22], ...
+                'Value', app.saveArcFinalAngMax, 'Limits', [-Inf Inf], ...
+                'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+
+            uibutton(dlg, 'push', 'Text', 'Only almost-perpendicular intersections', ...
+                'Position', [10 82 290 28], ...
+                'ButtonPushedFcn', @(~,~) setPerpendicularPreset( ...
+                    sp_iamin, sp_iamax, sp_famin, sp_famax));
+
+            uibutton(dlg, 'push', 'Text', 'OK', ...
+                'Position', [50 20 90 28], ...
+                'ButtonPushedFcn', @(~,~) uiresume(dlg));
+            uibutton(dlg, 'push', 'Text', 'Cancel', ...
+                'Position', [170 20 90 28], ...
+                'ButtonPushedFcn', @(~,~) close(dlg));
+
+            uiwait(dlg);
+
+            if isvalid(dlg)
+                app.saveArcMinLen      = sp_lmin.Value;
+                app.saveArcMaxLen      = sp_lmax.Value;
+                app.saveArcInitAngMin  = sp_iamin.Value;
+                app.saveArcInitAngMax  = sp_iamax.Value;
+                app.saveArcFinalAngMin = sp_famin.Value;
+                app.saveArcFinalAngMax = sp_famax.Value;
+                close(dlg);
+            end
+
+            function setPerpendicularPreset(sp_ia_min, sp_ia_max, sp_fa_min, sp_fa_max)
+                sp_ia_min.Value = 1.54;
+                sp_ia_max.Value = 1.6;
+                sp_fa_min.Value = 1.54;
+                sp_fa_max.Value = 1.6;
             end
         end
 
@@ -648,7 +818,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Barycenter, random speed — start at the', ...
                 'barycenter of hexagon 1 with a random unit', ...
                 'tangent vector.', '', ...
-                'Barycenter, after 1000s — same as above, but', ...
+                'Barycenter, random speed after 1000s — same as above, but', ...
                 'the geodesic is first run silently for 1000', ...
                 'hyperbolic length units before recording begins.', ...
                 'This provides a "warm-up" to move away from the', ...
@@ -776,10 +946,10 @@ classdef HyperMozartApp < matlab.apps.AppBase
             twisted_parameters = [app.T1Spinner.Value, app.T2Spinner.Value, app.T3Spinner.Value];
             Max_len_geodesic  = app.MaxLenSpinner.Value;
             visualize         = app.VisualizeCheckBox.Value;
-            points_draw_geodesics = app.PointsDrawSpinner.Value;
-            speed_drawing_geodesic = app.SpeedDrawSpinner.Value;
-            make_geodesics_grey_after = app.GreyAfterSpinner.Value;
-            delete_geodesics_after = app.DeleteAfterSpinner.Value;
+            points_draw_geodesics = app.visPointsPerGeo;
+            speed_drawing_geodesic = app.visDrawingSpeed;
+            make_geodesics_grey_after = app.visGreyAfterN;
+            delete_geodesics_after = app.visDeleteAfterN;
 
             notes_frequency   = [440.00, 554.37, 659.25];
             fs_audio = 44100;
@@ -820,9 +990,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
             p_1 = barycenter_cell_of_points(polytopes{1});
             polytope_index = 1;
 
-            init_cond = app.InitCondDropDown.Value;
+            init_cond = app.initCondMode;
             if strcmp(init_cond, 'Barycenter, fixed angle')
-                a = app.AngleSpinner.Value;
+                a = app.initCondAngle;
             else
                 a = rand(1)*2*pi;
             end
@@ -901,9 +1071,10 @@ classdef HyperMozartApp < matlab.apps.AppBase
             current_percentage = 0;
             points_dist_local = [];
             current_arc_segments = {};
+            current_arc_initial_angle = NaN;
             app.inter_crossing_arcs = {};
 
-            if strcmp(init_cond, 'Barycenter, after 1000s')
+            if strcmp(init_cond, 'Barycenter, random speed after 1000s')
                 warmup_target = 1000;
             else
                 warmup_target = 0;
@@ -993,6 +1164,15 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
                 % Collect segment for short-geodesic storage (after warmup only)
                 if warmup_done
+                    if isempty(current_arc_segments) && to_avoid <= length(collection_of_collection_of_circles{polytope_index})
+                        hv_ia = point_and_vec_init.point - collection_of_collection_of_circles{polytope_index}{to_avoid}{1};
+                        vca_ia = [-hv_ia(2), hv_ia(1)];
+                        if polytope_index == 1 || polytope_index == 3
+                            current_arc_initial_angle = mod(angleCW2D(vca_ia, point_and_vec_init.tg_vector), pi);
+                        else
+                            current_arc_initial_angle = mod(angleCW2D(point_and_vec_init.tg_vector, vca_ia) - pi, pi);
+                        end
+                    end
                     current_arc_segments{end+1} = {point_and_vec_init.point, point_and_vec_inters.point, polytope_index};
                 end
 
@@ -1005,6 +1185,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                         points_dist_local = [];
                         index_curves = 1;
                         current_arc_segments = {};
+                        current_arc_initial_angle = NaN;
                     end
                 else
                     travelled_distance = travelled_distance + dtp;
@@ -1040,18 +1221,34 @@ classdef HyperMozartApp < matlab.apps.AppBase
                             points_dist_local(end,3) = travelled_since_last_intersection;
                         end
 
-                        % Save arc record for short-geodesic panel (cap at 5000, threshold filter)
+                        % Compute final crossing angle
+                        hv_fa = point_and_vec_inters.point - collection_of_collection_of_circles{polytope_index}{side}{1};
+                        vca_fa = [-hv_fa(2), hv_fa(1)];
+                        if polytope_index == 1 || polytope_index == 3
+                            arc_final_angle = mod(angleCW2D(vca_fa, point_and_vec_inters.tg_vector), pi);
+                        else
+                            arc_final_angle = mod(angleCW2D(point_and_vec_inters.tg_vector, vca_fa) - pi, pi);
+                        end
+
+                        % Save arc record for short-geodesic panel (cap at 5000, all threshold filters)
                         if length(app.inter_crossing_arcs) < 5000 && ...
-                                travelled_since_last_intersection >= app.SaveArcMinThreshSpinner.Value && ...
-                                travelled_since_last_intersection < app.SaveArcThreshSpinner.Value
+                                travelled_since_last_intersection >= app.saveArcMinLen && ...
+                                travelled_since_last_intersection < app.saveArcMaxLen && ...
+                                current_arc_initial_angle >= app.saveArcInitAngMin && ...
+                                current_arc_initial_angle <= app.saveArcInitAngMax && ...
+                                arc_final_angle >= app.saveArcFinalAngMin && ...
+                                arc_final_angle <= app.saveArcFinalAngMax
                             arc_record = struct( ...
                                 'segments', {current_arc_segments}, ...
                                 'length', travelled_since_last_intersection, ...
-                                'polytope_at_crossing', polytope_index);
+                                'polytope_at_crossing', polytope_index, ...
+                                'initial_angle', current_arc_initial_angle, ...
+                                'final_angle', arc_final_angle);
                             app.inter_crossing_arcs{end+1} = arc_record;
                         end
                     end
                     current_arc_segments = {};
+                    current_arc_initial_angle = NaN;
                     travelled_since_last_intersection = 0;
                     first_cycle = false;
                 end
@@ -1157,7 +1354,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             % --- Main figure ---
             app.UIFigure = uifigure('Visible', 'off');
-            app.UIFigure.Position = [50 30 1300 990];
+            app.UIFigure.Position = [50 30 1728 972];
             app.UIFigure.Name = 'HyperMozart';
             app.UIFigure.Resize = 'on';
 
@@ -1166,27 +1363,27 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.ParametersPanel = uipanel(app.UIFigure);
             app.ParametersPanel.Title = 'Surface Parameters';
-            app.ParametersPanel.Position = [10 418 300 561];
+            app.ParametersPanel.Position = [10 600 300 362];
             app.ParametersPanel.FontWeight = 'bold';
 
             % Info button — parameters panel documentation
             app.InfoParamsButton = uibutton(app.UIFigure, 'push');
             app.InfoParamsButton.Text = char(9432);
-            app.InfoParamsButton.Position = [270 960 35 25];
+            app.InfoParamsButton.Position = [270 956 35 25];
             app.InfoParamsButton.FontSize = 14;
             app.InfoParamsButton.Tooltip = 'Help: Surface Parameters';
             app.InfoParamsButton.ButtonPushedFcn = createCallbackFcn(app, @InfoParamsButtonPushed, true);
 
             % --- Gluing selector ---
             uilabel(app.ParametersPanel, 'Text', 'Surface type', ...
-                'Position', [10 484 95 22], 'FontWeight', 'bold');
+                'Position', [10 302 95 22], 'FontWeight', 'bold');
             app.GluingDropDown = uidropdown(app.ParametersPanel, ...
                 'Items', {'Separating S2', 'Nonseparating S2'}, ...
-                'Position', [115 484 165 22], ...
+                'Position', [115 302 165 22], ...
                 'Value', 'Separating S2');
 
             % --- Curve lengths ---
-            y = 449;
+            y = 267;
             app.L1Label = uilabel(app.ParametersPanel, 'Text', 'L1 (curve 1 length)', ...
                 'Position', [10 y 140 22]);
             app.L1Spinner = uispinner(app.ParametersPanel, ...
@@ -1253,48 +1450,6 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Text', 'Curve 3', 'Position', [190 y 80 22], 'Value', true);
 
             % =============================================================
-            %  LEFT COLUMN — Visualization Panel (x: 10..310)
-            % =============================================================
-            app.VisualizationPanel = uipanel(app.UIFigure);
-            app.VisualizationPanel.Title = 'Visualization';
-            app.VisualizationPanel.Position = [10 165 300 231];
-            app.VisualizationPanel.FontWeight = 'bold';
-
-            y = 176;
-            app.VisualizeCheckBox = uicheckbox(app.VisualizationPanel, ...
-                'Text', 'Visualize geodesics while running', ...
-                'Position', [10 y 270 22], 'Value', false, ...
-                'ValueChangedFcn', createCallbackFcn(app, @VisualizeCheckBoxChanged, true));
-
-            y = y - 35;
-            app.PointsDrawLabel = uilabel(app.VisualizationPanel, 'Text', 'Points per geodesic', ...
-                'Position', [10 y 140 22]);
-            app.PointsDrawSpinner = uispinner(app.VisualizationPanel, ...
-                'Position', [160 y 120 22], 'Value', 10, ...
-                'Limits', [2 500], 'Step', 5);
-
-            y = y - 35;
-            app.SpeedDrawLabel = uilabel(app.VisualizationPanel, 'Text', 'Drawing speed', ...
-                'Position', [10 y 140 22]);
-            app.SpeedDrawSpinner = uispinner(app.VisualizationPanel, ...
-                'Position', [160 y 120 22], 'Value', 2, ...
-                'Limits', [0.1 100], 'Step', 0.5, 'ValueDisplayFormat', '%.1f');
-
-            y = y - 35;
-            app.GreyAfterLabel = uilabel(app.VisualizationPanel, 'Text', 'Grey-out after N', ...
-                'Position', [10 y 140 22]);
-            app.GreyAfterSpinner = uispinner(app.VisualizationPanel, ...
-                'Position', [160 y 120 22], 'Value', 2, ...
-                'Limits', [1 1000], 'Step', 1);
-
-            y = y - 35;
-            app.DeleteAfterLabel = uilabel(app.VisualizationPanel, 'Text', 'Delete after N (Inf=never)', ...
-                'Position', [10 y 170 22]);
-            app.DeleteAfterSpinner = uispinner(app.VisualizationPanel, ...
-                'Position', [190 y 90 22], 'Value', Inf, ...
-                'Limits', [1 Inf], 'Step', 5);
-
-            % =============================================================
             %  LEFT COLUMN — Run controls (x: 10..310)
             % =============================================================
             app.RunButton = uibutton(app.UIFigure, 'push');
@@ -1329,15 +1484,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.DistributionPanel = uipanel(app.UIFigure);
             app.DistributionPanel.Title = 'Intersection Distribution';
-            app.DistributionPanel.Position = [10 103 300 58];
+            app.DistributionPanel.Position = [10 285 300 58];
             app.DistributionPanel.FontWeight = 'bold';
-
-            app.InfoDistButton = uibutton(app.UIFigure, 'push');
-            app.InfoDistButton.Text = char(9432);
-            app.InfoDistButton.Position = [270 155 35 22];
-            app.InfoDistButton.FontSize = 14;
-            app.InfoDistButton.Tooltip = 'Help: Intersection Distribution';
-            app.InfoDistButton.ButtonPushedFcn = createCallbackFcn(app, @InfoDistButtonPushed, true);
 
             app.DrawDistButton = uibutton(app.DistributionPanel, 'push');
             app.DrawDistButton.Text = 'Draw Distribution';
@@ -1354,70 +1502,79 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.GeodesicPanel = uipanel(app.UIFigure);
             app.GeodesicPanel.Title = 'Geodesic';
-            app.GeodesicPanel.Position = [10 396 300 214];
+            app.GeodesicPanel.Position = [10 446 300 150];
             app.GeodesicPanel.FontWeight = 'bold';
 
             app.InfoGeodesicButton = uibutton(app.UIFigure, 'push');
             app.InfoGeodesicButton.Text = char(9432);
-            app.InfoGeodesicButton.Position = [270 604 35 22];
+            app.InfoGeodesicButton.Position = [270 590 35 22];
             app.InfoGeodesicButton.FontSize = 14;
             app.InfoGeodesicButton.Tooltip = 'Help: Geodesic Initial Conditions';
             app.InfoGeodesicButton.ButtonPushedFcn = createCallbackFcn(app, @InfoGeodesicButtonPushed, true);
 
             app.MaxLenLabel = uilabel(app.GeodesicPanel, 'Text', 'Max geodesic length', ...
-                'Position', [10 162 140 22]);
+                'Position', [10 102 140 22]);
             app.MaxLenSpinner = uispinner(app.GeodesicPanel, ...
-                'Position', [158 162 122 22], 'Value', 100000, ...
+                'Position', [158 102 122 22], 'Value', 100000, ...
                 'Limits', [100 1e8], 'Step', 10000, 'ValueDisplayFormat', '%.0f');
 
-            app.InitCondLabel = uilabel(app.GeodesicPanel, 'Text', 'Initial condition', ...
-                'Position', [10 127 115 22]);
-            app.InitCondDropDown = uidropdown(app.GeodesicPanel, ...
-                'Items', {'Barycenter, random speed', 'Barycenter, after 1000s', 'Barycenter, fixed angle'}, ...
-                'Position', [130 127 150 22], 'Value', 'Barycenter, random speed', ...
-                'ValueChangedFcn', createCallbackFcn(app, @InitCondDropDownChanged, true));
+            app.InitCondButton = uibutton(app.GeodesicPanel, 'push');
+            app.InitCondButton.Text = 'Initial conditions...';
+            app.InitCondButton.Position = [10 62 160 28];
+            app.InitCondButton.ButtonPushedFcn = createCallbackFcn(app, @InitCondButtonPushed, true);
 
-            app.AngleLabel = uilabel(app.GeodesicPanel, 'Text', 'Angle (rad)', ...
-                'Position', [10 91 100 22]);
-            app.AngleSpinner = uispinner(app.GeodesicPanel, ...
-                'Position', [115 91 115 22], 'Value', 0, ...
-                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f', ...
-                'Enable', 'off');
+            app.SaveArcFiltersButton = uibutton(app.GeodesicPanel, 'push');
+            app.SaveArcFiltersButton.Text = 'Save arc filters...';
+            app.SaveArcFiltersButton.Position = [10 22 160 28];
+            app.SaveArcFiltersButton.ButtonPushedFcn = createCallbackFcn(app, @SaveArcFiltersButtonPushed, true);
 
-            app.SaveArcMinThreshLabel = uilabel(app.GeodesicPanel, 'Text', 'Save arcs: min', ...
-                'Position', [10 57 95 22]);
-            app.SaveArcMinThreshSpinner = uispinner(app.GeodesicPanel, ...
-                'Position', [108 57 75 22], 'Value', 0, ...
-                'Limits', [0 Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.4f');
+            % =============================================================
+            %  LEFT COLUMN — Visualization Panel (created after GeodesicPanel so it renders on top)
+            % =============================================================
+            app.VisualizationPanel = uipanel(app.UIFigure);
+            app.VisualizationPanel.Title = 'Visualization';
+            app.VisualizationPanel.Position = [10 347 300 95];
+            app.VisualizationPanel.FontWeight = 'bold';
 
-            app.SaveArcThreshLabel = uilabel(app.GeodesicPanel, 'Text', 'max', ...
-                'Position', [186 57 30 22]);
-            app.SaveArcThreshSpinner = uispinner(app.GeodesicPanel, ...
-                'Position', [218 57 62 22], 'Value', Inf, ...
-                'Limits', [0 Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.4f');
+            app.VisualizeCheckBox = uicheckbox(app.VisualizationPanel, ...
+                'Text', 'Visualize geodesics while running', ...
+                'Position', [10 52 270 22], 'Value', false, ...
+                'ValueChangedFcn', createCallbackFcn(app, @VisualizeCheckBoxChanged, true));
 
-            % InfoVisButton created here (after GeodesicPanel) so it renders on top
+            app.VisDrawOptionsButton = uibutton(app.VisualizationPanel, 'push');
+            app.VisDrawOptionsButton.Text = 'Drawing options...';
+            app.VisDrawOptionsButton.Position = [10 16 160 28];
+            app.VisDrawOptionsButton.ButtonPushedFcn = createCallbackFcn(app, @VisDrawOptionsButtonPushed, true);
+
             app.InfoVisButton = uibutton(app.UIFigure, 'push');
             app.InfoVisButton.Text = char(9432);
-            app.InfoVisButton.Position = [270 390 35 25];
+            app.InfoVisButton.Position = [270 436 35 25];
             app.InfoVisButton.FontSize = 14;
             app.InfoVisButton.Tooltip = 'Help: Visualization';
             app.InfoVisButton.ButtonPushedFcn = createCallbackFcn(app, @InfoVisButtonPushed, true);
+
+            % Info button for Distribution panel — created after VisualizationPanel so it renders on top
+            app.InfoDistButton = uibutton(app.UIFigure, 'push');
+            app.InfoDistButton.Text = char(9432);
+            app.InfoDistButton.Position = [270 337 35 22];
+            app.InfoDistButton.FontSize = 14;
+            app.InfoDistButton.Tooltip = 'Help: Intersection Distribution';
+            app.InfoDistButton.ButtonPushedFcn = createCallbackFcn(app, @InfoDistButtonPushed, true);
 
             % =============================================================
             %  MIDDLE — Tab group with multiple views (x: 320..870)
             % =============================================================
             app.CenterTabGroup = uitabgroup(app.UIFigure);
-            app.CenterTabGroup.Position = [320 11 550 968];
+            app.CenterTabGroup.Position = [320 11 958 950];
 
             % --- Hexagons tab ---
             app.HexTab = uitab(app.CenterTabGroup, 'Title', 'Hexagons');
 
-            axW = 240; axH = 418;
-            app.Ax1 = uiaxes(app.HexTab, 'Position', [15,  484, axW, axH]);
-            app.Ax2 = uiaxes(app.HexTab, 'Position', [280, 484, axW, axH]);
+            axW = 410; axH = 410;
+            app.Ax1 = uiaxes(app.HexTab, 'Position', [15,  488, axW, axH]);
+            app.Ax2 = uiaxes(app.HexTab, 'Position', [513, 488, axW, axH]);
             app.Ax3 = uiaxes(app.HexTab, 'Position', [15,  22,  axW, axH]);
-            app.Ax4 = uiaxes(app.HexTab, 'Position', [280, 22,  axW, axH]);
+            app.Ax4 = uiaxes(app.HexTab, 'Position', [513, 22,  axW, axH]);
 
             for ax = [app.Ax1, app.Ax2, app.Ax3, app.Ax4]
                 ax.Box = 'on';
@@ -1429,7 +1586,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % --- CDF Plots tab ---
             app.CDFTab = uitab(app.CenterTabGroup, 'Title', 'CDF Plots');
 
-            app.CDFAxes = uiaxes(app.CDFTab, 'Position', [40 44 480 858]);
+            app.CDFAxes = uiaxes(app.CDFTab, 'Position', [40 44 878 858]);
             title(app.CDFAxes, 'Orthospectrum CDF');
             xlabel(app.CDFAxes, 'Length');
             ylabel(app.CDFAxes, 'CDF');
@@ -1438,12 +1595,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % --- 3D Surface tab ---
             app.SurfaceTab = uitab(app.CenterTabGroup, 'Title', '3D Surface');
 
-            app.SurfaceAxes = uiaxes(app.SurfaceTab, 'Position', [20 22 510 891]);
+            app.SurfaceAxes = uiaxes(app.SurfaceTab, 'Position', [20 22 918 873]);
 
             % --- Distribution tab ---
             app.DistTab = uitab(app.CenterTabGroup, 'Title', 'Distribution');
 
-            app.DistAxes = uiaxes(app.DistTab, 'Position', [40 44 480 858]);
+            app.DistAxes = uiaxes(app.DistTab, 'Position', [40 44 878 858]);
             title(app.DistAxes, 'Intersection Distribution');
             xlabel(app.DistAxes, 'Position on curve 1');
             ylabel(app.DistAxes, 'Angle');
@@ -1454,17 +1611,17 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.MusicPanel = uipanel(app.UIFigure);
             app.MusicPanel.Title = 'Music';
-            app.MusicPanel.Position = [880 688 410 292];
+            app.MusicPanel.Position = [1288 688 430 274];
             app.MusicPanel.FontWeight = 'bold';
 
             app.InfoMusicButton = uibutton(app.UIFigure, 'push');
             app.InfoMusicButton.Text = char(9432);
-            app.InfoMusicButton.Position = [1255 960 35 25];
+            app.InfoMusicButton.Position = [1683 956 35 25];
             app.InfoMusicButton.FontSize = 14;
             app.InfoMusicButton.Tooltip = 'Help: Music';
             app.InfoMusicButton.ButtonPushedFcn = createCallbackFcn(app, @InfoMusicButtonPushed, true);
 
-            ym = 237;
+            ym = 217;
             app.SpeedMultLabel = uilabel(app.MusicPanel, 'Text', 'Speed multiplier', ...
                 'Position', [10 ym 120 22]);
             app.SpeedMultSpinner = uispinner(app.MusicPanel, ...
@@ -1506,7 +1663,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             ym = ym - 35;
             app.MusicStatusLabel = uilabel(app.MusicPanel);
-            app.MusicStatusLabel.Position = [10 ym 380 22];
+            app.MusicStatusLabel.Position = [10 ym 410 22];
             app.MusicStatusLabel.Text = 'Run geodesic computation first.';
             app.MusicStatusLabel.FontColor = [0.2 0.2 0.6];
 
@@ -1514,45 +1671,80 @@ classdef HyperMozartApp < matlab.apps.AppBase
             %  RIGHT COLUMN — Short Geodesics Panel
             % =============================================================
             app.ShortGeoPanel = uipanel(app.UIFigure);
-            app.ShortGeoPanel.Title = 'Short Geodesics';
-            app.ShortGeoPanel.Position = [880 561 410 122];
+            app.ShortGeoPanel.Title = 'Short Geodesic Arcs';
+            app.ShortGeoPanel.Position = [1288 561 430 222];
             app.ShortGeoPanel.FontWeight = 'bold';
 
             app.InfoShortGeoButton = uibutton(app.UIFigure, 'push');
             app.InfoShortGeoButton.Text = char(9432);
-            app.InfoShortGeoButton.Position = [1255 679 35 22];
+            app.InfoShortGeoButton.Position = [1683 777 35 22];
             app.InfoShortGeoButton.FontSize = 14;
             app.InfoShortGeoButton.Tooltip = 'Help: Short Geodesics';
             app.InfoShortGeoButton.ButtonPushedFcn = createCallbackFcn(app, @InfoShortGeoButtonPushed, true);
 
             app.ShortGeoMinLLabel = uilabel(app.ShortGeoPanel, 'Text', 'L min', ...
-                'Position', [10 84 38 22]);
+                'Position', [10 154 38 22]);
             app.ShortGeoMinLSpinner = uispinner(app.ShortGeoPanel, ...
-                'Position', [52 84 80 22], 'Value', 0, ...
+                'Position', [52 154 80 22], 'Value', 0, ...
                 'Limits', [0 1e6], 'Step', 0.1, 'ValueDisplayFormat', '%.4f');
 
             app.ShortGeoLLabel = uilabel(app.ShortGeoPanel, 'Text', 'max', ...
-                'Position', [137 84 32 22]);
+                'Position', [137 154 32 22]);
             app.ShortGeoLSpinner = uispinner(app.ShortGeoPanel, ...
-                'Position', [172 84 80 22], 'Value', 1, ...
-                'Limits', [0 1e6], 'Step', 0.1, 'ValueDisplayFormat', '%.4f');
+                'Position', [172 154 80 22], 'Value', Inf, ...
+                'Limits', [0 Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.4f');
 
             app.ShortGeoNLabel = uilabel(app.ShortGeoPanel, 'Text', 'N', ...
-                'Position', [260 84 22 22]);
+                'Position', [260 154 22 22]);
             app.ShortGeoNSpinner = uispinner(app.ShortGeoPanel, ...
-                'Position', [280 84 80 22], 'Value', 5, ...
+                'Position', [280 154 80 22], 'Value', 5, ...
                 'Limits', [1 1000], 'Step', 1, 'ValueDisplayFormat', '%.0f');
+
+            app.ShortGeoInitAngMinLabel = uilabel(app.ShortGeoPanel, 'Text', 'Init. angle [0, pi]:', ...
+                'Position', [10 119 68 22]);
+            app.ShortGeoInitAngMinSpinner = uispinner(app.ShortGeoPanel, ...
+                'Position', [81 119 90 22], 'Value', -Inf, ...
+                'Limits', [-Inf Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+            app.ShortGeoInitAngMaxLabel = uilabel(app.ShortGeoPanel, 'Text', 'to', ...
+                'Position', [175 119 20 22]);
+            app.ShortGeoInitAngMaxSpinner = uispinner(app.ShortGeoPanel, ...
+                'Position', [198 119 90 22], 'Value', Inf, ...
+                'Limits', [-Inf Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+
+            app.ShortGeoFinalAngMinLabel = uilabel(app.ShortGeoPanel, 'Text', 'Final angle [0, pi]:', ...
+                'Position', [10 84 68 22]);
+            app.ShortGeoFinalAngMinSpinner = uispinner(app.ShortGeoPanel, ...
+                'Position', [81 84 90 22], 'Value', -Inf, ...
+                'Limits', [-Inf Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+            app.ShortGeoFinalAngMaxLabel = uilabel(app.ShortGeoPanel, 'Text', 'to', ...
+                'Position', [175 84 20 22]);
+            app.ShortGeoFinalAngMaxSpinner = uispinner(app.ShortGeoPanel, ...
+                'Position', [198 84 90 22], 'Value', Inf, ...
+                'Limits', [-Inf Inf], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+
+            app.ShortGeoSlowCheckBox = uicheckbox(app.ShortGeoPanel, ...
+                'Text', 'Draw slowly', 'Value', false, ...
+                'Position', [10 24 110 22]);
 
             app.ShortGeoRunButton = uibutton(app.ShortGeoPanel, 'push');
             app.ShortGeoRunButton.Text = 'Find & Draw';
-            app.ShortGeoRunButton.Position = [10 24 140 28];
+            app.ShortGeoRunButton.Position = [10 54 120 28];
             app.ShortGeoRunButton.FontWeight = 'bold';
             app.ShortGeoRunButton.BackgroundColor = [0.2 0.4 0.8];
             app.ShortGeoRunButton.FontColor = [1 1 1];
             app.ShortGeoRunButton.ButtonPushedFcn = createCallbackFcn(app, @ShortGeoRunButtonPushed, true);
 
+            app.ShortGeoStopButton = uibutton(app.ShortGeoPanel, 'push');
+            app.ShortGeoStopButton.Text = 'Stop';
+            app.ShortGeoStopButton.Position = [140 54 80 28];
+            app.ShortGeoStopButton.FontWeight = 'bold';
+            app.ShortGeoStopButton.BackgroundColor = [0.85 0.25 0.25];
+            app.ShortGeoStopButton.FontColor = [1 1 1];
+            app.ShortGeoStopButton.Enable = 'off';
+            app.ShortGeoStopButton.ButtonPushedFcn = createCallbackFcn(app, @ShortGeoStopButtonPushed, true);
+
             app.ShortGeoStatusLabel = uilabel(app.ShortGeoPanel);
-            app.ShortGeoStatusLabel.Position = [160 26 220 22];
+            app.ShortGeoStatusLabel.Position = [230 56 185 22];
             app.ShortGeoStatusLabel.Text = 'Run geodesic computation first.';
             app.ShortGeoStatusLabel.FontColor = [0.2 0.2 0.6];
 
@@ -1561,12 +1753,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
             % =============================================================
             app.OrthPanel = uipanel(app.UIFigure);
             app.OrthPanel.Title = 'Orthospectrum Computation';
-            app.OrthPanel.Position = [880 11 410 545];
+            app.OrthPanel.Position = [1288 11 430 545];
             app.OrthPanel.FontWeight = 'bold';
 
             app.InfoOrthButton = uibutton(app.UIFigure, 'push');
             app.InfoOrthButton.Text = char(9432);
-            app.InfoOrthButton.Position = [1255 550 35 25];
+            app.InfoOrthButton.Position = [1683 550 35 25];
             app.InfoOrthButton.FontSize = 14;
             app.InfoOrthButton.Tooltip = 'Help: Orthospectrum';
             app.InfoOrthButton.ButtonPushedFcn = createCallbackFcn(app, @InfoOrthButtonPushed, true);
@@ -1599,12 +1791,12 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             y = y - 30;
             app.SymmetricCheckBox = uicheckbox(app.OrthPanel, ...
-                'Text', 'Assume symmetric loops (2x)', ...
+                'Text', 'Assume symmetric arcs (2x)', ...
                 'Position', [10 y 250 22], 'Value', false);
 
             y = y - 40;
             app.ComputeOrthButton = uibutton(app.OrthPanel, 'push');
-            app.ComputeOrthButton.Text = 'Compute Next Element';
+            app.ComputeOrthButton.Text = 'Estimate Next Element';
             app.ComputeOrthButton.Position = [10 y 180 35];
             app.ComputeOrthButton.FontWeight = 'bold';
             app.ComputeOrthButton.BackgroundColor = [0.2 0.4 0.8];
@@ -1622,13 +1814,13 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
             y = y - 30;
             app.OrthStatusLabel = uilabel(app.OrthPanel);
-            app.OrthStatusLabel.Position = [10 y 380 22];
+            app.OrthStatusLabel.Position = [10 y 410 22];
             app.OrthStatusLabel.Text = 'Run geodesic computation first.';
             app.OrthStatusLabel.FontColor = [0.2 0.2 0.6];
 
             y = y - 25;
             app.OrthTable = uitable(app.OrthPanel);
-            app.OrthTable.Position = [10 10 380 y];
+            app.OrthTable.Position = [10 10 410 y];
             app.OrthTable.ColumnName = {'Index', 'Length', 'Prob. %'};
             app.OrthTable.ColumnWidth = {50, 200, 100};
             app.OrthTable.CellSelectionCallback = createCallbackFcn(app, @OrthTableCellSelected, true);
