@@ -28,7 +28,7 @@ values_1 = to_music_helper(to_music_helper(:,1) == index_to_find, 2);
 values_2 = to_music(:,1);
 
 figure 
-[fasd, xasd] = ecdf(values_2);
+[fasd, xasd] = my_ecdf(values_2);
 plot(xasd, fasd, 'o-')
 
 xlabel('Value')

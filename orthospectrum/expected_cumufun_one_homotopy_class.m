@@ -20,7 +20,7 @@ function [x_eval ,f_vals] = expected_cumufun_one_homotopy_class(distance, length
     
     vals = [finitevals, Inf*ones(1,num_inf_to_add)];
 
-    [f_vals, x_eval] = ecdf(vals);
+    [f_vals, x_eval] = my_ecdf(vals);
 
     num_finite_values = sum(isfinite(x_eval));
     x_eval = x_eval(1:num_finite_values);

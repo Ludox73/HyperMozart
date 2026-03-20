@@ -285,7 +285,7 @@ vals = [finitevals, Inf*ones(1,num_inf_to_add)];
 % 4. Compute and Plot the Empirical CDF
 
 figure
-[f_vals, x_eval] = ecdf(vals);
+[f_vals, x_eval] = my_ecdf(vals);
 % f_vals = f_vals * ( width_x / length_geodesic );
 
 plot(x_eval, f_vals);
@@ -453,7 +453,7 @@ vals = [finitevals, Inf*ones(1,num_inf_to_add)];
 % 4. Compute and Plot the Empirical CDF
 
 hold on
-[f_vals, x_eval] = ecdf(vals);
+[f_vals, x_eval] = my_ecdf(vals);
 % f_vals = f_vals * ( width_x / length_geodesic );
 
 plot(x_eval, f_vals);

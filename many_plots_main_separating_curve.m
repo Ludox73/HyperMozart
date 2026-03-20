@@ -180,7 +180,7 @@ for par = -0.15:0.01:0.8
 
     values_1 = to_music(to_music(:,1) == 1, 2);
     
-    [f, x] = ecdf(values_1);
+    [f, x] = my_ecdf(values_1);
     plot(x, f, 'o-')
     
     xlabel('Value')
@@ -192,7 +192,7 @@ for par = -0.15:0.01:0.8
     figure
     values_2 = to_music(to_music(:,1) == 2, 2);
     
-    [f, x] = ecdf(values_2);
+    [f, x] = my_ecdf(values_2);
     plot(x, f, 'o-')
     
     xlabel('Value')
