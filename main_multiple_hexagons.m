@@ -2,7 +2,7 @@ t=true;
 f=false;
 
 % NEED TO THINK HOW TO VISUALIZE
-visualize = f;
+visualize = t;
 points_draw_geodesics = 10;
 speed_drawing_geodesic = 2;
 make_geodesics_grey_after = 2;
@@ -21,7 +21,7 @@ how_long_note_played =0.1;
 
 lengths_curves = [5, 1.5, 3]; % Insert values
 twisted_parameters = [2.4, 1.2, 5.4]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100000;
+Max_len_geodesic = 100;
 
 pause_time = 0;
 
@@ -41,26 +41,9 @@ tg_1 = 20*(2/(1-norm(p_1)^2))^(-2)*[sin(a);cos(a)];
 
 p0=point_and_tg_vector(p_1,tg_1);
 
-collection_of_collection_of_circles = cell(length(polytopes));
+collection_of_collection_of_circles = build_circles_from_polytopes(polytopes);
 
 points_to_understand_distribution = [];
-
-for index_collection_of_collection = 1:length(polytopes)
-    num_sides = size(polytopes{1},1);
-    collection_of_circles = cell(1,num_sides);
-    
-    for ind = 1:num_sides
-        if ind == num_sides
-            ind2=1;
-        else
-            ind2=ind+1;
-        end
-        seg = segment(polytopes{index_collection_of_collection}{ind}, polytopes{index_collection_of_collection}{ind2});
-        [center, radius] = geodesic_circonference(seg);
-        collection_of_circles{ind} = {center, radius};
-    end
-    collection_of_collection_of_circles{index_collection_of_collection} = collection_of_circles;
-end
 
 
 point_and_vec_init = p0;
@@ -94,44 +77,22 @@ while travelled_distance<Max_len_geodesic
 
 
     %This is to get a distribution of intersections
-    if polytope_index == 1 && to_avoid ==1
-        l = distance_two_points(point_and_vec_init.point, polytopes{1}{1});
-
-
-        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{1}{1}{1});
+    if to_avoid == 1
+        if polytope_index == 1 || polytope_index == 3
+            l = distance_two_points(point_and_vec_init.point, polytopes{polytope_index}{1});
+        else
+            l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{polytope_index}{2});
+        end
+        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{polytope_index}{1}{1});
         vector_to_compute_angle = [-help_vector(2), help_vector(1)];
-        angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
-
+        if polytope_index == 1 || polytope_index == 3
+            angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
+        else
+            angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
+        end
         points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
     end
-    if polytope_index == 2 && to_avoid ==1
-        l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{2}{2});
-        
-        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{2}{1}{1});
-        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
-        angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
 
-        points_to_understand_distribution = [points_to_understand_distribution; l, angle, 0];
-    end
-    if polytope_index == 3 && to_avoid ==1
-        l = distance_two_points(point_and_vec_init.point, polytopes{3}{1});
-
-
-        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{3}{1}{1});
-        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
-        angle = angleCW2D(vector_to_compute_angle, point_and_vec_init.tg_vector);
-
-        points_to_understand_distribution = [points_to_understand_distribution; l, -angle, 0];
-    end
-    if polytope_index == 4 && to_avoid ==1
-        l =  lengths_curves(1)/2+ distance_two_points(point_and_vec_init.point,polytopes{4}{2});
-        
-        help_vector = (point_and_vec_init.point - collection_of_collection_of_circles{4}{1}{1});
-        vector_to_compute_angle = [-help_vector(2), help_vector(1)];
-        angle = angleCW2D(point_and_vec_init.tg_vector, vector_to_compute_angle) - pi;
-
-        points_to_understand_distribution = [points_to_understand_distribution; l, -angle, 0];
-    end
 
     % Here we compute the new intersection
     [point_and_vec_inters, side] = first_intersection_geodesic_fundamental_domain(point_and_vec_init, collection_of_collection_of_circles{polytope_index}, to_avoid);
@@ -245,69 +206,8 @@ while travelled_distance<Max_len_geodesic
 
 
     % Here we compute the new initial vector
-    [out_fund_dom_index, out_side_index, isometry] = pairing_from_gluing(gluing, polytope_index, side, twisted_parameters, point_and_vec_inters.point, polytopes);
-
-    [new_point1,new_tg_vector1] = isometry.apply_poincare_point_and_vector(point_and_vec_inters.point,point_and_vec_inters.tg_vector);
-    
-    if is_row([polytope_index, out_fund_dom_index], gluing.noncoherent_pairs)
-        if out_side_index == 6
-            index2 = 1;
-        else
-            index2 = out_side_index + 1;
-        end
-        p1 = polytopes{out_fund_dom_index}{out_side_index};
-        p2 = polytopes{out_fund_dom_index}{index2};
-
-        z1_poinc = p1(1) + p1(2)*1i;
-        z2_poinc = p2(1) + p2(2)*1i;
-    
-        z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
-        z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
-
-        x1 = real(z1);
-        y1 = imag(z1);
-        x2 = real(z2);
-        y2 = imag(z2);
-        c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
-
-        r=sqrt((x1-c)^2 + y1^2);
-
-        alpha = c-r;
-        beta = c+r;
-
-        M = [ 1 -alpha; 1 -beta];
-        J = [-1 0; 0 1];
-    
-        np1_poinc = new_point1(1) + new_point1(2)*1i;
-        ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
-
-        np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
-        ntv1 = 2i/(-np1_poinc + 1)^2 * ntv1_poinc;
-        
-        aus_M = M\J*M;
-        iso_R = hyp_isometry_2d([], aus_M);
-        [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1);
-        
-        back_np = (np - 1i)/(np + 1i);
-        back_ntv = (2i)/(1 * np + 1i)^2 * ntv;
-
-        new_point = [real(back_np); imag(back_np)];
-        new_tg_vector = [real(back_ntv); imag(back_ntv)];
-        
-        if norm(new_point1 - new_point)>1e-4
-            warning("It looks that the mirroring is moving points on the segment. There may be an error here.")
-            value = norm(new_point1 - new_point)
-        end
-        
-        % We use new_point1 since it should not have been changed.
-        point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector);
-    else
-        point_and_vec_init = point_and_tg_vector(new_point1,new_tg_vector1);
-    end
-    
-    
-    polytope_index = out_fund_dom_index;
-    to_avoid = out_side_index;
+    [point_and_vec_init, polytope_index, to_avoid] = apply_pairing( ...
+        point_and_vec_inters, polytope_index, side, gluing, twisted_parameters, polytopes);
 
     % if visualize
     %     new_point_and_tg.plot()

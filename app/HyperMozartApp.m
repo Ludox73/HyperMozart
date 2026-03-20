@@ -803,36 +803,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
                     end
 
                     % Advance to next polytope
-                    [out_pi, out_si, iso_r] = pairing_from_gluing( ...
-                        ctx.gluing, pi_r, side_r, ctx.twisted_parameters, ptv_next.point, ctx.polytopes);
-                    [new_pt, new_tv] = iso_r.apply_poincare_point_and_vector(ptv_next.point, ptv_next.tg_vector);
-                    if is_row([pi_r, out_pi], ctx.gluing.noncoherent_pairs)
-                        if out_si == 6, idx2 = 1; else, idx2 = out_si + 1; end
-                        p1c = ctx.polytopes{out_pi}{out_si};
-                        p2c = ctx.polytopes{out_pi}{idx2};
-                        z1p = p1c(1)+p1c(2)*1i;  z2p = p2c(1)+p2c(2)*1i;
-                        z1h = 1i*(1+z1p)/(1-z1p);  z2h = 1i*(1+z2p)/(1-z2p);
-                        x1h = real(z1h); y1h = imag(z1h);
-                        x2h = real(z2h); y2h = imag(z2h);
-                        ch  = (x1h^2+y1h^2-x2h^2-y2h^2)/(2*(x1h-x2h));
-                        rh  = sqrt((x1h-ch)^2+y1h^2);
-                        M_r = [1 -(ch-rh); 1 -(ch+rh)];
-                        J_r = [-1 0; 0 1];
-                        np1p  = new_pt(1)+new_pt(2)*1i;
-                        ntv1p = new_tv(1)+new_tv(2)*1i;
-                        np1h  = 1i*(1+np1p)/(1-np1p);
-                        ntv1h = 2i/(-np1p+1)^2*ntv1p;
-                        aus_r = M_r\J_r*M_r;
-                        iso_R = hyp_isometry_2d([], aus_r);
-                        [nph, ntvh] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1h, ntv1h);
-                        back_np  = (nph-1i)/(nph+1i);
-                        back_ntv = (2i)/(nph+1i)^2*ntvh;
-                        ptv_r = point_and_tg_vector([real(back_np); imag(back_np)], [real(back_ntv); imag(back_ntv)]);
-                    else
-                        ptv_r = point_and_tg_vector(new_pt, new_tv);
-                    end
-                    pi_r = out_pi;
-                    ta_r = out_si;
+                    [ptv_r, pi_r, ta_r] = apply_pairing( ...
+                        ptv_next, pi_r, side_r, ctx.gluing, ctx.twisted_parameters, ctx.polytopes);
                 end
 
                 app.ShortGeoStatusLabel.Text = sprintf('Drew %d / %d', n_found, N_target);
@@ -1307,22 +1279,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             p0 = point_and_tg_vector(p_1, tg_1);
 
             % --- Build collection of circles ---
-            collection_of_collection_of_circles = cell(length(polytopes), 1);
-            for index_collection = 1:length(polytopes)
-                num_sides = size(polytopes{1}, 1);
-                collection_of_circles = cell(1, num_sides);
-                for ind = 1:num_sides
-                    if ind == num_sides
-                        ind2 = 1;
-                    else
-                        ind2 = ind + 1;
-                    end
-                    seg = segment(polytopes{index_collection}{ind}, polytopes{index_collection}{ind2});
-                    [center, radius] = geodesic_circonference(seg);
-                    collection_of_circles{ind} = {center, radius};
-                end
-                collection_of_collection_of_circles{index_collection} = collection_of_circles;
-            end
+            collection_of_collection_of_circles = build_circles_from_polytopes(polytopes);
 
             % --- Store geometry context for arc reconstruction ---
             app.arc_geo_context = struct( ...
@@ -1583,61 +1540,8 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 end
 
                 % Compute pairing / next initial vector
-                [out_fund_dom_index, out_side_index, isometry] = pairing_from_gluing( ...
-                    gluing, polytope_index, side, twisted_parameters, point_and_vec_inters.point, polytopes);
-
-                [new_point1, new_tg_vector1] = isometry.apply_poincare_point_and_vector( ...
-                    point_and_vec_inters.point, point_and_vec_inters.tg_vector);
-
-                if is_row([polytope_index, out_fund_dom_index], gluing.noncoherent_pairs)
-                    if out_side_index == 6
-                        index2 = 1;
-                    else
-                        index2 = out_side_index + 1;
-                    end
-                    p1 = polytopes{out_fund_dom_index}{out_side_index};
-                    p2 = polytopes{out_fund_dom_index}{index2};
-
-                    z1_poinc = p1(1) + p1(2)*1i;
-                    z2_poinc = p2(1) + p2(2)*1i;
-                    z1 = 1i*(1+z1_poinc)/(1-z1_poinc);
-                    z2 = 1i*(1+z2_poinc)/(1-z2_poinc);
-                    x1 = real(z1); y1 = imag(z1);
-                    x2 = real(z2); y2 = imag(z2);
-                    c = (x1^2 + y1^2 - x2^2 - y2^2) / (2*(x1-x2));
-                    r = sqrt((x1-c)^2 + y1^2);
-                    alpha = c - r;
-                    beta  = c + r;
-
-                    M = [1 -alpha; 1 -beta];
-                    J = [-1 0; 0 1];
-
-                    np1_poinc = new_point1(1) + new_point1(2)*1i;
-                    ntv1_poinc = new_tg_vector1(1) + new_tg_vector1(2)*1i;
-                    np1 = 1i*(1+np1_poinc)/(1-np1_poinc);
-                    ntv1 = 2i/(-np1_poinc + 1)^2 * ntv1_poinc;
-
-                    aus_M = M \ J * M;
-                    iso_R = hyp_isometry_2d([], aus_M);
-                    [np, ntv] = iso_R.apply_upper_half_point_and_vector_orientation_reversing(np1, ntv1);
-
-                    back_np  = (np - 1i)/(np + 1i);
-                    back_ntv = (2i)/(1*np + 1i)^2 * ntv;
-
-                    new_point     = [real(back_np); imag(back_np)];
-                    new_tg_vector = [real(back_ntv); imag(back_ntv)];
-
-                    if norm(new_point1 - new_point) > 1e-4
-                        warning('Mirroring moved points on segment. Possible error.');
-                    end
-
-                    point_and_vec_init = point_and_tg_vector(new_point1, new_tg_vector);
-                else
-                    point_and_vec_init = point_and_tg_vector(new_point1, new_tg_vector1);
-                end
-
-                polytope_index = out_fund_dom_index;
-                to_avoid = out_side_index;
+                [point_and_vec_init, polytope_index, to_avoid] = apply_pairing( ...
+                    point_and_vec_inters, polytope_index, side, gluing, twisted_parameters, polytopes);
 
                 % Update progress
                 if ~warmup_done
@@ -1762,7 +1666,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Position', [10 y 140 22]);
             app.T1Spinner = uispinner(app.ParametersPanel, ...
                 'Position', [160 y 120 22], 'Value', 1, ...
-                'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
             app.CurveDotT1 = uilabel(app.ParametersPanel, 'Text', '', ...
                 'Position', [282 y+7 10 8], 'BackgroundColor', [0 0 0]);
 
@@ -1771,7 +1675,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Position', [10 y 140 22]);
             app.T2Spinner = uispinner(app.ParametersPanel, ...
                 'Position', [160 y 120 22], 'Value', 4.5, ...
-                'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
             app.CurveDotT2 = uilabel(app.ParametersPanel, 'Text', '', ...
                 'Position', [282 y+7 10 8], 'BackgroundColor', [0 0 0]);
 
@@ -1780,7 +1684,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 'Position', [10 y 140 22]);
             app.T3Spinner = uispinner(app.ParametersPanel, ...
                 'Position', [160 y 120 22], 'Value', 2, ...
-                'Limits', [0 2*pi-0.001], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
+                'Limits', [0 2*pi], 'Step', 0.1, 'ValueDisplayFormat', '%.3f');
             app.CurveDotT3 = uilabel(app.ParametersPanel, 'Text', '', ...
                 'Position', [282 y+7 10 8], 'BackgroundColor', [0 0 0]);
 

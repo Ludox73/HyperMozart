@@ -23,18 +23,7 @@ t3 = twisted_parameters(3);
 combination_noncoherent_orientation = [1,2; 1,4; 2,1; 2,3; 3,2; 3,4; 4,1; 4,3];
 
 %% Build collection of circles for all polytopes
-collection_of_collection_of_circles = cell(4, 1);
-for idx_coll = 1:4
-    num_sides = size(polytopes{1}, 1);
-    coll = cell(1, num_sides);
-    for ind = 1:num_sides
-        ind2 = mod(ind, num_sides) + 1;
-        seg = segment(polytopes{idx_coll}{ind}, polytopes{idx_coll}{ind2});
-        [center, radius] = geodesic_circonference(seg);
-        coll{ind} = {center, radius};
-    end
-    collection_of_collection_of_circles{idx_coll} = coll;
-end
+collection_of_collection_of_circles = build_circles_from_polytopes(polytopes);
 
 %% Draw the 4 hexagons
 Styles = curves_S2_styles();
