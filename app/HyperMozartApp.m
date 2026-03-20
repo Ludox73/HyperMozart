@@ -149,7 +149,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
         saveArcFinalAngMax = 1.6
         % Orthospectrum options (edited via dialog)
         orthChiSigma     = -2
-        orthSamplePoints = 300000
+        orthSamplePoints = 100000
         orthDrawCDF      = true
         orthSymmetric    = true
         orthArcSubset    = 'All arcs'
