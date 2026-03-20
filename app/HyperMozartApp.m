@@ -71,7 +71,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
         OrthPanel                    matlab.ui.container.Panel
         CurveIndexLabel              matlab.ui.control.Label
         CurveIndexDropDown           matlab.ui.control.DropDown
+        RecallOtherCurvesCheckBox    matlab.ui.control.CheckBox
         OrthOptionsButton            matlab.ui.control.Button
+        GuessSepButton               matlab.ui.control.Button
         ComputeOrthButton            matlab.ui.control.Button
         ResetOrthButton              matlab.ui.control.Button
         OrthStatusLabel              matlab.ui.control.Label
@@ -150,6 +152,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
         orthSamplePoints = 100000
         orthDrawCDF      = true
         orthSymmetric    = true
+        orthArcSubset    = 'All arcs'
         StopRequested logical = false
         IsRunning     logical = false
         % Orthospectrum incremental state
@@ -204,9 +207,9 @@ classdef HyperMozartApp < matlab.apps.AppBase
         function OrthOptionsButtonPushed(app, ~)
             % Dialog to edit orthospectrum computation options
             dlg = uifigure('Name', 'Orthospectrum Options', ...
-                'Position', [500 400 360 220], 'Resize', 'off');
+                'Position', [500 400 360 258], 'Resize', 'off');
 
-            y = 175;
+            y = 213;
             uilabel(dlg, 'Text', 'Chi(Sigma) (Euler char.)', ...
                 'Position', [15 y 200 22]);
             chiSpinner = uispinner(dlg, 'Value', app.orthChiSigma, ...
@@ -229,6 +232,14 @@ classdef HyperMozartApp < matlab.apps.AppBase
             symCheck = uicheckbox(dlg, 'Text', 'Assume symmetric arcs (2x)', ...
                 'Value', app.orthSymmetric, 'Position', [15 y 300 22]);
 
+            y = y - 35;
+            uilabel(dlg, 'Text', 'Initial CDF uses', ...
+                'Position', [15 y 130 22]);
+            subsetDD = uidropdown(dlg, ...
+                'Items', {'All arcs', 'Even sounds only', 'Odd sounds only'}, ...
+                'Value', app.orthArcSubset, ...
+                'Position', [150 y 190 22]);
+
             y = y - 40;
             uibutton(dlg, 'Text', 'OK', 'Position', [80 y 80 28], ...
                 'ButtonPushedFcn', @(~,~) acceptCb());
@@ -242,6 +253,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 app.orthSamplePoints = sampSpinner.Value;
                 app.orthDrawCDF      = drawCheck.Value;
                 app.orthSymmetric    = symCheck.Value;
+                app.orthArcSubset    = subsetDD.Value;
                 delete(dlg);
             end
         end
@@ -498,10 +510,22 @@ classdef HyperMozartApp < matlab.apps.AppBase
             if ~app.orth_initialized
                 index_curve = str2double(app.CurveIndexDropDown.Value);
                 chi_sigma   = app.orthChiSigma;
+                to_music_f = applyRecallFilter(app, app.to_music, index_curve);
                 app.orth_length_geodesic = guess_length_geodesics_from_to_music( ...
-                    app.to_music, index_curve, chi_sigma);
+                    to_music_f, index_curve, chi_sigma);
+                to_music_cdf = to_music_f;
+                if ~strcmp(app.orthArcSubset, 'All arcs')
+                    idx_c = find(to_music_cdf(:,2) == index_curve);
+                    if strcmp(app.orthArcSubset, 'Even arcs only')
+                        idx_c = idx_c(2:2:end);
+                    else
+                        idx_c = idx_c(1:2:end);
+                    end
+                    idx_other = find(to_music_cdf(:,2) ~= index_curve);
+                    to_music_cdf = to_music_cdf([idx_other; idx_c], :);
+                end
                 [app.orth_x_vals, app.orth_f_vals] = compute_cumufun_from_to_music( ...
-                    app.to_music, index_curve);
+                    to_music_cdf, index_curve);
                 app.orth_results = [];
                 app.orth_percentages = [];
                 app.orth_snapshots = {};
@@ -1012,6 +1036,85 @@ classdef HyperMozartApp < matlab.apps.AppBase
                 sp_fa_min.Value = 1.54;
                 sp_fa_max.Value = 1.6;
             end
+        end
+
+        function tm = applyRecallFilter(app, to_music, index_curve)
+            % If "Recall other curves" is ON, return unchanged.
+            % If OFF, remove rows for other curves and add their elapsed
+            % time to the next crossing of index_curve.
+            if app.RecallOtherCurvesCheckBox.Value
+                tm = to_music;
+                return;
+            end
+            tm = zeros(size(to_music, 1), 2);
+            n = 0;
+            pending = 0;
+            for i = 1:size(to_music, 1)
+                if to_music(i, 2) == index_curve
+                    n = n + 1;
+                    tm(n, :) = [to_music(i, 1) + pending, index_curve];
+                    pending = 0;
+                else
+                    pending = pending + to_music(i, 1);
+                end
+            end
+            tm = tm(1:n, :);
+        end
+
+        function GuessSepButtonPushed(app, ~)
+            if isempty(app.to_music)
+                app.OrthStatusLabel.Text = 'Run geodesic computation first.';
+                return;
+            end
+
+            index_curve = str2double(app.CurveIndexDropDown.Value);
+            to_music_f = applyRecallFilter(app, app.to_music, index_curve);
+            idx_c = find(to_music_f(:,2) == index_curve);
+            if length(idx_c) < 4
+                app.OrthStatusLabel.Text = 'Not enough crossings to compare.';
+                return;
+            end
+
+            idx_other = find(to_music_f(:,2) ~= index_curve);
+            tm_even = to_music_f([idx_other; idx_c(2:2:end)], :);
+            tm_odd  = to_music_f([idx_other; idx_c(1:2:end)], :);
+
+            [x_even, f_even] = compute_cumufun_from_to_music(tm_even, index_curve);
+            [x_odd,  f_odd ] = compute_cumufun_from_to_music(tm_odd,  index_curve);
+
+            % Deduplicate knots (keep last CDF value at each x)
+            [x_even, ia] = unique(x_even, 'last'); f_even = f_even(ia);
+            [x_odd,  ia] = unique(x_odd,  'last'); f_odd  = f_odd(ia);
+
+            % Evaluate both step-function CDFs on the union of their knots
+            x_common = sort(union(x_even, x_odd));
+            pad = max(x_even(end), x_odd(end)) + 1;
+            f_ei = interp1([x_even; pad], [f_even; f_even(end)], x_common, 'previous', 0);
+            f_oi = interp1([x_odd;  pad], [f_odd;  f_odd(end)],  x_common, 'previous', 0);
+
+            dist = max(abs(f_ei - f_oi));
+
+            threshold = 0.05;
+            if dist < threshold
+                guess = 'Nonseparating';
+            else
+                guess = 'Separating';
+            end
+
+            % Draw both CDFs on the CDF tab
+            app.CenterTabGroup.SelectedTab = app.CDFTab;
+            ax = app.CDFAxes;
+            cla(ax); hold(ax, 'on');
+            stairs(ax, x_even, f_even, 'b-', 'LineWidth', 1.5, 'DisplayName', 'Even arcs');
+            stairs(ax, x_odd,  f_odd,  'r-', 'LineWidth', 1.5, 'DisplayName', 'Odd arcs');
+            hold(ax, 'off');
+            legend(ax, 'Location', 'southeast');
+            title(ax, sprintf('Even vs Odd — KS dist: %.4f → %s', dist, guess));
+            xlim(ax, [0 25]);
+            ylim(ax, [0 1.05]);
+            drawnow;
+
+            app.OrthStatusLabel.Text = sprintf('Guess: %s (KS distance: %.4f)', guess, dist);
         end
 
         function InfoGeodesicButtonPushed(app, ~)
@@ -1993,12 +2096,20 @@ classdef HyperMozartApp < matlab.apps.AppBase
             app.CurveIndexDropDown = uidropdown(app.OrthPanel, ...
                 'Items', {'1','2','3'}, 'Value', '1', ...
                 'Position', [140 y 80 22]);
+            app.RecallOtherCurvesCheckBox = uicheckbox(app.OrthPanel, ...
+                'Text', 'Recall other curves', 'Value', true, ...
+                'Position', [230 y 170 22]);
 
             y = y - 40;
             app.OrthOptionsButton = uibutton(app.OrthPanel, 'push');
             app.OrthOptionsButton.Text = 'Options...';
             app.OrthOptionsButton.Position = [10 y 120 28];
             app.OrthOptionsButton.ButtonPushedFcn = createCallbackFcn(app, @OrthOptionsButtonPushed, true);
+
+            app.GuessSepButton = uibutton(app.OrthPanel, 'push');
+            app.GuessSepButton.Text = 'Guess sep / nonsep';
+            app.GuessSepButton.Position = [135 y 265 28];
+            app.GuessSepButton.ButtonPushedFcn = createCallbackFcn(app, @GuessSepButtonPushed, true);
 
             y = y - 45;
             app.ComputeOrthButton = uibutton(app.OrthPanel, 'push');
