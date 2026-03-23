@@ -179,7 +179,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
 
         function updateCurveColors(app)
             if strcmp(app.GluingDropDown.Value, 'Separating S2')
-                gluing = create_gluing_standard_S2();
+                gluing = create_gluing_separating_S2();
             else
                 gluing = create_gluing_nonseparating_S2();
             end
@@ -459,7 +459,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             lengths_curves = [app.L1Spinner.Value, app.L2Spinner.Value, app.L3Spinner.Value];
             points_draw = 200;
             if strcmp(app.GluingDropDown.Value, 'Separating S2')
-                gluing_preview = create_gluing_standard_S2();
+                gluing_preview = create_gluing_separating_S2();
             else
                 gluing_preview = create_gluing_nonseparating_S2();
             end
@@ -1239,7 +1239,7 @@ classdef HyperMozartApp < matlab.apps.AppBase
             end
 
             if strcmp(app.GluingDropDown.Value, 'Separating S2')
-                gluing = create_gluing_standard_S2();
+                gluing = create_gluing_separating_S2();
             else
                 gluing = create_gluing_nonseparating_S2();
             end

@@ -2,7 +2,7 @@ t=true;
 f=false;
 
 % NEED TO THINK HOW TO VISUALIZE
-visualize = t;
+visualize = f;
 points_draw_geodesics = 10;
 speed_drawing_geodesic = 2;
 make_geodesics_grey_after = 2;
@@ -21,7 +21,7 @@ how_long_note_played =0.1;
 
 lengths_curves = [5, 1.5, 3]; % Insert values
 twisted_parameters = [2.4, 1.2, 5.4]; % Insert values in [0, 2pi)
-Max_len_geodesic = 100;
+Max_len_geodesic = 100000;
 
 pause_time = 0;
 

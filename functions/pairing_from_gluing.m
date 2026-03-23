@@ -5,7 +5,7 @@ function [out_hex, out_side, isometry] = pairing_from_gluing(gluing, in_hex, in_
 % hexagon, target side, and the isometry needed to continue the geodesic.
 %
 % Inputs:
-%   gluing            - struct produced by create_gluing_standard_S2 (or similar)
+%   gluing            - struct produced by create_gluing_separating_S2 (or similar)
 %   in_hex            - index of the current fundamental domain (1-based)
 %   in_side           - index of the side being crossed (1-based)
 %   twisted_params    - vector of Fenchel-Nielsen twist parameters [t1, t2, t3]

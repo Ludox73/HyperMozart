@@ -1,5 +1,5 @@
-function gluing = create_gluing_standard_S2()
-%CREATE_GLUING_STANDARD_S2  Build the gluing struct for the standard genus-2
+function gluing = create_gluing_separating_S2()
+%CREATE_GLUING_SEPARATING_S2  Build the gluing struct for the standard genus-2
 % surface constructed from 4 right-angled hexagons.
 %
 % Returns a struct with fields:
