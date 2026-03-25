@@ -281,7 +281,7 @@ function nullSpace4x4(A){
   for(let col=0;col<n&&row<4;col++){
     let maxVal=0,maxRow=row;
     for(let r=row;r<4;r++){if(Math.abs(M[r][col])>maxVal){maxVal=Math.abs(M[r][col]);maxRow=r;}}
-    if(maxVal<1e-14)continue;
+    if(maxVal<1e-10)continue;
     [M[row],M[maxRow]]=[M[maxRow],M[row]];
     const piv=M[row][col];
     for(let c=0;c<n;c++)M[row][c]/=piv;
