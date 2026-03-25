@@ -32,6 +32,16 @@ canvas{border-radius:8px;background:#0a0a1a;display:block;margin:0 auto}
 .hex-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .hex-grid canvas{width:100%;height:auto}
 .audio-info{font-size:.75rem;color:#888;text-align:center;margin-top:6px}
+.checkbox-row{display:flex;align-items:center;gap:6px;margin:4px 0}
+.checkbox-row input[type=checkbox]{accent-color:#e8d5b7;width:16px;height:16px}
+.checkbox-row label{display:inline;margin:0;font-size:.8rem}
+select{background:#0a0a1a;color:#e0e0e0;border:1px solid #0f3460;border-radius:4px;padding:4px 6px;font-size:.8rem;width:100%}
+.orth-table{width:100%;border-collapse:collapse;font-size:.75rem;margin-top:6px}
+.orth-table th{background:#0f3460;padding:4px 6px;text-align:left;color:#c9a96e}
+.orth-table td{padding:3px 6px;border-bottom:1px solid #0f3460;cursor:pointer}
+.orth-table tr:hover td{background:#1a4a8a}
+.orth-table tr.selected td{background:#2a5a9a}
+.cdf-canvas{width:100%;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;margin-top:6px}
 </style>
 </head>
 <body>
@@ -65,6 +75,9 @@ canvas{border-radius:8px;background:#0a0a1a;display:block;margin:0 auto}
 <input type="range" id="maxlen" min="1000" max="100000" step="1000" value="10000">
 <label>Drawing speed <span class="val" id="v-speed">2</span></label>
 <input type="range" id="speed" min="1" max="10" step="0.5" value="2">
+<div class="checkbox-row">
+<input type="checkbox" id="fast-mode"><label for="fast-mode">Fast mode (no visualization)</label>
+</div>
 </div>
 <button id="btn-run" onclick="startComputation()">Run Geodesic</button>
 <button id="btn-stop" class="stop" onclick="stopComputation()" disabled>Stop</button>
@@ -99,6 +112,54 @@ canvas{border-radius:8px;background:#0a0a1a;display:block;margin:0 auto}
 <div class="audio-info" id="stats"></div>
 </div>
 </div>
+
+<!-- Orthospectrum Panel -->
+<div class="panel" style="width:100%;max-width:1200px">
+<div class="group">
+<div class="group-title">Orthospectrum Estimation</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+<div style="flex:0 0 auto">
+<label>Curve <select id="orth-curve" style="width:60px">
+<option value="1">1</option><option value="2">2</option><option value="3">3</option>
+</select></label>
+</div>
+<div style="flex:0 0 auto">
+<label>Sample points <select id="orth-samples" style="width:100px">
+<option value="10000">10k</option><option value="50000">50k</option>
+<option value="100000" selected>100k</option><option value="300000">300k</option>
+</select></label>
+</div>
+<div style="flex:0 0 auto">
+<div class="checkbox-row"><input type="checkbox" id="orth-symmetric" checked><label for="orth-symmetric">Symmetric</label></div>
+</div>
+<div style="flex:0 0 auto">
+<div class="checkbox-row"><input type="checkbox" id="orth-recall" checked><label for="orth-recall">Recall other curves</label></div>
+</div>
+<div style="flex:0 0 auto">
+<button id="btn-orth" onclick="computeNextOrthElement()" disabled style="width:auto;padding:6px 14px">Estimate Next Element</button>
+</div>
+<div style="flex:0 0 auto">
+<button onclick="resetOrth()" style="width:auto;padding:6px 14px">Reset</button>
+</div>
+<div style="flex:0 0 auto">
+<button id="btn-guess-sep" onclick="guessSepNonsep()" disabled style="width:auto;padding:6px 14px">Guess sep/nonsep</button>
+</div>
+</div>
+<div class="status" id="orth-status">Run geodesic first.</div>
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+<div style="flex:1;min-width:200px">
+<table class="orth-table" id="orth-table">
+<thead><tr><th>#</th><th>Length</th><th>Prob %</th></tr></thead>
+<tbody></tbody>
+</table>
+</div>
+<div style="flex:2;min-width:300px">
+<canvas id="cdf-canvas" class="cdf-canvas" width="600" height="250"></canvas>
+</div>
+</div>
+</div>
+</div>
+
 </div>
 
 <script>
@@ -888,8 +949,10 @@ async function startComputation(){
 
   if(stopRequested){finish();return;}
 
-  // Main geodesic computation with animated drawing
-  document.getElementById('status').textContent='Running geodesic...';
+  const fastMode=document.getElementById('fast-mode').checked;
+
+  // Main geodesic computation
+  document.getElementById('status').textContent=fastMode?'Computing (fast mode)...':'Running geodesic...';
   let travelledDist=0;
   let travelledSinceLast=0;
   let firstCycle=true;
@@ -897,132 +960,130 @@ async function startComputation(){
   const curveCombinations=gluing.curveCombinations;
   stepCount=0;
 
-  // History of recent arcs for greying
-  const recentArcs=[]; // [{hexIdx, sp, ep}]
-  const GREY_AFTER=2; // grey out arcs after this many newer arcs
-
-  // Save canvas state after drawing hexagons (before any geodesics)
-  const baseImages=[];
-  for(let h=0;h<4;h++){
-    const ctx=canvases[h].getContext('2d');
-    baseImages.push(ctx.getImageData(0,0,canvases[h].width,canvases[h].height));
-  }
-
-  function drawCurrentArcs(skipLast){
-    // Restore base hexagon images
-    for(let h=0;h<4;h++){
-      canvases[h].getContext('2d').putImageData(baseImages[h],0,0);
-    }
-    // Draw all recent arcs with proper colours
-    const drawCount=skipLast?recentArcs.length-1:recentArcs.length;
-    for(let i=0;i<drawCount;i++){
-      const arc=recentArcs[i];
-      const canvas=canvases[arc.hexIdx];
-      const ctx=canvas.getContext('2d');
-      const w=canvas.width,ht=canvas.height;
-      const cxC=w/2,cyC=ht/2,sc=w/2.3;
-      const age=recentArcs.length-1-i;
-      if(age>=GREY_AFTER){
-        drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(160,160,160,1.0)',0.8);
-      }else{
-        drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(255,80,80,0.85)',1.5);
+  if(fastMode){
+    // ===== FAST MODE: no drawing, no animation =====
+    while(travelledDist<maxLen){
+      if(stopRequested)break;
+      const inter=firstIntersection(curPoint,curTgVec,circles[polyIdx],toAvoid);
+      if(!inter)break;
+      const dtp=distanceTwoPoints(curPoint,inter.point);
+      travelledDist+=dtp;
+      travelledSinceLast+=dtp;
+      let intersectsCurve=-1;
+      for(let c=0;c<3;c++){
+        if(isRow([polyIdx,inter.side],curveCombinations[c])){intersectsCurve=c;break;}
+      }
+      if(intersectsCurve>=0){
+        if(!firstCycle)toMusicLocal.push([travelledSinceLast,intersectsCurve+1]);
+        travelledSinceLast=0;firstCycle=false;
+      }
+      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      curPoint=pr.point;curTgVec=pr.tgVec;polyIdx=pr.polyIdx;toAvoid=pr.toAvoid;
+      stepCount++;
+      if(stepCount%2000===0){
+        const pct=Math.min(100,travelledDist/maxLen*100);
+        document.getElementById('progress').style.width=pct+'%';
+        document.getElementById('status').textContent=`Computing... ${Math.floor(pct)}% (${toMusicLocal.length} crossings)`;
+        await new Promise(r=>setTimeout(r,0));
       }
     }
-    // Keep only the most recent arcs (GREY_AFTER + 2 buffer)
-    const keep=GREY_AFTER+2;
-    if(recentArcs.length>keep){
-      // Bake old grey arcs into the base images
-      for(let i=0;i<recentArcs.length-keep;i++){
+  } else {
+    // ===== VISUAL MODE: animated drawing =====
+    // History of recent arcs for greying
+    const recentArcs=[];
+    const GREY_AFTER=2;
+
+    const baseImages=[];
+    for(let h=0;h<4;h++){
+      const ctx=canvases[h].getContext('2d');
+      baseImages.push(ctx.getImageData(0,0,canvases[h].width,canvases[h].height));
+    }
+
+    function drawCurrentArcs(skipLast){
+      for(let h=0;h<4;h++){
+        canvases[h].getContext('2d').putImageData(baseImages[h],0,0);
+      }
+      const drawCount=skipLast?recentArcs.length-1:recentArcs.length;
+      for(let i=0;i<drawCount;i++){
         const arc=recentArcs[i];
         const canvas=canvases[arc.hexIdx];
         const ctx=canvas.getContext('2d');
         const w=canvas.width,ht=canvas.height;
         const cxC=w/2,cyC=ht/2,sc=w/2.3;
-        drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(160,160,160,1.0)',0.8);
+        const age=recentArcs.length-1-i;
+        if(age>=GREY_AFTER){
+          drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(160,160,160,1.0)',0.8);
+        }else{
+          drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(255,80,80,0.85)',1.5);
+        }
       }
-      // Update base images with baked arcs
-      for(let h=0;h<4;h++){
-        const ctx=canvases[h].getContext('2d');
-        baseImages[h]=ctx.getImageData(0,0,canvases[h].width,canvases[h].height);
+      const keep=GREY_AFTER+2;
+      if(recentArcs.length>keep){
+        for(let i=0;i<recentArcs.length-keep;i++){
+          const arc=recentArcs[i];
+          const canvas=canvases[arc.hexIdx];
+          const ctx=canvas.getContext('2d');
+          const w=canvas.width,ht=canvas.height;
+          const cxC=w/2,cyC=ht/2,sc=w/2.3;
+          drawGeodesicSegment(ctx,cxC,cyC,sc,arc.sp,arc.ep,'rgba(160,160,160,1.0)',0.8);
+        }
+        for(let h=0;h<4;h++){
+          const ctx=canvases[h].getContext('2d');
+          baseImages[h]=ctx.getImageData(0,0,canvases[h].width,canvases[h].height);
+        }
+        recentArcs.splice(0,recentArcs.length-keep);
       }
-      recentArcs.splice(0,recentArcs.length-keep);
-    }
-  }
-
-  // Pre-create audio context and marimba note buffers for live playback
-  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  const liveNotes=[440.00,554.37,659.25].map(f=>createMarimbaNote(f,1.5));
-
-  function playNoteNow(curveIdx){
-    try{
-      const src=audioCtx.createBufferSource();
-      src.buffer=liveNotes[curveIdx];
-      src.connect(audioCtx.destination);
-      src.start();
-    }catch(e){}
-  }
-
-  const NUM_CHUNKS=7;
-
-  while(travelledDist<maxLen){
-    if(stopRequested)break;
-
-    const inter=firstIntersection(curPoint,curTgVec,circles[polyIdx],toAvoid);
-    if(!inter)break;
-
-    const dtp=distanceTwoPoints(curPoint,inter.point);
-    const arcSp=[...curPoint],arcEp=[...inter.point];
-    const arcHex=polyIdx;
-
-    travelledDist+=dtp;
-    travelledSinceLast+=dtp;
-
-    // Check curve intersections
-    let intersectsCurve=-1;
-    for(let c=0;c<3;c++){
-      if(isRow([polyIdx,inter.side],curveCombinations[c])){intersectsCurve=c;break;}
     }
 
-    if(intersectsCurve>=0){
-      if(!firstCycle){
-        toMusicLocal.push([travelledSinceLast,intersectsCurve+1]);
-      }
-      travelledSinceLast=0;
-      firstCycle=false;
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const liveNotes=[440.00,554.37,659.25].map(f=>createMarimbaNote(f,1.5));
+    function playNoteNow(curveIdx){
+      try{const src=audioCtx.createBufferSource();src.buffer=liveNotes[curveIdx];src.connect(audioCtx.destination);src.start();}catch(e){}
     }
 
-    const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
-    curPoint=pr.point;curTgVec=pr.tgVec;polyIdx=pr.polyIdx;toAvoid=pr.toAvoid;
+    const NUM_CHUNKS=7;
 
-    stepCount++;
-
-    // Update greying for previous arcs, skip the newest (animated below)
-    recentArcs.push({hexIdx:arcHex,sp:arcSp,ep:arcEp});
-    drawCurrentArcs(true);
-
-    // Animate the newest arc chunk by chunk on top
-    const canvas=canvases[arcHex];
-    const ctx=canvas.getContext('2d');
-    const w=canvas.width,ht=canvas.height;
-    const cxC=w/2,cyC=ht/2,sc=w/2.3;
-    const chunkPauseMs=Math.max(2,(dtp/drawSpeed)*143);
-
-    for(let ch=0;ch<NUM_CHUNKS;ch++){
+    while(travelledDist<maxLen){
       if(stopRequested)break;
-      const f0=ch/NUM_CHUNKS;
-      const f1=(ch+1)/NUM_CHUNKS;
-      drawGeodesicSegmentPartial(ctx,cxC,cyC,sc,arcSp,arcEp,'rgba(255,80,80,0.85)',1.5,f0,f1);
-      await new Promise(r=>setTimeout(r,chunkPauseMs));
-    }
+      const inter=firstIntersection(curPoint,curTgVec,circles[polyIdx],toAvoid);
+      if(!inter)break;
+      const dtp=distanceTwoPoints(curPoint,inter.point);
+      const arcSp=[...curPoint],arcEp=[...inter.point];
+      const arcHex=polyIdx;
+      travelledDist+=dtp;
+      travelledSinceLast+=dtp;
+      let intersectsCurve=-1;
+      for(let c=0;c<3;c++){
+        if(isRow([polyIdx,inter.side],curveCombinations[c])){intersectsCurve=c;break;}
+      }
+      if(intersectsCurve>=0){
+        if(!firstCycle)toMusicLocal.push([travelledSinceLast,intersectsCurve+1]);
+        travelledSinceLast=0;firstCycle=false;
+      }
+      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      curPoint=pr.point;curTgVec=pr.tgVec;polyIdx=pr.polyIdx;toAvoid=pr.toAvoid;
+      stepCount++;
 
-    // Play note when hitting a curve
-    if(intersectsCurve>=0){
-      playNoteNow(intersectsCurve);
-    }
+      recentArcs.push({hexIdx:arcHex,sp:arcSp,ep:arcEp});
+      drawCurrentArcs(true);
 
-    const pct=Math.min(100,travelledDist/maxLen*100);
-    document.getElementById('progress').style.width=pct+'%';
-    document.getElementById('status').textContent=`Running... ${Math.floor(pct)}% (${toMusicLocal.length} crossings)`;
+      const canvas=canvases[arcHex];
+      const ctx=canvas.getContext('2d');
+      const w=canvas.width,ht=canvas.height;
+      const cxC=w/2,cyC=ht/2,sc=w/2.3;
+      const chunkPauseMs=Math.max(2,(dtp/drawSpeed)*143);
+      for(let ch=0;ch<NUM_CHUNKS;ch++){
+        if(stopRequested)break;
+        const f0=ch/NUM_CHUNKS;
+        const f1=(ch+1)/NUM_CHUNKS;
+        drawGeodesicSegmentPartial(ctx,cxC,cyC,sc,arcSp,arcEp,'rgba(255,80,80,0.85)',1.5,f0,f1);
+        await new Promise(r=>setTimeout(r,chunkPauseMs));
+      }
+      if(intersectsCurve>=0)playNoteNow(intersectsCurve);
+      const pct=Math.min(100,travelledDist/maxLen*100);
+      document.getElementById('progress').style.width=pct+'%';
+      document.getElementById('status').textContent=`Running... ${Math.floor(pct)}% (${toMusicLocal.length} crossings)`;
+    }
   }
 
   toMusic=toMusicLocal;
@@ -1037,11 +1098,369 @@ function finish(){
   running=false;
   document.getElementById('btn-run').disabled=false;
   document.getElementById('btn-stop').disabled=true;
-  document.getElementById('btn-play').disabled=!(toMusic&&toMusic.length>0);
+  const hasData=toMusic&&toMusic.length>0;
+  document.getElementById('btn-play').disabled=!hasData;
+  document.getElementById('btn-orth').disabled=!hasData;
+  document.getElementById('btn-guess-sep').disabled=!hasData;
+  if(hasData){document.getElementById('orth-status').textContent='Ready. Click "Estimate Next Element".';}
 }
 
 function stopComputation(){
   stopRequested=true;
+}
+
+// ===== Orthospectrum =====
+let orthState={initialized:false,xVals:null,fVals:null,lengthGeodesic:0,results:[],percentages:[],snapshots:[]};
+
+function myEcdf(data){
+  const sorted=[...data].sort((a,b)=>a-b);
+  const n=sorted.length;
+  const x=[sorted[0],...sorted];
+  const f=[0,...sorted.map((_,i)=>(i+1)/n)];
+  return{x,f};
+}
+
+function applyRecallFilter(tm,indexCurve){
+  if(document.getElementById('orth-recall').checked)return tm;
+  const out=[];
+  let pending=0;
+  for(const row of tm){
+    if(row[1]===indexCurve){out.push([row[0]+pending,indexCurve]);pending=0;}
+    else pending+=row[0];
+  }
+  return out;
+}
+
+function guessLengthGeodesicFromToMusic(tm,indexCurve,chiSigma){
+  const totalTime=tm.reduce((s,r)=>s+r[0],0);
+  const numIntersections=tm.filter(r=>r[1]===indexCurve).length;
+  return -numIntersections*Math.PI*Math.PI*chiSigma/totalTime;
+}
+
+function computeCumufunFromToMusic(tm,indexCurve){
+  const values=tm.filter(r=>r[1]===indexCurve).map(r=>r[0]);
+  return myEcdf(values);
+}
+
+function distFunctionJS(y0,theta,s){
+  // Distance from (0,y) to the intersection of:
+  // - geodesic from (0,y) with angle theta
+  // - geodesic at distance s from x=0 through (tanh(s/2),0)
+  const y=Math.tanh(y0/2);
+  const point1=[0,y];
+  const tgVec1=[Math.cos(theta),Math.sin(theta)];
+  const gc1=geodesicCircumferenceFromPtv(point1,tgVec1);
+
+  const point2=[Math.tanh(s/2),0];
+  const tgVec2=[0,1];
+  const gc2=geodesicCircumferenceFromPtv(point2,tgVec2);
+
+  const pts=findIntersectionCircles(gc1.center,gc1.radius,gc2.center,gc2.radius);
+  if(!pts)return Infinity;
+
+  for(let h=0;h<pts.length;h++){
+    const p=pts[h];
+    if(p[0]*p[0]+p[1]*p[1]<1)return distanceTwoPoints(point1,p);
+  }
+  return Infinity;
+}
+
+function expectedCumufunOneHomotopyClass(distance,lengthGeodesic,nSamples){
+  const widthX=4*lengthGeodesic;
+  const vals=[];
+  let finiteCount=0;
+  for(let i=0;i<nSamples;i++){
+    const x=-widthX/2+widthX*Math.random();
+    const u=Math.random();
+    const theta=Math.asin(2*u-1);
+    const d=distFunctionJS(x,theta,distance);
+    if(isFinite(d)){vals.push(d);finiteCount++;}
+  }
+  // Estimate unmeasurable fraction
+  const AL=widthX*Math.PI;
+  const AB=finiteCount/nSamples*AL;
+  const numInfToAdd=Math.max(0,Math.round((lengthGeodesic*2*Math.PI/AB)*finiteCount)-finiteCount);
+  for(let i=0;i<numInfToAdd;i++)vals.push(Infinity);
+
+  const sorted=vals.filter(v=>isFinite(v)).sort((a,b)=>a-b);
+  const n=vals.length;
+  if(sorted.length===0)return{x:[0],f:[0]};
+  const x=[sorted[0],...sorted];
+  const f=x.map((_,i)=>i/n);
+  return{x,f};
+}
+
+function subtractCumufuns(x1,f1,x2,f2){
+  // Interpolate both onto common grid, subtract f2-f1
+  const xSet=new Set([...x1,...x2].filter(v=>isFinite(v)));
+  const xCommon=[...xSet].sort((a,b)=>a-b);
+  function interpPrev(xs,fs,xq){
+    // Step-function interpolation (previous value)
+    const result=new Float64Array(xq.length);
+    for(let i=0;i<xq.length;i++){
+      let val=0;
+      for(let j=xs.length-1;j>=0;j--){
+        if(xs[j]<=xq[i]){val=fs[j];break;}
+      }
+      result[i]=val;
+    }
+    return result;
+  }
+  const f1i=interpPrev(x1,f1,xCommon);
+  const f2i=interpPrev(x2,f2,xCommon);
+  const fOut=xCommon.map((_,i)=>f2i[i]-f1i[i]);
+  return{x:xCommon,f:fOut};
+}
+
+function guessMinimumLength(xVals,fVals,lengthGeodesic,nSamples){
+  // Binary search for smallest distance whose expected CDF fits under empirical CDF
+  const xFinite=xVals.filter((_,i)=>isFinite(xVals[i])&&isFinite(fVals[i]));
+  const fFinite=fVals.filter((_,i)=>isFinite(xVals[i])&&isFinite(fVals[i]));
+  if(xFinite.length===0)return 0;
+
+  let sLow=xFinite[0];
+  let sHigh=xFinite[0];
+  for(let i=0;i<fFinite.length;i++){if(fFinite[i]>0.2){sHigh=xFinite[i];break;}}
+  if(sHigh<=sLow)sHigh=Math.min(xFinite[xFinite.length-1],5);
+  if(sLow>=sHigh)return sLow;
+
+  // Deduplicate for interpolation
+  const xEmpU=[],fEmpU=[];
+  for(let i=0;i<xFinite.length;i++){
+    if(i===xFinite.length-1||xFinite[i]!==xFinite[i+1]){xEmpU.push(xFinite[i]);fEmpU.push(fFinite[i]);}
+  }
+
+  for(let iter=0;iter<15;iter++){
+    const sMid=(sLow+sHigh)/2;
+    const cand=expectedCumufunOneHomotopyClass(sMid,lengthGeodesic,nSamples);
+    // Check if 0.8*f_cand <= f_empirical + 0.0001 everywhere
+    let fits=true;
+    for(let i=0;i<cand.x.length;i++){
+      // Interpolate empirical at cand.x[i] (step function)
+      let fEmp=0;
+      for(let j=xEmpU.length-1;j>=0;j--){
+        if(xEmpU[j]<=cand.x[i]){fEmp=fEmpU[j];break;}
+      }
+      if(0.8*cand.f[i]>fEmp+0.0001){fits=false;break;}
+    }
+    if(fits)sHigh=sMid;else sLow=sMid;
+  }
+  return(sLow+sHigh)/2;
+}
+
+async function computeNextOrthElement(){
+  if(!toMusic||toMusic.length===0)return;
+  const indexCurve=parseInt(document.getElementById('orth-curve').value);
+  const nSamples=parseInt(document.getElementById('orth-samples').value);
+  const symmetric=document.getElementById('orth-symmetric').checked;
+  const chiSigma=-2;
+
+  if(!orthState.initialized){
+    const tmF=applyRecallFilter(toMusic,indexCurve);
+    orthState.lengthGeodesic=guessLengthGeodesicFromToMusic(tmF,indexCurve,chiSigma);
+    const ecdf=computeCumufunFromToMusic(tmF,indexCurve);
+    orthState.xVals=ecdf.x;orthState.fVals=ecdf.f;
+    orthState.results=[];orthState.percentages=[];orthState.snapshots=[];
+    orthState.initialized=true;
+    document.getElementById('orth-table').querySelector('tbody').innerHTML='';
+  }
+
+  document.getElementById('btn-orth').disabled=true;
+  document.getElementById('orth-status').textContent='Computing next element...';
+  await new Promise(r=>setTimeout(r,10));
+
+  try{
+    const xBackup=[...orthState.xVals],fBackup=[...orthState.fVals];
+
+    const minLength=guessMinimumLength(orthState.xVals,orthState.fVals,orthState.lengthGeodesic,nSamples);
+
+    const cand=expectedCumufunOneHomotopyClass(minLength,orthState.lengthGeodesic,nSamples);
+
+    // Align endpoints
+    if(cand.x[cand.x.length-1]<orthState.xVals[orthState.xVals.length-1])
+      cand.x[cand.x.length-1]=orthState.xVals[orthState.xVals.length-1];
+    else
+      orthState.xVals[orthState.xVals.length-1]=cand.x[cand.x.length-1];
+
+    let fCandSub,pct;
+    if(symmetric){
+      fCandSub=cand.f.map(v=>2*v);
+      pct=cand.f[cand.f.length-1]*200;
+    }else{
+      fCandSub=[...cand.f];
+      pct=cand.f[cand.f.length-1]*100;
+    }
+
+    const sub=subtractCumufuns(cand.x,fCandSub,orthState.xVals,orthState.fVals);
+    orthState.xVals=sub.x;orthState.fVals=sub.f;
+    orthState.results.push(minLength);
+    orthState.percentages.push(pct);
+
+    // Save snapshot
+    orthState.snapshots.push({
+      xCand:[...cand.x],fCand:[...fCandSub],
+      xBackup,fBackup,
+      xNew:[...sub.x],fNew:[...sub.f],
+      minLength,pct
+    });
+
+    // Update table
+    const tbody=document.getElementById('orth-table').querySelector('tbody');
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${orthState.results.length}</td><td>${minLength.toFixed(6)}</td><td>${pct.toFixed(1)}</td>`;
+    tr.addEventListener('click',()=>drawOrthSnapshot(orthState.results.length-1));
+    tbody.appendChild(tr);
+
+    // Draw CDF
+    drawOrthSnapshot(orthState.snapshots.length-1);
+
+    document.getElementById('orth-status').textContent=
+      `Element ${orthState.results.length}: ${minLength.toFixed(6)} (${pct.toFixed(1)}%)`;
+
+  }catch(e){
+    document.getElementById('orth-status').textContent='Error: '+e.message;
+  }
+  document.getElementById('btn-orth').disabled=false;
+}
+
+function drawOrthSnapshot(idx){
+  if(idx<0||idx>=orthState.snapshots.length)return;
+  const snap=orthState.snapshots[idx];
+  const canvas=document.getElementById('cdf-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const pad={l:50,r:15,t:25,b:30};
+  const pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+
+  // Axes
+  const xMax=25,yMin=-0.2,yMax=1.0;
+  function tx(v){return pad.l+v/xMax*pw;}
+  function ty(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*ph;}
+
+  // Grid
+  ctx.strokeStyle='#1a2a4a';ctx.lineWidth=0.5;
+  for(let gx=0;gx<=xMax;gx+=5){ctx.beginPath();ctx.moveTo(tx(gx),pad.t);ctx.lineTo(tx(gx),pad.t+ph);ctx.stroke();}
+  for(let gy=-0.2;gy<=1;gy+=0.2){ctx.beginPath();ctx.moveTo(pad.l,ty(gy));ctx.lineTo(pad.l+pw,ty(gy));ctx.stroke();}
+
+  // Axis labels
+  ctx.fillStyle='#888';ctx.font='10px sans-serif';ctx.textAlign='center';
+  for(let gx=0;gx<=xMax;gx+=5)ctx.fillText(gx,tx(gx),pad.t+ph+14);
+  ctx.textAlign='right';
+  for(let gy=-0.2;gy<=1;gy+=0.2)ctx.fillText(gy.toFixed(1),pad.l-4,ty(gy)+3);
+
+  function drawStep(x,f,color){
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;
+    let started=false;
+    for(let i=0;i<x.length;i++){
+      if(!isFinite(x[i])||!isFinite(f[i]))continue;
+      const sx=tx(Math.min(x[i],xMax)),sy=ty(Math.max(yMin,Math.min(yMax,f[i])));
+      if(!started){ctx.moveTo(sx,sy);started=true;}
+      else ctx.lineTo(sx,sy);
+    }
+    ctx.stroke();
+  }
+
+  drawStep(snap.xCand,snap.fCand,'#4488ff');
+  drawStep(snap.xBackup,snap.fBackup,'#cccccc');
+  drawStep(snap.xNew,snap.fNew,'#ff4444');
+
+  // Legend
+  ctx.font='11px sans-serif';
+  const lx=pad.l+pw-160,ly=pad.t+15;
+  [[snap.fCand.length?'Candidate CDF':'','#4488ff'],['Previous residual','#cccccc'],['After subtraction','#ff4444']].forEach(([label,col],i)=>{
+    if(!label)return;
+    ctx.fillStyle=col;ctx.fillRect(lx,ly+i*14-8,12,3);
+    ctx.fillStyle='#ccc';ctx.fillText(label,lx+16,ly+i*14-2);
+  });
+
+  // Title
+  ctx.fillStyle='#c9a96e';ctx.font='12px sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Element ${idx+1} (length=${snap.minLength.toFixed(4)}, ${snap.pct.toFixed(1)}%)`,pad.l,pad.t-8);
+
+  // Highlight selected row
+  const rows=document.getElementById('orth-table').querySelectorAll('tbody tr');
+  rows.forEach((r,i)=>{r.classList.toggle('selected',i===idx);});
+}
+
+function resetOrth(){
+  orthState={initialized:false,xVals:null,fVals:null,lengthGeodesic:0,results:[],percentages:[],snapshots:[]};
+  document.getElementById('orth-table').querySelector('tbody').innerHTML='';
+  const canvas=document.getElementById('cdf-canvas');
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,canvas.width,canvas.height);
+  document.getElementById('orth-status').textContent='Reset. Ready.';
+}
+
+async function guessSepNonsep(){
+  if(!toMusic||toMusic.length===0)return;
+  const indexCurve=parseInt(document.getElementById('orth-curve').value);
+  const tmF=applyRecallFilter(toMusic,indexCurve);
+  const idxC=[];const idxOther=[];
+  for(let i=0;i<tmF.length;i++){if(tmF[i][1]===indexCurve)idxC.push(i);else idxOther.push(i);}
+  if(idxC.length<4){document.getElementById('orth-status').textContent='Not enough crossings.';return;}
+
+  const evenIdx=idxC.filter((_,i)=>i%2===1);
+  const oddIdx=idxC.filter((_,i)=>i%2===0);
+  const tmEven=[...idxOther,...evenIdx].map(i=>tmF[i]);
+  const tmOdd=[...idxOther,...oddIdx].map(i=>tmF[i]);
+
+  const ecdfEven=computeCumufunFromToMusic(tmEven,indexCurve);
+  const ecdfOdd=computeCumufunFromToMusic(tmOdd,indexCurve);
+
+  // Evaluate both on common grid and compute KS distance
+  const xSet=new Set([...ecdfEven.x,...ecdfOdd.x].filter(v=>isFinite(v)));
+  const xCommon=[...xSet].sort((a,b)=>a-b);
+  let maxDist=0;
+  for(const xv of xCommon){
+    let fe=0,fo=0;
+    for(let j=ecdfEven.x.length-1;j>=0;j--){if(ecdfEven.x[j]<=xv){fe=ecdfEven.f[j];break;}}
+    for(let j=ecdfOdd.x.length-1;j>=0;j--){if(ecdfOdd.x[j]<=xv){fo=ecdfOdd.f[j];break;}}
+    maxDist=Math.max(maxDist,Math.abs(fe-fo));
+  }
+
+  const guess=maxDist<0.05?'Nonseparating':'Separating';
+
+  // Draw both CDFs
+  const canvas=document.getElementById('cdf-canvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const pad={l:50,r:15,t:25,b:30};
+  const pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  const xMax=25;
+  function tx(v){return pad.l+v/xMax*pw;}
+  function ty(v){return pad.t+(1-v)*ph;}
+  ctx.strokeStyle='#1a2a4a';ctx.lineWidth=0.5;
+  for(let gx=0;gx<=xMax;gx+=5){ctx.beginPath();ctx.moveTo(tx(gx),pad.t);ctx.lineTo(tx(gx),pad.t+ph);ctx.stroke();}
+  for(let gy=0;gy<=1;gy+=0.2){ctx.beginPath();ctx.moveTo(pad.l,ty(gy));ctx.lineTo(pad.l+pw,ty(gy));ctx.stroke();}
+  ctx.fillStyle='#888';ctx.font='10px sans-serif';ctx.textAlign='center';
+  for(let gx=0;gx<=xMax;gx+=5)ctx.fillText(gx,tx(gx),pad.t+ph+14);
+  ctx.textAlign='right';
+  for(let gy=0;gy<=1;gy+=0.2)ctx.fillText(gy.toFixed(1),pad.l-4,ty(gy)+3);
+
+  function drawStep(ecdf,color){
+    ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=1.5;
+    let started=false;
+    for(let i=0;i<ecdf.x.length;i++){
+      if(!isFinite(ecdf.x[i])||!isFinite(ecdf.f[i]))continue;
+      const sx=tx(Math.min(ecdf.x[i],xMax)),sy=ty(Math.max(0,Math.min(1,ecdf.f[i])));
+      if(!started){ctx.moveTo(sx,sy);started=true;}else ctx.lineTo(sx,sy);
+    }
+    ctx.stroke();
+  }
+  drawStep(ecdfEven,'#4488ff');
+  drawStep(ecdfOdd,'#ff4444');
+
+  ctx.fillStyle='#c9a96e';ctx.font='12px sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Even vs Odd — KS dist: ${maxDist.toFixed(4)} → ${guess}`,pad.l,pad.t-8);
+  ctx.font='11px sans-serif';
+  ctx.fillStyle='#4488ff';ctx.fillRect(pad.l+pw-120,pad.t+7,12,3);ctx.fillStyle='#ccc';ctx.fillText('Even arcs',pad.l+pw-104,pad.t+12);
+  ctx.fillStyle='#ff4444';ctx.fillRect(pad.l+pw-120,pad.t+21,12,3);ctx.fillStyle='#ccc';ctx.fillText('Odd arcs',pad.l+pw-104,pad.t+26);
+
+  document.getElementById('orth-status').textContent=`Guess: ${guess} (KS distance: ${maxDist.toFixed(4)})`;
 }
 
 // ===== UI wiring =====
