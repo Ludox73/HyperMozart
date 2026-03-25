@@ -126,7 +126,8 @@ select{background:#0a0a1a;color:#e0e0e0;border:1px solid #0f3460;border-radius:4
 <div style="flex:0 0 auto">
 <label>Sample points <select id="orth-samples" style="width:100px">
 <option value="10000">10k</option><option value="50000">50k</option>
-<option value="100000" selected>100k</option><option value="300000">300k</option>
+<option value="100000">100k</option><option value="300000" selected>300k</option>
+<option value="500000">500k</option>
 </select></label>
 </div>
 <div style="flex:0 0 auto">
@@ -1142,67 +1143,81 @@ function computeCumufunFromToMusic(tm,indexCurve){
   return myEcdf(values);
 }
 
-function distFunctionJS(y0,theta,s){
-  // Distance from (0,y) to the intersection of:
-  // - geodesic from (0,y) with angle theta
-  // - geodesic at distance s from x=0 through (tanh(s/2),0)
-  const y=Math.tanh(y0/2);
-  const point1=[0,y];
-  const tgVec1=[Math.cos(theta),Math.sin(theta)];
-  const gc1=geodesicCircumferenceFromPtv(point1,tgVec1);
-
-  const point2=[Math.tanh(s/2),0];
-  const tgVec2=[0,1];
-  const gc2=geodesicCircumferenceFromPtv(point2,tgVec2);
-
-  const pts=findIntersectionCircles(gc1.center,gc1.radius,gc2.center,gc2.radius);
-  if(!pts)return Infinity;
-
-  for(let h=0;h<pts.length;h++){
-    const p=pts[h];
-    if(p[0]*p[0]+p[1]*p[1]<1)return distanceTwoPoints(point1,p);
-  }
-  return Infinity;
-}
-
-function expectedCumufunOneHomotopyClass(distance,lengthGeodesic,nSamples){
+// Precompute Monte Carlo samples: random (y0, theta) and their geodesic circles.
+// These are reused across all binary search iterations for consistency.
+function precomputeSamples(lengthGeodesic,nSamples){
   const widthX=4*lengthGeodesic;
-  const vals=[];
-  let finiteCount=0;
+  const samples=new Array(nSamples);
   for(let i=0;i<nSamples;i++){
-    const x=-widthX/2+widthX*Math.random();
+    const y0=-widthX/2+widthX*Math.random();
     const u=Math.random();
     const theta=Math.asin(2*u-1);
-    const d=distFunctionJS(x,theta,distance);
+    const y=Math.tanh(y0/2);
+    const point1=[0,y];
+    const gc1=geodesicCircumferenceFromPtv(point1,[Math.cos(theta),Math.sin(theta)]);
+    samples[i]={point1,gc1Center:gc1.center,gc1Radius:gc1.radius};
+  }
+  return{samples,widthX,lengthGeodesic};
+}
+
+// Evaluate all precomputed samples at a given distance s.
+// gc2 is computed once for the given s (same for all samples).
+function evaluateSamplesAtDistance(precomp,distance){
+  const{samples,widthX,lengthGeodesic}=precomp;
+  const n=samples.length;
+  const point2=[Math.tanh(distance/2),0];
+  const gc2=geodesicCircumferenceFromPtv(point2,[0,1]);
+  const gc2c=gc2.center,gc2r=gc2.radius;
+
+  const vals=[];
+  let finiteCount=0;
+  for(let i=0;i<n;i++){
+    const s=samples[i];
+    const pts=findIntersectionCircles(s.gc1Center,s.gc1Radius,gc2c,gc2r);
+    let d=Infinity;
+    if(pts){
+      for(let h=0;h<pts.length;h++){
+        const p=pts[h];
+        if(p[0]*p[0]+p[1]*p[1]<1){d=distanceTwoPoints(s.point1,p);break;}
+      }
+    }
     if(isFinite(d)){vals.push(d);finiteCount++;}
   }
-  // Estimate unmeasurable fraction
-  const AL=widthX*Math.PI;
-  const AB=finiteCount/nSamples*AL;
-  const numInfToAdd=Math.max(0,Math.round((lengthGeodesic*2*Math.PI/AB)*finiteCount)-finiteCount);
-  for(let i=0;i<numInfToAdd;i++)vals.push(Infinity);
 
-  const sorted=vals.filter(v=>isFinite(v)).sort((a,b)=>a-b);
-  const n=vals.length;
+  // Estimate unmeasurable fraction and add Infinity padding
+  const AL=widthX*Math.PI;
+  const AB=finiteCount/n*AL;
+  const numInfToAdd=Math.max(0,Math.round((lengthGeodesic*2*Math.PI/AB)*finiteCount)-finiteCount);
+  const totalN=finiteCount+numInfToAdd;
+
+  const sorted=vals.sort((a,b)=>a-b);
   if(sorted.length===0)return{x:[0],f:[0]};
   const x=[sorted[0],...sorted];
-  const f=x.map((_,i)=>i/n);
+  const f=x.map((_,i)=>i/totalN);
   return{x,f};
+}
+
+// Backward-compatible wrapper (for guessSepNonsep which doesn't need precomputed samples)
+function expectedCumufunOneHomotopyClass(distance,lengthGeodesic,nSamples){
+  const precomp=precomputeSamples(lengthGeodesic,nSamples);
+  return evaluateSamplesAtDistance(precomp,distance);
 }
 
 function subtractCumufuns(x1,f1,x2,f2){
   // Interpolate both onto common grid, subtract f2-f1
+  // Use binary search for O(n log n) instead of O(n²)
   const xSet=new Set([...x1,...x2].filter(v=>isFinite(v)));
   const xCommon=[...xSet].sort((a,b)=>a-b);
   function interpPrev(xs,fs,xq){
-    // Step-function interpolation (previous value)
     const result=new Float64Array(xq.length);
     for(let i=0;i<xq.length;i++){
-      let val=0;
-      for(let j=xs.length-1;j>=0;j--){
-        if(xs[j]<=xq[i]){val=fs[j];break;}
+      // Binary search for largest j where xs[j] <= xq[i]
+      let lo=0,hi=xs.length-1,best=-1;
+      while(lo<=hi){
+        const mid=(lo+hi)>>1;
+        if(xs[mid]<=xq[i]){best=mid;lo=mid+1;}else hi=mid-1;
       }
-      result[i]=val;
+      result[i]=best>=0?fs[best]:0;
     }
     return result;
   }
@@ -1213,7 +1228,7 @@ function subtractCumufuns(x1,f1,x2,f2){
 }
 
 function guessMinimumLength(xVals,fVals,lengthGeodesic,nSamples){
-  // Binary search for smallest distance whose expected CDF fits under empirical CDF
+  // Binary search using precomputed samples for consistency across iterations
   const xFinite=xVals.filter((_,i)=>isFinite(xVals[i])&&isFinite(fVals[i]));
   const fFinite=fVals.filter((_,i)=>isFinite(xVals[i])&&isFinite(fVals[i]));
   if(xFinite.length===0)return 0;
@@ -1224,23 +1239,24 @@ function guessMinimumLength(xVals,fVals,lengthGeodesic,nSamples){
   if(sHigh<=sLow)sHigh=Math.min(xFinite[xFinite.length-1],5);
   if(sLow>=sHigh)return sLow;
 
-  // Deduplicate for interpolation
+  // Deduplicate empirical CDF for interpolation
   const xEmpU=[],fEmpU=[];
   for(let i=0;i<xFinite.length;i++){
     if(i===xFinite.length-1||xFinite[i]!==xFinite[i+1]){xEmpU.push(xFinite[i]);fEmpU.push(fFinite[i]);}
   }
 
+  // Precompute samples once — reused for all 15 binary search iterations
+  const precomp=precomputeSamples(lengthGeodesic,nSamples);
+
   for(let iter=0;iter<15;iter++){
     const sMid=(sLow+sHigh)/2;
-    const cand=expectedCumufunOneHomotopyClass(sMid,lengthGeodesic,nSamples);
+    const cand=evaluateSamplesAtDistance(precomp,sMid);
     // Check if 0.8*f_cand <= f_empirical + 0.0001 everywhere
     let fits=true;
     for(let i=0;i<cand.x.length;i++){
-      // Interpolate empirical at cand.x[i] (step function)
-      let fEmp=0;
-      for(let j=xEmpU.length-1;j>=0;j--){
-        if(xEmpU[j]<=cand.x[i]){fEmp=fEmpU[j];break;}
-      }
+      // Binary search for empirical value at cand.x[i]
+      let lo=0,hi=xEmpU.length-1,fEmp=0;
+      while(lo<=hi){const mid=(lo+hi)>>1;if(xEmpU[mid]<=cand.x[i]){fEmp=fEmpU[mid];lo=mid+1;}else hi=mid-1;}
       if(0.8*cand.f[i]>fEmp+0.0001){fits=false;break;}
     }
     if(fits)sHigh=sMid;else sLow=sMid;
@@ -1274,7 +1290,9 @@ async function computeNextOrthElement(){
 
     const minLength=guessMinimumLength(orthState.xVals,orthState.fVals,orthState.lengthGeodesic,nSamples);
 
-    const cand=expectedCumufunOneHomotopyClass(minLength,orthState.lengthGeodesic,nSamples);
+    // Reuse fresh precomputed samples for the final CDF at the found min_length
+    const precomp=precomputeSamples(orthState.lengthGeodesic,nSamples);
+    const cand=evaluateSamplesAtDistance(precomp,minLength);
 
     // Align endpoints
     if(cand.x[cand.x.length-1]<orthState.xVals[orthState.xVals.length-1])
