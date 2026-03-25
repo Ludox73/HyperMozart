@@ -527,7 +527,7 @@ function firstIntersection(point,tgVec,circles,toAvoid){
     const ip=intPoints[i].pt;
     if(ip[0]*ip[0]+ip[1]*ip[1]>1+1e-8)continue;
     const ang=angleCW2D([point[0]-c1[0],point[1]-c1[1]],[ip[0]-c1[0],ip[1]-c1[1]],goClockwise);
-    if(ang<minAng&&ang>1e-10){minAng=ang;bestIdx=i;}
+    if(ang>0&&ang<minAng){minAng=ang;bestIdx=i;}
   }
 
   if(bestIdx<0)return null;
@@ -854,6 +854,8 @@ async function startComputation(){
   let bx=0,by=0;
   for(let k=0;k<6;k++){bx+=polytopes[0][k][0];by+=polytopes[0][k][1];}
   bx/=6;by/=6;
+  // Perturb away from origin to avoid degenerate geodesic circle computation
+  if(Math.abs(bx)<1e-6&&Math.abs(by)<1e-6){bx+=1e-4;by+=1e-4;}
   const p1=[bx,by];
   const np2=bx*bx+by*by;
   const a=Math.random()*2*Math.PI;
