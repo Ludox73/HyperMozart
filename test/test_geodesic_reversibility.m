@@ -28,7 +28,7 @@ classdef test_geodesic_reversibility < matlab.unittest.TestCase
             twisted_parameters = rand(1, 3)*2*pi;   % random twist exercises all pairing branches
 
             %% Build the surface
-            gluing    = create_gluing_nonseparating_S2();
+            gluing    = create_gluing_separating_S2();
             polytopes = build_polytopes_from_gluing(gluing, lengths_curves);
             num_sides = length(polytopes{1});
             no_avoid  = num_sides + 1;   % sentinel: avoid nothing at the very first step

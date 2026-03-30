@@ -222,28 +222,28 @@ function createGluingSeparatingS2(){
   g.pairings[0][2]={type:'twisted',primaryTgtHex:0,primaryTgtSide:4,secondaryTgtHex:1,secondaryTgtSide:4,
     srcVtx:[2,3],primaryVtx:[5,4],secondaryVtx:[4,5],twistParamIndex:1,twistSign:1};
   g.pairings[0][4]={type:'twisted',primaryTgtHex:0,primaryTgtSide:2,secondaryTgtHex:1,secondaryTgtSide:2,
-    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:1,twistSign:-1};
+    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:1,twistSign:1};
 
   g.pairings[1][0]={type:'twisted',primaryTgtHex:3,primaryTgtSide:0,secondaryTgtHex:2,secondaryTgtSide:0,
     srcVtx:[0,1],primaryVtx:[1,0],secondaryVtx:[0,1],twistParamIndex:0,twistSign:-1};
   g.pairings[1][2]={type:'twisted',primaryTgtHex:1,primaryTgtSide:4,secondaryTgtHex:0,secondaryTgtSide:4,
     srcVtx:[2,3],primaryVtx:[5,4],secondaryVtx:[4,5],twistParamIndex:1,twistSign:-1};
   g.pairings[1][4]={type:'twisted',primaryTgtHex:1,primaryTgtSide:2,secondaryTgtHex:0,secondaryTgtSide:2,
-    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:1,twistSign:1};
+    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:1,twistSign:-1};
 
   g.pairings[2][0]={type:'twisted',primaryTgtHex:0,primaryTgtSide:0,secondaryTgtHex:1,secondaryTgtSide:0,
-    srcVtx:[0,1],primaryVtx:[1,0],secondaryVtx:[0,1],twistParamIndex:0,twistSign:-1};
+    srcVtx:[0,1],primaryVtx:[1,0],secondaryVtx:[0,1],twistParamIndex:0,twistSign:1};
   g.pairings[2][2]={type:'twisted',primaryTgtHex:2,primaryTgtSide:4,secondaryTgtHex:3,secondaryTgtSide:4,
     srcVtx:[2,3],primaryVtx:[5,4],secondaryVtx:[4,5],twistParamIndex:2,twistSign:1};
   g.pairings[2][4]={type:'twisted',primaryTgtHex:2,primaryTgtSide:2,secondaryTgtHex:3,secondaryTgtSide:2,
-    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:2,twistSign:-1};
+    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:2,twistSign:1};
 
   g.pairings[3][0]={type:'twisted',primaryTgtHex:1,primaryTgtSide:0,secondaryTgtHex:0,secondaryTgtSide:0,
-    srcVtx:[0,1],primaryVtx:[1,0],secondaryVtx:[0,1],twistParamIndex:0,twistSign:1};
+    srcVtx:[0,1],primaryVtx:[1,0],secondaryVtx:[0,1],twistParamIndex:0,twistSign:-1};
   g.pairings[3][2]={type:'twisted',primaryTgtHex:3,primaryTgtSide:4,secondaryTgtHex:2,secondaryTgtSide:4,
     srcVtx:[2,3],primaryVtx:[5,4],secondaryVtx:[4,5],twistParamIndex:2,twistSign:-1};
   g.pairings[3][4]={type:'twisted',primaryTgtHex:3,primaryTgtSide:2,secondaryTgtHex:2,secondaryTgtSide:2,
-    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:2,twistSign:1};
+    srcVtx:[4,5],primaryVtx:[3,2],secondaryVtx:[2,3],twistParamIndex:2,twistSign:-1};
 
   // Style lookup
   g.styleLookup=[
