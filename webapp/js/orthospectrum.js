@@ -206,16 +206,18 @@ async function computeNextOrthElement(){
 let homotopyState={results:[]};
 
 // Build a map from (hex*6+side) → boundary ID.
-// All (hex,side) pairs on the same surface boundary get the same ID.
+// Each (hex,side) on a decomposition curve gets its own unique ID (so different
+// sides of the same curve are distinguished). Simple-paired internal sides share
+// an ID with their partner (they form the same internal edge).
 function buildBoundaryMap(gluing){
   const map=new Map();
   let nextId=0;
-  // Decomposition curves from curveCombinations
+  // Decomposition curves: each (hex,side) gets a distinct ID
   for(const cc of gluing.curveCombinations){
     for(const[h,s] of cc){
       map.set(h*6+s,nextId);
+      nextId++;
     }
-    nextId++;
   }
   // Internal boundaries (simple pairings between hexes)
   for(let h=0;h<4;h++){
@@ -236,23 +238,34 @@ function buildBoundaryMap(gluing){
   return map;
 }
 
-// Reduce a crossing sequence by cancelling consecutive crossings of the same boundary.
-function reduceHomotopyWord(crossings,boundaryMap){
-  const stack=[];
-  for(const[h,s] of crossings){
-    const id=boundaryMap.get(h*6+s);
-    if(id===undefined)continue;
-    if(stack.length>0&&stack[stack.length-1]===id){
-      stack.pop();
-    }else{
-      stack.push(id);
-    }
-  }
-  return stack;
+// Each crossing is [exitHex, exitSide, entryHex, entrySide].
+// Map it to a single canonical integer: the unordered pair {exit, entry} encoded as
+// min*100+max (hex*6+side gives values 0-23, so no collision).
+// This is symmetric: same ID whether traversed forward or backward.
+function crossingId(eh,es,nh,ns){
+  const a=eh*6+es, b=nh*6+ns;
+  return Math.min(a,b)*100+Math.max(a,b);
 }
 
-function homotopyKey(crossings,boundaryMap){
-  return reduceHomotopyWord(crossings,boundaryMap).join(',');
+function reduceHomotopyWord(crossings){
+  const ids=[];
+  for(const c of crossings){
+    const[eh,es,nh,ns]=c;
+    if(isNaN(eh)||isNaN(nh))continue; // skip incomplete first crossing
+    ids.push(crossingId(eh,es,nh,ns));
+  }
+  return ids;
+}
+
+function homotopyKey(crossings){
+  const fwd=reduceHomotopyWord(crossings);
+  const rev=[...fwd].reverse();
+  // Canonicalize: treat an arc and its reverse as the same class
+  for(let i=0;i<fwd.length;i++){
+    if(fwd[i]<rev[i])return fwd.join(',');
+    if(fwd[i]>rev[i])return rev.join(',');
+  }
+  return fwd.join(',');
 }
 
 function computeHomotopyOrthospectrum(){
@@ -261,17 +274,16 @@ function computeHomotopyOrthospectrum(){
     return;
   }
 
-  const boundaryMap=buildBoundaryMap(arcGeoContext.gluing);
-
   // Group arcs by homotopy class
   const groups=new Map();
   let skipped=0;
   for(let ai=0;ai<savedArcs.length;ai++){
     const arc=savedArcs[ai];
     if(!arc.crossings||arc.crossings.length===0){skipped++;continue;}
-    const key=homotopyKey(arc.crossings,boundaryMap);
+    const key=homotopyKey(arc.crossings);
     if(!groups.has(key)){
-      groups.set(key,{totalLen:0,count:0,minLen:Infinity,maxLen:0,arcIndices:[]});
+      const seqStr=arc.crossings.map(([eh,es,nh,ns])=>isNaN(eh)?`(${nh+1},${ns+1})`:`(${eh+1},${es+1})→(${nh+1},${ns+1})`).join(' ');
+      groups.set(key,{totalLen:0,count:0,minLen:Infinity,maxLen:0,arcIndices:[],seqStr});
     }
     const g=groups.get(key);
     g.totalLen+=arc.length;
@@ -291,6 +303,7 @@ function computeHomotopyOrthospectrum(){
       minLength:g.minLen,
       maxLength:g.maxLen,
       arcIndices:g.arcIndices,
+      seqStr:g.seqStr,
     });
   }
   results.sort((a,b)=>a.minLength-b.minLength);
@@ -309,7 +322,7 @@ function computeHomotopyOrthospectrum(){
   for(let i=0;i<results.length;i++){
     const r=results[i];
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${i+1}</td><td>${r.minLength.toFixed(6)}</td><td>${r.count}</td>`;
+    tr.innerHTML=`<td>${i+1}</td><td>${r.minLength.toFixed(6)}</td><td>${r.count}</td><td style="font-size:0.8em;color:#555">${r.seqStr}</td>`;
     tr.title=`avg=${r.avgLength.toFixed(6)} max=${r.maxLength.toFixed(6)} word=${r.key}`;
     tbody.appendChild(tr);
   }

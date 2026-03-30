@@ -153,6 +153,7 @@ async function startComputation(){
   const arcsLocal=[];
   let arcInitPt=null,arcInitTg=null,arcInitToAvoid=NaN,arcInitPoly=NaN,arcInitAngle=NaN;
   let arcCrossings=[];
+  let lastExitHex=NaN,lastExitSide=NaN;
 
   function computeAngleAtSide(pt,tgv,hexIdx,side){
     // Angle between curve tangent and geodesic direction, mod pi → [0,π]
@@ -173,7 +174,7 @@ async function startComputation(){
     arcInitPt=[...curPoint];arcInitTg=[...curTgVec];
     arcInitToAvoid=toAvoid;arcInitPoly=polyIdx;
     arcInitAngle=computeAngleAtSide(curPoint,curTgVec,polyIdx,toAvoid);
-    arcCrossings=[[polyIdx,toAvoid]];
+    arcCrossings=[[lastExitHex,lastExitSide,polyIdx,toAvoid]];
   }
 
   // Try to save arc at end crossing
@@ -205,7 +206,8 @@ async function startComputation(){
       const dtp=distanceTwoPoints(curPoint,inter.point);
       travelledDist+=dtp;
       travelledSinceLast+=dtp;
-      if(arcInitPt!==null)arcCrossings.push([polyIdx,inter.side]);
+      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      if(arcInitPt!==null)arcCrossings.push([polyIdx,inter.side,pr.polyIdx,pr.toAvoid]);
       let intersectsCurve=-1;
       for(let c=0;c<3;c++){
         if(isRow([polyIdx,inter.side],curveCombinations[c])){intersectsCurve=c;break;}
@@ -219,7 +221,7 @@ async function startComputation(){
         trackArcEnd(inter.point,inter.tgVec,polyIdx,inter.side,travelledSinceLast);
         travelledSinceLast=0;firstCycle=false;
       }
-      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      lastExitHex=polyIdx;lastExitSide=inter.side;
       curPoint=pr.point;curTgVec=pr.tgVec;polyIdx=pr.polyIdx;toAvoid=pr.toAvoid;
       stepCount++;
       if(stepCount%2000===0){
@@ -296,7 +298,8 @@ async function startComputation(){
       const arcHex=polyIdx;
       travelledDist+=dtp;
       travelledSinceLast+=dtp;
-      if(arcInitPt!==null)arcCrossings.push([polyIdx,inter.side]);
+      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      if(arcInitPt!==null)arcCrossings.push([polyIdx,inter.side,pr.polyIdx,pr.toAvoid]);
       let intersectsCurve=-1;
       for(let c=0;c<3;c++){
         if(isRow([polyIdx,inter.side],curveCombinations[c])){intersectsCurve=c;break;}
@@ -310,7 +313,7 @@ async function startComputation(){
         trackArcEnd(inter.point,inter.tgVec,polyIdx,inter.side,travelledSinceLast);
         travelledSinceLast=0;firstCycle=false;
       }
-      const pr=applyPairing(inter.point,inter.tgVec,polyIdx,inter.side,gluing,twists,polytopes);
+      lastExitHex=polyIdx;lastExitSide=inter.side;
       curPoint=pr.point;curTgVec=pr.tgVec;polyIdx=pr.polyIdx;toAvoid=pr.toAvoid;
       stepCount++;
 
