@@ -107,6 +107,92 @@
 </div>
 </div>
 
+<!-- Motif Frequency Estimation Panel -->
+<div class="panel" style="width:100%;max-width:1200px">
+<div class="group">
+<div class="group-title">Motif Frequency Estimation</div>
+
+<!-- 2-motif sub-panel -->
+<div style="border:1px solid #2a4a7a;border-radius:8px;overflow:hidden;margin-bottom:12px">
+  <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+       onclick="this.parentElement.classList.toggle('iso-sub-open')">
+    <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 2-motifs</span>
+    <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+  </div>
+  <div class="iso-sub-body" style="display:none;padding:16px">
+    <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+      Minimum inter-note interval: <strong id="amotif2-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+      <span style="color:#667"> — values of a smaller than this will find no 2-motifs</span>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <label style="font-size:.85rem">a
+        <input type="range" id="amotif2-a" min="0" max="5" step="0.01" value="0.50"
+          oninput="document.getElementById('amotif2-v-a').textContent=parseFloat(this.value).toFixed(2)"
+          style="width:120px">
+        <span class="val" id="amotif2-v-a">0.50</span>
+      </label>
+      <label style="font-size:.85rem">ε
+        <input type="range" id="amotif2-eps" min="0" max="0.5" step="0.001" value="0.050"
+          oninput="document.getElementById('amotif2-v-eps').textContent=parseFloat(this.value).toFixed(3)"
+          style="width:120px">
+        <span class="val" id="amotif2-v-eps">0.050</span>
+      </label>
+      <button id="btn-amotif2" onclick="runAppMotif2()" disabled style="width:auto;padding:6px 14px">Run 2-Motif Scan</button>
+    </div>
+    <div class="status" id="amotif2-status">Run geodesic first.</div>
+    <div id="amotif2-results" style="display:none;margin-top:10px;font-size:.85rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+    <div id="amotif2-plot-wrap" style="display:none;margin-top:12px">
+      <canvas id="amotif2-canvas" width="900" height="240"
+        style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- 3-motif sub-panel -->
+<div style="border:1px solid #2a4a7a;border-radius:8px;overflow:hidden">
+  <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+       onclick="this.parentElement.classList.toggle('iso-sub-open')">
+    <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 3-motifs</span>
+    <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+  </div>
+  <div class="iso-sub-body" style="display:none;padding:16px">
+    <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+      Minimum inter-note interval: <strong id="amotif3-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+      <span style="color:#667"> — values of a or b smaller than this will find no 3-motifs</span>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <label style="font-size:.85rem">a
+        <input type="range" id="amotif3-a" min="0" max="5" step="0.01" value="0.50"
+          oninput="document.getElementById('amotif3-v-a').textContent=parseFloat(this.value).toFixed(2)"
+          style="width:120px">
+        <span class="val" id="amotif3-v-a">0.50</span>
+      </label>
+      <label style="font-size:.85rem">b
+        <input type="range" id="amotif3-b" min="0" max="5" step="0.01" value="0.50"
+          oninput="document.getElementById('amotif3-v-b').textContent=parseFloat(this.value).toFixed(2)"
+          style="width:120px">
+        <span class="val" id="amotif3-v-b">0.50</span>
+      </label>
+      <label style="font-size:.85rem">ε
+        <input type="range" id="amotif3-eps" min="0" max="0.5" step="0.001" value="0.050"
+          oninput="document.getElementById('amotif3-v-eps').textContent=parseFloat(this.value).toFixed(3)"
+          style="width:120px">
+        <span class="val" id="amotif3-v-eps">0.050</span>
+      </label>
+      <button id="btn-amotif3" onclick="runAppMotif3()" disabled style="width:auto;padding:6px 14px">Run 3-Motif Scan</button>
+    </div>
+    <div class="status" id="amotif3-status">Run geodesic first.</div>
+    <div id="amotif3-results" style="display:none;margin-top:10px;font-size:.85rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+    <div id="amotif3-plot-wrap" style="display:none;margin-top:12px">
+      <canvas id="amotif3-canvas" width="900" height="240"
+        style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
 <!-- Orthospectrum Panel (Monte Carlo) -->
 <div class="panel" style="width:100%;max-width:1200px">
 <div class="group">
@@ -239,6 +325,83 @@
 <script src="js/arcs.js"></script>
 <script src="js/distribution.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/motifs.js"></script>
 <script src="js/ui.js"></script>
+<script>
+"use strict";
+// ===== Motif Frequency Estimation =====
+// Override finish() to enable motif buttons when music data is ready
+const _origFinishMotif = finish;
+finish = function() {
+  _origFinishMotif();
+  const hasData = toMusic && toMusic.length > 0;
+  document.getElementById('btn-amotif2').disabled = !hasData;
+  document.getElementById('btn-amotif3').disabled = !hasData;
+  if (hasData) {
+    const minStr = motifMinInterval(toMusic).toFixed(4);
+    document.getElementById('amotif2-min').textContent = minStr;
+    document.getElementById('amotif3-min').textContent = minStr;
+    document.getElementById('amotif2-status').textContent = 'Ready.';
+    document.getElementById('amotif3-status').textContent = 'Ready.';
+  }
+};
+
+function _appMotifResultsHtml(label, result, noteCount) {
+  return `<strong style="color:#c9a96e">${label}</strong><br>
+    <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:.85rem;margin-top:6px">
+      <tr style="color:#a0b8d0;border-bottom:1px solid #1e3060">
+        <th style="text-align:left;padding:3px 6px">Metric</th>
+        <th style="text-align:right;padding:3px 6px">Value</th>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:3px 6px">Total geodesic length</td>
+        <td style="text-align:right;padding:3px 6px">${result.totalDist.toFixed(1)}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:3px 6px">Note count</td>
+        <td style="text-align:right;padding:3px 6px">${noteCount.toLocaleString()}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:3px 6px">Motif count</td>
+        <td style="text-align:right;padding:3px 6px">${result.count.toLocaleString()}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:3px 6px">Frequency (per unit length)</td>
+        <td style="text-align:right;padding:3px 6px">${result.freq.toExponential(4)}</td>
+      </tr>
+    </table>`;
+}
+
+function runAppMotif2() {
+  if (!toMusic || toMusic.length === 0) return;
+  const a   = parseFloat(document.getElementById('amotif2-a').value);
+  const eps = parseFloat(document.getElementById('amotif2-eps').value);
+  document.getElementById('amotif2-status').textContent = 'Scanning…';
+  const result = scanMotif2(toMusic, a, eps);
+  document.getElementById('amotif2-status').textContent = 'Done.';
+  const res = document.getElementById('amotif2-results');
+  res.style.display = '';
+  res.innerHTML = _appMotifResultsHtml(
+    `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+  document.getElementById('amotif2-plot-wrap').style.display = '';
+  drawMotifFreqGraph('amotif2-canvas', [{ samples: result.samples, color: '#c9a96e' }]);
+}
+
+function runAppMotif3() {
+  if (!toMusic || toMusic.length === 0) return;
+  const a   = parseFloat(document.getElementById('amotif3-a').value);
+  const b   = parseFloat(document.getElementById('amotif3-b').value);
+  const eps = parseFloat(document.getElementById('amotif3-eps').value);
+  document.getElementById('amotif3-status').textContent = 'Scanning…';
+  const result = scanMotif3(toMusic, a, b, eps);
+  document.getElementById('amotif3-status').textContent = 'Done.';
+  const res = document.getElementById('amotif3-results');
+  res.style.display = '';
+  res.innerHTML = _appMotifResultsHtml(
+    `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+  document.getElementById('amotif3-plot-wrap').style.display = '';
+  drawMotifFreqGraph('amotif3-canvas', [{ samples: result.samples, color: '#ff7744' }]);
+}
+</script>
 </body>
 </html>

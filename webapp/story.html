@@ -349,6 +349,99 @@ body { align-items: stretch; }
   </div>
 </div>
 
+<!-- ==================== STEP MOTIF: Motif Frequency Estimation ==================== -->
+<div class="step locked" id="step-motif">
+  <div class="step-header" onclick="toggleStep('motif')">
+    <div class="step-number">★</div>
+    <div class="step-title">Motif Frequency Estimation</div>
+    <div class="step-toggle">▼</div>
+    <span class="lock-badge" id="lock-motif">Run geodesic first</span>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-motif"></div>
+    <div class="step-controls">
+
+      <!-- ── 2-motif sub-panel ── -->
+      <div style="border:1px solid #1a3a6a;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+             onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 2-motifs</span>
+          <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+          <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+            Minimum inter-note interval: <strong id="smotif2-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+            <span style="color:#667"> — values of a smaller than this will find no 2-motifs</span>
+          </div>
+          <div class="controls-row">
+            <div class="controls-group">
+              <label>a &nbsp;<input type="range" id="smotif2-a" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif2-v-a').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif2-v-a">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>ε &nbsp;<input type="range" id="smotif2-eps" min="0" max="0.5" step="0.001" value="0.050"
+                oninput="document.getElementById('smotif2-v-eps').textContent=parseFloat(this.value).toFixed(3)">
+                <span class="val" id="smotif2-v-eps">0.050</span></label>
+            </div>
+          </div>
+          <div class="controls-actions" style="margin-top:10px">
+            <button onclick="runStoryMotif2()">Run</button>
+          </div>
+          <div class="status" id="smotif2-status">Ready</div>
+          <div id="smotif2-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+          <div id="smotif2-plot-wrap" style="display:none;margin-top:12px">
+            <canvas id="smotif2-canvas" width="900" height="240"
+              style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 3-motif sub-panel ── -->
+      <div style="border:1px solid #1a3a6a;border-radius:8px;overflow:hidden">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+             onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 3-motifs</span>
+          <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+          <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+            Minimum inter-note interval: <strong id="smotif3-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+            <span style="color:#667"> — values of a or b smaller than this will find no 3-motifs</span>
+          </div>
+          <div class="controls-row">
+            <div class="controls-group">
+              <label>a &nbsp;<input type="range" id="smotif3-a" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif3-v-a').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif3-v-a">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>b &nbsp;<input type="range" id="smotif3-b" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif3-v-b').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif3-v-b">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>ε &nbsp;<input type="range" id="smotif3-eps" min="0" max="0.5" step="0.001" value="0.050"
+                oninput="document.getElementById('smotif3-v-eps').textContent=parseFloat(this.value).toFixed(3)">
+                <span class="val" id="smotif3-v-eps">0.050</span></label>
+            </div>
+          </div>
+          <div class="controls-actions" style="margin-top:10px">
+            <button onclick="runStoryMotif3()">Run</button>
+          </div>
+          <div class="status" id="smotif3-status">Ready</div>
+          <div id="smotif3-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+          <div id="smotif3-plot-wrap" style="display:none;margin-top:12px">
+            <canvas id="smotif3-canvas" width="900" height="240"
+              style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ==================== STEP 5: Orthospectrum ==================== -->
 <div class="step locked" id="step-5">
   <div class="step-header" onclick="toggleStep(5)">
@@ -614,7 +707,7 @@ body { align-items: stretch; }
             </div>
             <div class="controls-group">
               <div class="group-title">Geodesic Length</div>
-              <label style="margin-bottom:6px;display:block">Max notes</label>
+              <label style="margin-bottom:6px;display:block">Max length</label>
               <select id="iso3-maxlen" style="background:#0f1a30;color:#e8d5b7;border:1px solid #0f3460;padding:4px 8px;border-radius:4px;font-size:.88rem">
                 <option value="1000000">1M</option>
                 <option value="10000000">10M</option>
@@ -629,6 +722,14 @@ body { align-items: stretch; }
           <div class="progress-bar"><div class="progress-fill" id="iso3-progress"></div></div>
           <div class="status" id="iso3-status">Ready</div>
           <div id="iso3-results" style="margin-top:14px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:none"></div>
+          <div id="iso3-plot-wrap" style="margin-top:12px;display:none">
+            <div style="font-size:.75rem;color:#a0a0c0;margin-bottom:4px">
+              Motif frequency over geodesic length &nbsp;
+              <span style="color:#ff7744">&#9644; Separating</span> &nbsp;
+              <span style="color:#44aaff">&#9644; Nonseparating</span>
+            </div>
+            <canvas id="iso3-freq-plot" width="900" height="240" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
 
         </div>
       </div>
@@ -651,6 +752,7 @@ body { align-items: stretch; }
 <script src="js/arcs.js"></script>
 <script src="js/distribution.js"></script>
 <script src="js/charts.js"></script>
+<script src="js/motifs.js"></script>
 
 <script>
 "use strict";
@@ -735,6 +837,13 @@ function unlockStep(n) {
 function unlockGeodesicSteps() {
   geodesicDone = true;
   for (let i = 3; i <= 6; i++) unlockStep(i);
+  unlockStep('motif');
+  // Populate min interval displays now that toMusic is available
+  if (toMusic && toMusic.length > 0) {
+    const minStr = motifMinInterval(toMusic).toFixed(4);
+    document.getElementById('smotif2-min').textContent = minStr;
+    document.getElementById('smotif3-min').textContent = minStr;
+  }
   // Auto-open next step
   document.getElementById('step-3').classList.add('open');
 }
@@ -784,6 +893,71 @@ finish = function() {
     unlockGeodesicSteps();
   }
 };
+
+// ===== Motif Frequency Estimation (step-motif) =====
+function _motifResultsHtml(label, result, noteCount) {
+  return `
+    <div style="color:#c9a96e;font-weight:600;margin-bottom:8px">${label}</div>
+    <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:.85rem">
+      <tr style="color:#a0b8d0;border-bottom:1px solid #1e3060">
+        <th style="text-align:left;padding:4px 8px">Metric</th>
+        <th style="text-align:right;padding:4px 8px">Value</th>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:4px 8px">Total geodesic length</td>
+        <td style="text-align:right;padding:4px 8px">${result.totalDist.toFixed(1)}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:4px 8px">Note count</td>
+        <td style="text-align:right;padding:4px 8px">${noteCount.toLocaleString()}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:4px 8px">Motif count</td>
+        <td style="text-align:right;padding:4px 8px">${result.count.toLocaleString()}</td>
+      </tr>
+      <tr style="color:#e8d5b7">
+        <td style="padding:4px 8px">Frequency (per unit length)</td>
+        <td style="text-align:right;padding:4px 8px">${result.freq.toExponential(4)}</td>
+      </tr>
+    </table>`;
+}
+
+function runStoryMotif2() {
+  if (!toMusic || toMusic.length === 0) {
+    document.getElementById('smotif2-status').textContent = 'No music data — run geodesic first.';
+    return;
+  }
+  const a   = parseFloat(document.getElementById('smotif2-a').value);
+  const eps = parseFloat(document.getElementById('smotif2-eps').value);
+  document.getElementById('smotif2-status').textContent = 'Scanning…';
+  const result = scanMotif2(toMusic, a, eps);
+  document.getElementById('smotif2-status').textContent = 'Done.';
+  const res = document.getElementById('smotif2-results');
+  res.style.display = '';
+  res.innerHTML = _motifResultsHtml(
+    `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+  document.getElementById('smotif2-plot-wrap').style.display = '';
+  drawMotifFreqGraph('smotif2-canvas', [{ samples: result.samples, color: '#c9a96e' }]);
+}
+
+function runStoryMotif3() {
+  if (!toMusic || toMusic.length === 0) {
+    document.getElementById('smotif3-status').textContent = 'No music data — run geodesic first.';
+    return;
+  }
+  const a   = parseFloat(document.getElementById('smotif3-a').value);
+  const b   = parseFloat(document.getElementById('smotif3-b').value);
+  const eps = parseFloat(document.getElementById('smotif3-eps').value);
+  document.getElementById('smotif3-status').textContent = 'Scanning…';
+  const result = scanMotif3(toMusic, a, b, eps);
+  document.getElementById('smotif3-status').textContent = 'Done.';
+  const res = document.getElementById('smotif3-results');
+  res.style.display = '';
+  res.innerHTML = _motifResultsHtml(
+    `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+  document.getElementById('smotif3-plot-wrap').style.display = '';
+  drawMotifFreqGraph('smotif3-canvas', [{ samples: result.samples, color: '#ff7744' }]);
+}
 
 // ===== SVG zoom/pan for CDF chart =====
 function trySetupSvgZoomPan() {
@@ -1739,13 +1913,14 @@ async function runMotifAnalysis() {
   const a   = parseFloat(document.getElementById('iso3-a').value);
   const b   = parseFloat(document.getElementById('iso3-b').value);
   const eps = parseFloat(document.getElementById('iso3-eps').value);
-  const maxNotes = parseInt(document.getElementById('iso3-maxlen').value);
+  const maxLen = parseFloat(document.getElementById('iso3-maxlen').value);
 
   document.getElementById('iso3-btn-run').disabled = true;
   document.getElementById('iso3-btn-stop').disabled = false;
   document.getElementById('iso3-progress').style.width = '0%';
   document.getElementById('iso3-status').textContent = 'Building surfaces...';
   document.getElementById('iso3-results').style.display = 'none';
+  document.getElementById('iso3-plot-wrap').style.display = 'none';
 
   const l1 = 5, l2 = 3, l3 = 3, t1 = 0, t2 = 0, t3 = 0;
   const twists = [t1, t2, t3];
@@ -1760,57 +1935,77 @@ async function runMotifAnalysis() {
   const sepCurves = sepGluing.curveCombinations.map((cc, i) => i === 0 ? cc : [[-1, -1]]);
   const nonCurves = nonGluing.curveCombinations.map((cc, i) => i === 0 ? cc : [[-1, -1]]);
 
-  // Collect all intervals between C1 crossings (curve index 0 → curve+1 == 1)
-  // music array: [interval, curve] where curve is 1-indexed
-  // 3-motif: notes i, i+1, i+2: d12 = music[i+1][0], d23 = music[i+2][0]
-  //   condition: d12 ∈ [a, a+eps]  AND  d12+d23 ∈ [a+b, a+b+eps]
-  function countMotifs(music) {
-    let count = 0;
-    for (let i = 0; i + 2 < music.length; i++) {
-      const d12 = music[i+1][0];
-      const d23 = music[i+2][0];
-      if (d12 >= a && d12 <= a + eps && d12 + d23 >= a + b && d12 + d23 <= a + b + eps) {
-        count++;
-      }
-    }
-    return count;
-  }
-
   document.getElementById('iso3-status').textContent = 'Running geodesics...';
 
   const sepMusic = [], nonMusic = [];
   let sepDist = 0, nonDist = 0;
   let sepSinceLast = 0, nonSinceLast = 0;
   let sepFirst = true, nonFirst = true;
-  let step = 0;
+  let sepMotifs = 0, nonMotifs = 0;
 
-  while (sepMusic.length < maxNotes || nonMusic.length < maxNotes) {
+  // Frequency samples for the graph: {t, sepFreq, nonFreq}
+  const sampleInterval = Math.max(100, maxLen / 500);
+  let nextSample = sampleInterval;
+  const freqSamples = [];
+
+  // Inline motif check: called each time a new note is appended to music
+  function checkMotif(music) {
+    const k = music.length - 1;
+    if (k < 2) return false;
+    const d12 = music[k-1][0], d23 = music[k][0];
+    return d12 >= a && d12 <= a + eps && d12 + d23 >= a + b && d12 + d23 <= a + b + eps;
+  }
+
+  let step = 0;
+  while (sepDist < maxLen || nonDist < maxLen) {
     if (iso3StopRequested) break;
-    if (sepMusic.length < maxNotes) {
+
+    if (sepDist < maxLen) {
+      const prevLen = sepMusic.length;
       const r = _stepOne(sepState, sepCircles, sepGluing, sepPolytopes, sepCurves, sepMusic, sepDist, sepSinceLast, sepFirst, twists);
       if (!r) break;
       sepDist = r.dist; sepSinceLast = r.since; sepFirst = r.first;
+      if (sepMusic.length > prevLen && checkMotif(sepMusic)) sepMotifs++;
     }
-    if (nonMusic.length < maxNotes) {
+
+    if (nonDist < maxLen) {
+      const prevLen = nonMusic.length;
       const r = _stepOne(nonState, nonCircles, nonGluing, nonPolytopes, nonCurves, nonMusic, nonDist, nonSinceLast, nonFirst, twists);
       if (!r) break;
       nonDist = r.dist; nonSinceLast = r.since; nonFirst = r.first;
+      if (nonMusic.length > prevLen && checkMotif(nonMusic)) nonMotifs++;
     }
+
+    // Record sample when both geodesics have passed the next sample point
+    const tNow = Math.min(sepDist, nonDist);
+    if (tNow >= nextSample) {
+      freqSamples.push({
+        t: tNow,
+        sepFreq: sepDist > 0 ? sepMotifs / sepDist : 0,
+        nonFreq: nonDist > 0 ? nonMotifs / nonDist : 0,
+      });
+      nextSample += sampleInterval;
+    }
+
     step++;
     if (step % 50000 === 0) {
-      const pct = Math.min(100, Math.max(sepMusic.length, nonMusic.length) / maxNotes * 100);
+      const pct = Math.min(100, Math.max(sepDist, nonDist) / maxLen * 100);
       document.getElementById('iso3-progress').style.width = pct + '%';
-      document.getElementById('iso3-status').textContent = `Computing... ${Math.floor(pct)}% (sep: ${sepMusic.length}, non: ${nonMusic.length} notes)`;
+      document.getElementById('iso3-status').textContent =
+        `Computing... ${Math.floor(pct)}%  (sep: ${sepMotifs} motifs / ${sepDist.toFixed(0)} len,  non: ${nonMotifs} motifs / ${nonDist.toFixed(0)} len)`;
       await new Promise(r => setTimeout(r, 0));
     }
   }
 
-  const sepMotifs = countMotifs(sepMusic);
-  const nonMotifs = countMotifs(nonMusic);
-  const sepTriples = Math.max(0, sepMusic.length - 2);
-  const nonTriples = Math.max(0, nonMusic.length - 2);
-  const sepFreq = sepTriples > 0 ? sepMotifs / sepTriples : 0;
-  const nonFreq = nonTriples > 0 ? nonMotifs / nonTriples : 0;
+  // Final sample
+  freqSamples.push({
+    t: Math.min(sepDist, nonDist),
+    sepFreq: sepDist > 0 ? sepMotifs / sepDist : 0,
+    nonFreq: nonDist > 0 ? nonMotifs / nonDist : 0,
+  });
+
+  const sepFreq = sepDist > 0 ? sepMotifs / sepDist : 0;
+  const nonFreq = nonDist > 0 ? nonMotifs / nonDist : 0;
 
   document.getElementById('iso3-progress').style.width = '100%';
   document.getElementById('iso3-status').textContent = 'Done.';
@@ -1824,27 +2019,110 @@ async function runMotifAnalysis() {
     <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:.85rem">
       <tr style="color:#a0b8d0;border-bottom:1px solid #1e3060">
         <th style="text-align:left;padding:4px 8px"></th>
+        <th style="text-align:right;padding:4px 8px">Length</th>
         <th style="text-align:right;padding:4px 8px">Notes</th>
-        <th style="text-align:right;padding:4px 8px">3-Triples</th>
         <th style="text-align:right;padding:4px 8px">Motif count</th>
-        <th style="text-align:right;padding:4px 8px">Frequency</th>
+        <th style="text-align:right;padding:4px 8px">Frequency (per unit length)</th>
       </tr>
       <tr style="color:#e8d5b7">
         <td style="padding:4px 8px">Separating</td>
+        <td style="text-align:right;padding:4px 8px">${sepDist.toFixed(1)}</td>
         <td style="text-align:right;padding:4px 8px">${sepMusic.length.toLocaleString()}</td>
-        <td style="text-align:right;padding:4px 8px">${sepTriples.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${sepMotifs.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${sepFreq.toExponential(4)}</td>
       </tr>
       <tr style="color:#e8d5b7">
         <td style="padding:4px 8px">Nonseparating</td>
+        <td style="text-align:right;padding:4px 8px">${nonDist.toFixed(1)}</td>
         <td style="text-align:right;padding:4px 8px">${nonMusic.length.toLocaleString()}</td>
-        <td style="text-align:right;padding:4px 8px">${nonTriples.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${nonMotifs.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${nonFreq.toExponential(4)}</td>
       </tr>
     </table>
   `;
+
+  // Draw frequency-over-time graph
+  if (freqSamples.length > 1) {
+    document.getElementById('iso3-plot-wrap').style.display = '';
+    const cv = document.getElementById('iso3-freq-plot');
+    const W = cv.width, H = cv.height;
+    const ctx = cv.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, W, H);
+
+    const PAD_L = 72, PAD_R = 12, PAD_T = 12, PAD_B = 32;
+    const plotW = W - PAD_L - PAD_R;
+    const plotH = H - PAD_T - PAD_B;
+
+    const tMax = freqSamples[freqSamples.length - 1].t;
+    const allFreqs = freqSamples.flatMap(s => [s.sepFreq, s.nonFreq]).filter(v => v > 0);
+    const yMax = allFreqs.length > 0 ? Math.max(...allFreqs) * 1.15 : 1;
+    const yMin = 0;
+
+    function toX(t) { return PAD_L + (t / tMax) * plotW; }
+    function toY(v) { return PAD_T + plotH - ((v - yMin) / (yMax - yMin)) * plotH; }
+
+    // Grid
+    ctx.strokeStyle = '#1e2e4a';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#778899';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'right';
+    const yTicks = 5;
+    for (let i = 0; i <= yTicks; i++) {
+      const v = yMax * i / yTicks;
+      const y = toY(v);
+      ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(PAD_L + plotW, y); ctx.stroke();
+      ctx.fillText(v.toExponential(2), PAD_L - 4, y + 3);
+    }
+    ctx.textAlign = 'center';
+    const xStep = Math.pow(10, Math.floor(Math.log10(tMax / 5)));
+    for (let t = 0; t <= tMax; t += xStep) {
+      const x = toX(t);
+      ctx.beginPath(); ctx.moveTo(x, PAD_T); ctx.lineTo(x, PAD_T + plotH); ctx.stroke();
+      ctx.fillText(t >= 1000 ? (t/1000).toFixed(0)+'k' : t.toFixed(0), x, PAD_T + plotH + 14);
+    }
+
+    // Axes
+    ctx.strokeStyle = '#4466aa';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(PAD_L, PAD_T); ctx.lineTo(PAD_L, PAD_T + plotH);
+    ctx.lineTo(PAD_L + plotW, PAD_T + plotH);
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#a0b8d0';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('hyperbolic length', PAD_L + plotW / 2, H - 4);
+    ctx.save();
+    ctx.translate(12, PAD_T + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('frequency', 0, 0);
+    ctx.restore();
+
+    // Sep curve
+    ctx.strokeStyle = '#ff7744';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    freqSamples.forEach((s, i) => {
+      const x = toX(s.t), y = toY(s.sepFreq);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Non curve
+    ctx.strokeStyle = '#44aaff';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    freqSamples.forEach((s, i) => {
+      const x = toX(s.t), y = toY(s.nonFreq);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
 
   document.getElementById('iso3-btn-run').disabled = false;
   document.getElementById('iso3-btn-stop').disabled = true;
