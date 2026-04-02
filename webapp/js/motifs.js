@@ -24,7 +24,7 @@ function motifMinInterval(music) {
 //   Scans for 2-motifs and records running frequency at ~nSamples evenly-
 //   spaced geodesic-length checkpoints.
 // ---------------------------------------------------------------------------
-function scanMotif2(music, a, eps, nSamples = 500) {
+function scanMotif2(music, a, eps, nSamples = 500, note1 = 0, note2 = 0) {
   if (!music || music.length < 2) return { count: 0, totalDist: 0, freq: 0, samples: [] };
   const totalDist = music.reduce((s, n) => s + n[0], 0);
   if (totalDist === 0) return { count: 0, totalDist: 0, freq: 0, samples: [] };
@@ -36,7 +36,9 @@ function scanMotif2(music, a, eps, nSamples = 500) {
   for (let k = 1; k < music.length; k++) {
     cumDist += music[k][0];
     const d = music[k][0];
-    if (d >= a && d <= a + eps) count++;
+    if (d >= a && d <= a + eps &&
+        (note1 === 0 || music[k - 1][1] === note1) &&
+        (note2 === 0 || music[k][1] === note2)) count++;
     while (nextSample <= cumDist && nextSample <= totalDist + 1e-12) {
       samples.push({ t: nextSample, freq: count / nextSample });
       nextSample += sampleStep;
@@ -53,7 +55,7 @@ function scanMotif2(music, a, eps, nSamples = 500) {
 // scanMotif3(music, a, b, eps, nSamples=500)
 //   Returns { count, totalDist, freq, samples: [{t, freq}] }
 // ---------------------------------------------------------------------------
-function scanMotif3(music, a, b, eps, nSamples = 500) {
+function scanMotif3(music, a, b, eps, nSamples = 500, note1 = 0, note2 = 0, note3 = 0) {
   if (!music || music.length < 3) return { count: 0, totalDist: 0, freq: 0, samples: [] };
   const totalDist = music.reduce((s, n) => s + n[0], 0);
   if (totalDist === 0) return { count: 0, totalDist: 0, freq: 0, samples: [] };
@@ -65,7 +67,10 @@ function scanMotif3(music, a, b, eps, nSamples = 500) {
   for (let k = 2; k < music.length; k++) {
     cumDist += music[k][0];
     const d12 = music[k - 1][0], d23 = music[k][0];
-    if (d12 >= a && d12 <= a + eps && d12 + d23 >= a + b && d12 + d23 <= a + b + eps) count++;
+    if (d12 >= a && d12 <= a + eps && d12 + d23 >= a + b && d12 + d23 <= a + b + eps &&
+        (note1 === 0 || music[k - 2][1] === note1) &&
+        (note2 === 0 || music[k - 1][1] === note2) &&
+        (note3 === 0 || music[k][1] === note3)) count++;
     while (nextSample <= cumDist && nextSample <= totalDist + 1e-12) {
       samples.push({ t: nextSample, freq: count / nextSample });
       nextSample += sampleStep;

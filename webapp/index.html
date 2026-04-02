@@ -137,6 +137,24 @@
           style="width:120px">
         <span class="val" id="amotif2-v-eps">0.050</span>
       </label>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <label style="font-size:.85rem">Note 1
+        <select id="amotif2-n1" style="margin-left:4px;background:#0a1628;color:#e8d5b7;border:1px solid #2a4a7a;border-radius:4px;padding:2px 6px">
+          <option value="0">any</option>
+          <option value="1">curve 1</option>
+          <option value="2">curve 2</option>
+          <option value="3">curve 3</option>
+        </select>
+      </label>
+      <label style="font-size:.85rem">Note 2
+        <select id="amotif2-n2" style="margin-left:4px;background:#0a1628;color:#e8d5b7;border:1px solid #2a4a7a;border-radius:4px;padding:2px 6px">
+          <option value="0">any</option>
+          <option value="1">curve 1</option>
+          <option value="2">curve 2</option>
+          <option value="3">curve 3</option>
+        </select>
+      </label>
       <button id="btn-amotif2" onclick="runAppMotif2()" disabled style="width:auto;padding:6px 14px">Run 2-Motif Scan</button>
     </div>
     <div class="status" id="amotif2-status">Run geodesic first.</div>
@@ -178,6 +196,32 @@
           oninput="document.getElementById('amotif3-v-eps').textContent=parseFloat(this.value).toFixed(3)"
           style="width:120px">
         <span class="val" id="amotif3-v-eps">0.050</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+      <label style="font-size:.85rem">Note 1
+        <select id="amotif3-n1" style="margin-left:4px;background:#0a1628;color:#e8d5b7;border:1px solid #2a4a7a;border-radius:4px;padding:2px 6px">
+          <option value="0">any</option>
+          <option value="1">curve 1</option>
+          <option value="2">curve 2</option>
+          <option value="3">curve 3</option>
+        </select>
+      </label>
+      <label style="font-size:.85rem">Note 2
+        <select id="amotif3-n2" style="margin-left:4px;background:#0a1628;color:#e8d5b7;border:1px solid #2a4a7a;border-radius:4px;padding:2px 6px">
+          <option value="0">any</option>
+          <option value="1">curve 1</option>
+          <option value="2">curve 2</option>
+          <option value="3">curve 3</option>
+        </select>
+      </label>
+      <label style="font-size:.85rem">Note 3
+        <select id="amotif3-n3" style="margin-left:4px;background:#0a1628;color:#e8d5b7;border:1px solid #2a4a7a;border-radius:4px;padding:2px 6px">
+          <option value="0">any</option>
+          <option value="1">curve 1</option>
+          <option value="2">curve 2</option>
+          <option value="3">curve 3</option>
+        </select>
       </label>
       <button id="btn-amotif3" onclick="runAppMotif3()" disabled style="width:auto;padding:6px 14px">Run 3-Motif Scan</button>
     </div>
@@ -372,33 +416,42 @@ function _appMotifResultsHtml(label, result, noteCount) {
     </table>`;
 }
 
+function _noteLabel(v) { return v === 0 ? 'any' : `c${v}`; }
+
 function runAppMotif2() {
   if (!toMusic || toMusic.length === 0) return;
-  const a   = parseFloat(document.getElementById('amotif2-a').value);
-  const eps = parseFloat(document.getElementById('amotif2-eps').value);
+  const a    = parseFloat(document.getElementById('amotif2-a').value);
+  const eps  = parseFloat(document.getElementById('amotif2-eps').value);
+  const note1 = parseInt(document.getElementById('amotif2-n1').value);
+  const note2 = parseInt(document.getElementById('amotif2-n2').value);
   document.getElementById('amotif2-status').textContent = 'Scanning…';
-  const result = scanMotif2(toMusic, a, eps);
+  const result = scanMotif2(toMusic, a, eps, 500, note1, note2);
   document.getElementById('amotif2-status').textContent = 'Done.';
   const res = document.getElementById('amotif2-results');
   res.style.display = '';
   res.innerHTML = _appMotifResultsHtml(
-    `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+    `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}, notes=[${_noteLabel(note1)},${_noteLabel(note2)}]`,
+    result, toMusic.length);
   document.getElementById('amotif2-plot-wrap').style.display = '';
   drawMotifFreqGraph('amotif2-canvas', [{ samples: result.samples, color: '#c9a96e' }]);
 }
 
 function runAppMotif3() {
   if (!toMusic || toMusic.length === 0) return;
-  const a   = parseFloat(document.getElementById('amotif3-a').value);
-  const b   = parseFloat(document.getElementById('amotif3-b').value);
-  const eps = parseFloat(document.getElementById('amotif3-eps').value);
+  const a    = parseFloat(document.getElementById('amotif3-a').value);
+  const b    = parseFloat(document.getElementById('amotif3-b').value);
+  const eps  = parseFloat(document.getElementById('amotif3-eps').value);
+  const note1 = parseInt(document.getElementById('amotif3-n1').value);
+  const note2 = parseInt(document.getElementById('amotif3-n2').value);
+  const note3 = parseInt(document.getElementById('amotif3-n3').value);
   document.getElementById('amotif3-status').textContent = 'Scanning…';
-  const result = scanMotif3(toMusic, a, b, eps);
+  const result = scanMotif3(toMusic, a, b, eps, 500, note1, note2, note3);
   document.getElementById('amotif3-status').textContent = 'Done.';
   const res = document.getElementById('amotif3-results');
   res.style.display = '';
   res.innerHTML = _appMotifResultsHtml(
-    `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}`, result, toMusic.length);
+    `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}, notes=[${_noteLabel(note1)},${_noteLabel(note2)},${_noteLabel(note3)}]`,
+    result, toMusic.length);
   document.getElementById('amotif3-plot-wrap').style.display = '';
   drawMotifFreqGraph('amotif3-canvas', [{ samples: result.samples, color: '#ff7744' }]);
 }
