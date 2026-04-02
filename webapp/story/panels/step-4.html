@@ -1,0 +1,24 @@
+<!-- ==================== STEP 4: Distribution ==================== -->
+<div class="step locked" id="step-4">
+  <div class="step-header" onclick="toggleStep(4)">
+    <div class="step-number">4</div>
+    <div class="step-title">Intersection Distribution</div>
+    <div class="step-toggle">▼</div>
+    <span class="lock-badge" id="lock-4">Run geodesic first</span>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-4"></div>
+    <div class="step-controls">
+      <div class="controls-row">
+        <div class="controls-group">
+          <label style="font-size:.8rem">Max points <input type="number" id="dist-max-pts" value="100000" min="1000" step="10000" style="width:80px"></label>
+        </div>
+      </div>
+      <div class="controls-actions">
+        <button id="btn-dist" onclick="drawDistribution()" disabled>Draw Distribution</button>
+      </div>
+      <canvas id="dist-canvas" width="1200" height="800" id="dist-canvas-story"></canvas>
+      <div class="status" id="dist-status"></div>
+    </div>
+  </div>
+</div>

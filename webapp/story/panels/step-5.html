@@ -1,0 +1,40 @@
+<!-- ==================== STEP 5: Orthospectrum ==================== -->
+<div class="step locked" id="step-5">
+  <div class="step-header" onclick="toggleStep(5)">
+    <div class="step-number">5</div>
+    <div class="step-title">Orthospectrum Estimation (Monte Carlo)</div>
+    <div class="step-toggle">▼</div>
+    <span class="lock-badge" id="lock-5">Run geodesic first</span>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-5"></div>
+    <div class="step-controls">
+      <div class="controls-row">
+        <div class="controls-group" style="min-width:100px;flex:0">
+          <label>Samples <select id="orth-samples" style="width:100px">
+            <option value="500000">500k</option>
+            <option value="1000000" selected>1M</option>
+            <option value="2000000">2M</option>
+          </select></label>
+        </div>
+      </div>
+      <div class="controls-actions">
+        <button id="btn-orth" onclick="computeNextOrthElement()" disabled>Estimate Next Element</button>
+        <button onclick="resetOrth()">Reset</button>
+        <button id="btn-guess-sep" onclick="guessSepNonsep()" disabled>Guess sep/nonsep</button>
+      </div>
+      <div class="status" id="orth-status">Run geodesic first.</div>
+      <div class="inline-panel" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+        <div style="flex:1;min-width:180px">
+          <table class="orth-table" id="orth-table">
+            <thead><tr><th>#</th><th>Length</th><th>Prob %</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div style="flex:2;min-width:280px">
+          <svg id="cdf-svg" class="cdf-canvas" viewBox="0 0 600 250" preserveAspectRatio="xMidYMid meet" id="cdf-svg-story"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

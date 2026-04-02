@@ -1,0 +1,92 @@
+<!-- ==================== STEP MOTIF: Motif Frequency Estimation ==================== -->
+<div class="step locked" id="step-motif">
+  <div class="step-header" onclick="toggleStep('motif')">
+    <div class="step-number">★</div>
+    <div class="step-title">Motif Frequency Estimation</div>
+    <div class="step-toggle">▼</div>
+    <span class="lock-badge" id="lock-motif">Run geodesic first</span>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-motif"></div>
+    <div class="step-controls">
+
+      <!-- ── 2-motif sub-panel ── -->
+      <div style="border:1px solid #1a3a6a;border-radius:8px;overflow:hidden;margin-bottom:12px">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+             onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 2-motifs</span>
+          <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+          <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+            Minimum inter-note interval: <strong id="smotif2-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+            <span style="color:#667"> — values of a smaller than this will find no 2-motifs</span>
+          </div>
+          <div class="controls-row">
+            <div class="controls-group">
+              <label>a &nbsp;<input type="range" id="smotif2-a" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif2-v-a').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif2-v-a">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>ε &nbsp;<input type="range" id="smotif2-eps" min="0" max="0.5" step="0.001" value="0.050"
+                oninput="document.getElementById('smotif2-v-eps').textContent=parseFloat(this.value).toFixed(3)">
+                <span class="val" id="smotif2-v-eps">0.050</span></label>
+            </div>
+          </div>
+          <div class="controls-actions" style="margin-top:10px">
+            <button onclick="runStoryMotif2()">Run</button>
+          </div>
+          <div class="status" id="smotif2-status">Ready</div>
+          <div id="smotif2-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+          <div id="smotif2-plot-wrap" style="display:none;margin-top:12px">
+            <canvas id="smotif2-canvas" width="900" height="240"
+              style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 3-motif sub-panel ── -->
+      <div style="border:1px solid #1a3a6a;border-radius:8px;overflow:hidden">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px"
+             onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">Estimation of 3-motifs</span>
+          <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+          <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
+            Minimum inter-note interval: <strong id="smotif3-min" style="color:#e8d5b7">— (run geodesic first)</strong>
+            <span style="color:#667"> — values of a or b smaller than this will find no 3-motifs</span>
+          </div>
+          <div class="controls-row">
+            <div class="controls-group">
+              <label>a &nbsp;<input type="range" id="smotif3-a" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif3-v-a').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif3-v-a">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>b &nbsp;<input type="range" id="smotif3-b" min="0" max="5" step="0.01" value="0.50"
+                oninput="document.getElementById('smotif3-v-b').textContent=parseFloat(this.value).toFixed(2)">
+                <span class="val" id="smotif3-v-b">0.50</span></label>
+            </div>
+            <div class="controls-group">
+              <label>ε &nbsp;<input type="range" id="smotif3-eps" min="0" max="0.5" step="0.001" value="0.050"
+                oninput="document.getElementById('smotif3-v-eps').textContent=parseFloat(this.value).toFixed(3)">
+                <span class="val" id="smotif3-v-eps">0.050</span></label>
+            </div>
+          </div>
+          <div class="controls-actions" style="margin-top:10px">
+            <button onclick="runStoryMotif3()">Run</button>
+          </div>
+          <div class="status" id="smotif3-status">Ready</div>
+          <div id="smotif3-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
+          <div id="smotif3-plot-wrap" style="display:none;margin-top:12px">
+            <canvas id="smotif3-canvas" width="900" height="240"
+              style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

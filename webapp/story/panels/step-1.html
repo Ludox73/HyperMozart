@@ -1,0 +1,49 @@
+<!-- ==================== STEP 1: Building the Surface ==================== -->
+<div class="step open" id="step-1">
+  <div class="step-header" onclick="toggleStep(1)">
+    <div class="step-number">1</div>
+    <div class="step-title">Building the Surface</div>
+    <div class="step-toggle">▼</div>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-1"></div>
+    <div class="step-controls">
+      <div class="controls-row">
+        <div class="controls-group">
+          <div class="group-title">Decomposition</div>
+          <select id="gluing-type" style="width:100%">
+            <option value="separating">Separating S2</option>
+            <option value="nonseparating">Nonseparating S2</option>
+          </select>
+        </div>
+        <div class="controls-group">
+          <div class="group-title">Curve Lengths</div>
+          <label>L1 <span class="val" id="v-l1">2.00</span></label>
+          <input type="range" id="l1" min="1" max="7" step="0.01" value="2.00">
+          <label>L2 <span class="val" id="v-l2">3.00</span></label>
+          <input type="range" id="l2" min="1" max="7" step="0.01" value="3.00">
+          <label>L3 <span class="val" id="v-l3">4.00</span></label>
+          <input type="range" id="l3" min="1" max="7" step="0.01" value="4.00">
+        </div>
+        <div class="controls-group">
+          <div class="group-title">Twist Parameters</div>
+          <label>T1 <span class="val" id="v-t1">0%</span></label>
+          <input type="range" id="t1" min="0" max="100" step="0.5" value="0">
+          <label>T2 <span class="val" id="v-t2">0%</span></label>
+          <input type="range" id="t2" min="0" max="100" step="0.5" value="0">
+          <label>T3 <span class="val" id="v-t3">0%</span></label>
+          <input type="range" id="t3" min="0" max="100" step="0.5" value="0">
+        </div>
+      </div>
+      <div class="controls-actions">
+        <button onclick="buildSurface()">Build Surface</button>
+      </div>
+      <div class="hex-grid" id="hex-grid-story">
+        <canvas id="c0" width="340" height="340"></canvas>
+        <canvas id="c1" width="340" height="340"></canvas>
+        <canvas id="c2" width="340" height="340"></canvas>
+        <canvas id="c3" width="340" height="340"></canvas>
+      </div>
+    </div>
+  </div>
+</div>

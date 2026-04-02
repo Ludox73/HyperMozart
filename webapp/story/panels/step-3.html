@@ -1,0 +1,29 @@
+<!-- ==================== STEP 3: Music ==================== -->
+<div class="step locked" id="step-3">
+  <div class="step-header" onclick="toggleStep(3)">
+    <div class="step-number">3</div>
+    <div class="step-title">Music from Geometry</div>
+    <div class="step-toggle">▼</div>
+    <span class="lock-badge" id="lock-3">Run geodesic first</span>
+  </div>
+  <div class="step-body">
+    <div class="step-content" id="content-3"></div>
+    <div class="step-controls">
+      <div class="controls-row">
+        <div class="controls-group">
+          <label>Speed multiplier <span class="val" id="v-audiospeed">1.0</span></label>
+          <input type="range" id="audiospeed" min="0.1" max="100" step="0.1" value="1.0">
+        </div>
+        <div class="controls-group">
+          <label>Max duration (s) <span class="val" id="v-maxdur">60</span></label>
+          <input type="range" id="maxdur" min="5" max="300" step="5" value="60">
+        </div>
+      </div>
+      <div class="controls-actions">
+        <button id="btn-play" class="play" onclick="playAudio()" disabled>Play</button>
+        <button id="btn-stop-audio" class="stop" onclick="stopAudio()" disabled>Stop Audio</button>
+      </div>
+      <div class="audio-info" id="audio-info"></div>
+    </div>
+  </div>
+</div>

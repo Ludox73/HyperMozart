@@ -1,0 +1,179 @@
+<!-- ==================== ISOMELODIC EXAMPLES ==================== -->
+<div class="step open" id="step-iso">
+  <div class="step-header" onclick="toggleStepIso()">
+    <div class="step-number">★</div>
+    <div class="step-title">Indistinguishable example, separating and nonseparating curve</div>
+    <div class="step-toggle">▼</div>
+  </div>
+  <div class="step-body">
+    <div class="step-controls">
+
+      <div style="padding:8px 0 12px;font-size:.88rem;color:#c9a96e">
+        <strong>Fixed parameters:</strong> L1 = 5 &nbsp;|&nbsp; L2 = L3 = 3 &nbsp;|&nbsp; T1 = T2 = T3 = 0 &nbsp;|&nbsp; MaxLength = 25
+      </div>
+
+      <div class="controls-row">
+        <div class="controls-group">
+          <label>Drawing speed <span class="val" id="iso-v-speed">2.0</span></label>
+          <input type="range" id="iso-speed" min="0.1" max="20" step="0.1" value="2">
+          <div class="checkbox-row">
+            <input type="checkbox" id="iso-fast-mode"><label for="iso-fast-mode">Fast mode</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-actions">
+        <button id="iso-btn-run" onclick="startIsomelodic()">Run Both</button>
+        <button id="iso-btn-stop" class="stop" onclick="isoStopRequested=true" disabled>Stop</button>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="iso-progress"></div></div>
+      <div class="status" id="iso-status">Ready</div>
+
+      <!-- Two hex grids side by side -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px">
+        <div>
+          <div class="group-title" style="text-align:center;margin-bottom:6px">Separating</div>
+          <div class="hex-grid">
+            <canvas id="iso-sep-c0" width="340" height="340"></canvas>
+            <canvas id="iso-sep-c1" width="340" height="340"></canvas>
+            <canvas id="iso-sep-c2" width="340" height="340"></canvas>
+            <canvas id="iso-sep-c3" width="340" height="340"></canvas>
+          </div>
+          <div class="audio-info" id="iso-sep-stats" style="margin-top:6px"></div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button id="iso-btn-play-sep" class="play" onclick="playIsomelodic('sep')" disabled style="flex:1">Play</button>
+            <button id="iso-btn-stop-sep" class="stop" onclick="isoStopAudio('sep')" disabled style="flex:1">Stop</button>
+          </div>
+          <div class="audio-info" id="iso-sep-audio-info"></div>
+        </div>
+        <div>
+          <div class="group-title" style="text-align:center;margin-bottom:6px">Nonseparating</div>
+          <div class="hex-grid">
+            <canvas id="iso-non-c0" width="340" height="340"></canvas>
+            <canvas id="iso-non-c1" width="340" height="340"></canvas>
+            <canvas id="iso-non-c2" width="340" height="340"></canvas>
+            <canvas id="iso-non-c3" width="340" height="340"></canvas>
+          </div>
+          <div class="audio-info" id="iso-non-stats" style="margin-top:6px"></div>
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button id="iso-btn-play-non" class="play" onclick="playIsomelodic('non')" disabled style="flex:1">Play</button>
+            <button id="iso-btn-stop-non" class="stop" onclick="isoStopAudio('non')" disabled style="flex:1">Stop</button>
+          </div>
+          <div class="audio-info" id="iso-non-audio-info"></div>
+        </div>
+      </div><!-- /two grids -->
+
+      <!-- Partiture -->
+      <div style="margin-top:14px">
+        <div class="group-title" style="margin-bottom:4px">Partiture</div>
+        <canvas id="iso-partiture" width="1200" height="150" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></canvas>
+      </div>
+
+      <!-- Sub-panel: Why MaxLength 25 -->
+      <div style="margin-top:24px;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none" onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">Why we fix MaxLength at 25 and more on computational error</span>
+          <span style="color:#888;font-size:1.1rem" class="iso-sub-toggle">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+          <div id="iso-error-md-content" style="font-size:.9rem;line-height:1.7;color:#ccc;margin-bottom:16px"></div>
+
+          <div style="padding:6px 0 12px;font-size:.88rem;color:#c9a96e">
+            <strong>Fixed parameters:</strong> L1 = 5 &nbsp;|&nbsp; L2 = L3 = 3 &nbsp;|&nbsp; T1 = T2 = T3 = 0 &nbsp;|&nbsp; MaxLength = 50
+          </div>
+
+          <div class="controls-actions">
+            <button id="iso2-btn-run" onclick="startIsomelodic2()">Run Both</button>
+            <button id="iso2-btn-stop" class="stop" onclick="iso2StopRequested=true" disabled>Stop</button>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="iso2-progress"></div></div>
+          <div class="status" id="iso2-status">Ready</div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:14px">
+            <div>
+              <div class="group-title" style="text-align:center;margin-bottom:6px">Separating</div>
+              <div class="hex-grid">
+                <canvas id="iso2-sep-c0" width="340" height="340"></canvas>
+                <canvas id="iso2-sep-c1" width="340" height="340"></canvas>
+                <canvas id="iso2-sep-c2" width="340" height="340"></canvas>
+                <canvas id="iso2-sep-c3" width="340" height="340"></canvas>
+              </div>
+            </div>
+            <div>
+              <div class="group-title" style="text-align:center;margin-bottom:6px">Nonseparating</div>
+              <div class="hex-grid">
+                <canvas id="iso2-non-c0" width="340" height="340"></canvas>
+                <canvas id="iso2-non-c1" width="340" height="340"></canvas>
+                <canvas id="iso2-non-c2" width="340" height="340"></canvas>
+                <canvas id="iso2-non-c3" width="340" height="340"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px">
+            <div class="group-title" style="margin-bottom:4px">Partiture</div>
+            <canvas id="iso2-partiture" width="1200" height="150" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></canvas>
+          </div>
+
+          <div style="margin-top:16px">
+            <div style="font-size:.75rem;color:#a0a0c0;margin-bottom:4px">Point symmetry error — log scale, t ∈ [0, 50]</div>
+            <canvas id="iso2-plot-pt" width="900" height="220" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-panel: 3-Motif Analysis -->
+      <div style="margin-top:16px;border:1px solid #1a3a6a;border-radius:8px;overflow:hidden">
+        <div style="background:#0d2040;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:10px;user-select:none" onclick="this.parentElement.classList.toggle('iso-sub-open')">
+          <span style="color:#c9a96e;font-weight:600;flex:1">3-Motif Frequency Analysis</span>
+          <span style="color:#888;font-size:1.1rem" class="iso-sub-toggle">▼</span>
+        </div>
+        <div class="iso-sub-body" style="display:none;padding:16px">
+
+          <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;border:1px solid #1a3060;font-size:.85rem;color:#a0b8d0">
+            Minimum inter-note interval (sep):
+            <strong id="iso3-min-interval" style="color:#e8d5b7">— (run Part 1 first)</strong>
+          </div>
+
+          <div class="controls-row">
+            <div class="controls-group">
+              <div class="group-title">Motif Parameters</div>
+              <label>a <span class="val" id="iso3-v-a">1.00</span></label>
+              <input type="range" id="iso3-a" min="0" max="5" step="0.01" value="1">
+              <label>b <span class="val" id="iso3-v-b">1.00</span></label>
+              <input type="range" id="iso3-b" min="0" max="5" step="0.01" value="1">
+              <label>eps <span class="val" id="iso3-v-eps">0.050</span></label>
+              <input type="range" id="iso3-eps" min="0" max="0.5" step="0.001" value="0.05">
+            </div>
+            <div class="controls-group">
+              <div class="group-title">Geodesic Length</div>
+              <label style="margin-bottom:6px;display:block">Max length</label>
+              <select id="iso3-maxlen" style="background:#0f1a30;color:#e8d5b7;border:1px solid #0f3460;padding:4px 8px;border-radius:4px;font-size:.88rem">
+                <option value="1000000">1M</option>
+                <option value="10000000">10M</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="controls-actions" style="margin-top:12px">
+            <button id="iso3-btn-run" onclick="runMotifAnalysis()">Run Both</button>
+            <button id="iso3-btn-stop" class="stop" onclick="iso3StopRequested=true" disabled>Stop</button>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="iso3-progress"></div></div>
+          <div class="status" id="iso3-status">Ready</div>
+          <div id="iso3-results" style="margin-top:14px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:none"></div>
+          <div id="iso3-plot-wrap" style="margin-top:12px;display:none">
+            <div style="font-size:.75rem;color:#a0a0c0;margin-bottom:4px">
+              Motif frequency over geodesic length &nbsp;
+              <span style="color:#ff7744">&#9644; Separating</span> &nbsp;
+              <span style="color:#44aaff">&#9644; Nonseparating</span>
+            </div>
+            <canvas id="iso3-freq-plot" width="900" height="240" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
