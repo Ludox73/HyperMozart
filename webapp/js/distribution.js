@@ -103,7 +103,112 @@ function drawDistribution(){
   ctx.fillText('Position on curve 1',pad.l+pw/2,H-8);
   ctx.save();ctx.translate(16,pad.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('Angle',0,0);ctx.restore();
 
-  document.getElementById('dist-panel').style.display='';
+  const distPanel=document.getElementById('dist-panel');
+  if(distPanel)distPanel.style.display='';
   const capped=pointsDistribution.length>D.length?` (${pointsDistribution.length} total, showing first ${D.length})`:'';
   document.getElementById('dist-status').textContent=`${D.length} points plotted${capped}. Color = travel time (log scale).`;
+  drawThetaDistribution(D);
+}
+
+function drawThetaDistribution(D){
+  const canvas=document.getElementById('dist-theta-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const pad={l:60,r:70,t:40,b:50};
+  const pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+
+  const tMin=-Math.PI,tMax=Math.PI;
+  const nBins=80;
+  const binW=(tMax-tMin)/nBins;
+
+  // Build histogram
+  const counts=new Array(nBins).fill(0);
+  const n=D.length;
+  for(let i=0;i<n;i++){
+    const b=Math.floor((D[i][1]-tMin)/binW);
+    if(b>=0&&b<nBins)counts[b]++;
+  }
+
+  // CDF from cumulative histogram (at bin edges)
+  const cumsum=new Array(nBins+1).fill(0);
+  for(let i=0;i<nBins;i++)cumsum[i+1]=cumsum[i]+counts[i];
+  const cdfXpts=Array.from({length:nBins+1},(_,i)=>tMin+i*binW);
+  const cdfFpts=cumsum.map(c=>c/n);
+
+  // PDF density
+  const density=counts.map(c=>c/(n*binW));
+  const pdfMax=Math.max(...density,1e-10);
+
+  const tx=v=>pad.l+(v-tMin)/(tMax-tMin)*pw;
+  const tyCdf=v=>pad.t+(1-v)*ph;
+  const tyPdf=v=>pad.t+(1-v/pdfMax)*ph;
+
+  // Background
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle='#1a2a4a';ctx.lineWidth=1;
+  for(const gx of[-Math.PI,-Math.PI/2,0,Math.PI/2,Math.PI]){
+    ctx.beginPath();ctx.moveTo(tx(gx),pad.t);ctx.lineTo(tx(gx),pad.t+ph);ctx.stroke();
+  }
+  for(let gy=0;gy<=1.01;gy+=0.2){
+    ctx.beginPath();ctx.moveTo(pad.l,tyCdf(gy));ctx.lineTo(pad.l+pw,tyCdf(gy));ctx.stroke();
+  }
+
+  // PDF: filled bars + polyline
+  ctx.fillStyle='rgba(255,136,68,0.2)';
+  for(let i=0;i<nBins;i++){
+    const x0=tx(tMin+i*binW),x1=tx(tMin+(i+1)*binW);
+    const y0=tyPdf(density[i]);
+    ctx.fillRect(x0,y0,x1-x0,pad.t+ph-y0);
+  }
+  ctx.strokeStyle='#ff8844';ctx.lineWidth=2;
+  ctx.beginPath();
+  for(let i=0;i<nBins;i++){
+    const x=tx(tMin+(i+0.5)*binW),y=tyPdf(density[i]);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  // CDF: step function
+  ctx.strokeStyle='#4488ff';ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(tx(tMin),tyCdf(0));
+  for(let i=0;i<=nBins;i++){
+    const x=tx(cdfXpts[i]),y=tyCdf(cdfFpts[i]);
+    ctx.lineTo(x,y);
+    if(i<nBins)ctx.lineTo(tx(cdfXpts[i+1]),y);
+  }
+  ctx.stroke();
+
+  // X-axis labels
+  ctx.fillStyle='#888';ctx.font='14px sans-serif';ctx.textAlign='center';
+  for(const[v,lbl] of[[-Math.PI,'-π'],[-Math.PI/2,'-π/2'],[0,'0'],[Math.PI/2,'π/2'],[Math.PI,'π']])
+    ctx.fillText(lbl,tx(v),pad.t+ph+20);
+
+  // Left axis (CDF)
+  ctx.textAlign='right';ctx.fillStyle='#4488ff';
+  for(let gy=0;gy<=1.01;gy+=0.2)ctx.fillText(gy.toFixed(1),pad.l-6,tyCdf(gy)+5);
+
+  // Right axis (PDF)
+  ctx.textAlign='left';ctx.fillStyle='#ff8844';
+  for(let i=0;i<=5;i++){
+    const v=i/5*pdfMax;
+    ctx.fillText(v.toFixed(2),pad.l+pw+6,tyPdf(v)+5);
+  }
+
+  // Axis titles
+  ctx.fillStyle='#c9a96e';ctx.font='15px sans-serif';ctx.textAlign='left';
+  ctx.fillText(`Angle θ distribution  (${n} points)`,pad.l,pad.t-14);
+  ctx.fillStyle='#888';ctx.font='13px sans-serif';ctx.textAlign='center';
+  ctx.fillText('θ',pad.l+pw/2,H-8);
+  ctx.save();ctx.fillStyle='#4488ff';ctx.translate(14,pad.t+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('CDF',0,0);ctx.restore();
+  ctx.save();ctx.fillStyle='#ff8844';ctx.translate(W-14,pad.t+ph/2);ctx.rotate(Math.PI/2);ctx.fillText('density',0,0);ctx.restore();
+
+  // Legend
+  ctx.fillStyle='#4488ff';ctx.fillRect(pad.l,pad.t+8,18,3);
+  ctx.font='12px sans-serif';ctx.textAlign='left';ctx.fillStyle='#4488ff';ctx.fillText('CDF',pad.l+22,pad.t+13);
+  ctx.fillStyle='#ff8844';ctx.fillRect(pad.l+65,pad.t+8,18,3);
+  ctx.fillStyle='#ff8844';ctx.fillText('PDF',pad.l+87,pad.t+13);
 }

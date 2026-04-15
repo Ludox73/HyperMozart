@@ -24,7 +24,8 @@ function distanceTwoPoints(p1,p2){
   const dx=p1[0]-p2[0],dy=p1[1]-p2[1];
   const n1=p1[0]*p1[0]+p1[1]*p1[1],n2=p2[0]*p2[0]+p2[1]*p2[1];
   const delta=2*(dx*dx+dy*dy)/((1-n1)*(1-n2));
-  return Math.acosh(1+delta);
+  // Numerically stable: acosh(1+x) = 2*asinh(sqrt(x/2)), avoids 1+delta rounding to 1
+  return 2*Math.asinh(Math.sqrt(delta/2));
 }
 
 function angleCW2D(v1,v2,goingClockwise=true){

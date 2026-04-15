@@ -147,6 +147,7 @@ async function computeNextOrthElement(){
     orthState.lengthGeodesic=guessLengthGeodesicFromToMusic(toMusic,chiSigma);
     const ecdf=computeCumufunFromToMusic(toMusic);
     orthState.xVals=ecdf.x;orthState.fVals=ecdf.f;
+    orthState.xInit=[...ecdf.x];orthState.fInit=[...ecdf.f];
     orthState.results=[];orthState.percentages=[];orthState.snapshots=[];
     orthState.initialized=true;
     document.getElementById('orth-table').querySelector('tbody').innerHTML='';
@@ -192,6 +193,7 @@ async function computeNextOrthElement(){
     tbody.appendChild(tr);
 
     drawOrthSnapshot(orthState.snapshots.length-1);
+    updateBarcodeChart();
 
     document.getElementById('orth-status').textContent=
       `Element ${orthState.results.length}: ${minLength.toFixed(6)} (${pct.toFixed(1)}%)`;

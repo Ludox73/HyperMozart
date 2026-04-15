@@ -61,12 +61,14 @@ async function playAudio(){
     src.start();
 
     document.getElementById('audio-info').textContent=`Note ${i+1}/${toMusic.length} — ${elapsed.toFixed(1)}s`;
+    if(window.drawMainPartiture)window.drawMainPartiture(i);
   }
 
   audioPlaying=false;
   document.getElementById('btn-play').disabled=false;
   document.getElementById('btn-stop-audio').disabled=true;
   document.getElementById('audio-info').textContent='Playback finished.';
+  if(window.drawMainPartiture)window.drawMainPartiture(-1);
 }
 
 function stopAudio(){

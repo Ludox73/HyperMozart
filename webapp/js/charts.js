@@ -69,7 +69,7 @@ function downsampleForViz(x,f,maxPts){
 function drawOrthSnapshot(idx){
   if(idx<0||idx>=orthState.snapshots.length)return;
   const snap=orthState.snapshots[idx];
-  const cfg=svgCdfSetup(25,-0.2,1.0);
+  const cfg=svgCdfSetup(15,-0.2,1.0);
   const MAX_VIZ=1000000;
   const c1=downsampleForViz(snap.xCand,snap.fCand,MAX_VIZ);
   const c2=downsampleForViz(snap.xBackup,snap.fBackup,MAX_VIZ);
@@ -88,10 +88,93 @@ function drawOrthSnapshot(idx){
 }
 
 function resetOrth(){
-  orthState={initialized:false,xVals:null,fVals:null,lengthGeodesic:0,results:[],percentages:[],snapshots:[]};
+  orthState={initialized:false,xVals:null,fVals:null,lengthGeodesic:0,results:[],percentages:[],snapshots:[],xInit:null,fInit:null};
   document.getElementById('orth-table').querySelector('tbody').innerHTML='';
   document.getElementById('cdf-svg').innerHTML='';
+  const bsv=document.getElementById('barcode-svg');
+  if(bsv)bsv.innerHTML='';
   document.getElementById('orth-status').textContent='Reset. Ready.';
+}
+
+// ===== Barcode chart =====
+function svgBarcodeChart(blueTicks,redTicks){
+  const xMax=15;
+  const W=600,H=80;
+  const pad={l:50,r:15,t:12,b:20};
+  const pw=W-pad.l-pad.r;
+  const tx=v=>pad.l+Math.min(v,xMax)/xMax*pw;
+  const midY=(H-pad.t-pad.b)/2+pad.t;
+  const halfH=(H-pad.t-pad.b)/2*0.72;
+
+  let svg=`<rect width="${W}" height="${H}" fill="#0a0a1a"/>`;
+
+  // Vertical grid lines
+  for(let gx=0;gx<=xMax;gx+=5)
+    svg+=`<line x1="${tx(gx)}" y1="${pad.t}" x2="${tx(gx)}" y2="${H-pad.b}" stroke="#1a2a4a" stroke-width="0.5"/>`;
+  // X-axis labels
+  for(let gx=0;gx<=xMax;gx+=5)
+    svg+=`<text x="${tx(gx)}" y="${H-pad.b+12}" fill="#888" font-size="10" text-anchor="middle">${gx}</text>`;
+
+  // Baseline
+  svg+=`<line x1="${pad.l}" y1="${midY}" x2="${pad.l+pw}" y2="${midY}" stroke="#2a3a5a" stroke-width="0.8"/>`;
+
+  // Blue barcode ticks (almost-perpendicular arc lengths)
+  for(const p of blueTicks){
+    if(!isFinite(p)||p<0)continue;
+    const x=tx(p);
+    svg+=`<line x1="${x}" y1="${midY-halfH}" x2="${x}" y2="${midY+halfH}" stroke="#4488ff" stroke-width="1" opacity="0.8"/>`;
+  }
+
+  // Red ticks (orthospectrum elements — full height)
+  for(const p of redTicks){
+    if(!isFinite(p)||p<0)continue;
+    const x=tx(Math.min(p,xMax));
+    svg+=`<line x1="${x}" y1="${pad.t}" x2="${x}" y2="${H-pad.b}" stroke="#ff4444" stroke-width="2"/>`;
+  }
+
+  return svg;
+}
+
+function updateBarcodeChart(){
+  const svg=document.getElementById('barcode-svg');
+  if(!svg)return;
+  const blueTicks=typeof storyArcLengths!=='undefined'?storyArcLengths:[];
+  const redTicks=(orthState&&orthState.results)?[...orthState.results]:[];
+  svg.innerHTML=svgBarcodeChart(blueTicks,redTicks);
+}
+
+// ===== Show initial ECDF + sum of computed elements =====
+function showOrthInitialSum(){
+  if(!orthState||!orthState.initialized||!orthState.xInit){
+    document.getElementById('orth-status').textContent='Run at least one estimate first.';
+    return;
+  }
+  const cfg=svgCdfSetup(15,-0.2,1.0);
+  const MAX_VIZ=1000000;
+  const init=downsampleForViz(orthState.xInit,orthState.fInit,MAX_VIZ);
+  const curves=[{x:init.x,f:init.f,color:'#cccccc',label:'Initial ECDF'}];
+
+  const snaps=orthState.snapshots;
+  if(snaps.length>0){
+    // Build union x grid across all candidate CDFs
+    const xSet=new Set();
+    for(const s of snaps)for(const v of s.xCand)if(isFinite(v))xSet.add(v);
+    const sumX=[...xSet].sort((a,b)=>a-b);
+    const sumF=sumX.map(x=>{
+      let tot=0;
+      for(const snap of snaps){
+        let lo=0,hi=snap.xCand.length-1,best=-1;
+        while(lo<=hi){const mid=(lo+hi)>>1;if(snap.xCand[mid]<=x){best=mid;lo=mid+1;}else hi=mid-1;}
+        if(best>=0)tot+=snap.fCand[best];
+      }
+      return tot;
+    });
+    const sm=downsampleForViz(sumX,sumF,MAX_VIZ);
+    curves.push({x:sm.x,f:sm.f,color:'#ff8844',label:'Sum of computed'});
+  }
+
+  const title=`Initial distribution + sum (${snaps.length} element${snaps.length!==1?'s':''})`;
+  document.getElementById('cdf-svg').innerHTML=buildSvgChart(curves,title,cfg);
 }
 
 function resetHomotopy(){
@@ -128,7 +211,7 @@ async function guessSepNonsep(){
   const guess=maxDist<0.05?'Nonseparating':'Separating';
 
   // Draw both CDFs using SVG
-  const cfg=svgCdfSetup(25,0,1.05);
+  const cfg=svgCdfSetup(15,0,1.05);
   const MAX_VIZ=1000000;
   const de=downsampleForViz(ecdfEven.x,ecdfEven.f,MAX_VIZ);
   const do_=downsampleForViz(ecdfOdd.x,ecdfOdd.f,MAX_VIZ);

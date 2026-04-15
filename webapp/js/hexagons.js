@@ -255,12 +255,12 @@ function createGluingSeparatingS2(){
 
 function createGluingNonseparatingS2(){
   const g={};
-  g.hexCurveIndices=[[0,1,2],[0,1,2],[0,1,2],[0,1,2]]; // all hexes use all 3 curves
+  g.hexCurveIndices=[[0,2,1],[0,2,1],[0,2,1],[0,2,1]]; // L1→side0, L3→side2, L2→side4
   g.noncoherentPairs=[[0,1],[0,2],[1,0],[1,3],[2,0],[2,3],[3,1],[3,2]];
   g.curveCombinations=[
-    [[0,0],[1,0],[2,0],[3,0]],  // curve 1 — side 0 of all hexes
-    [[0,2],[1,2],[2,2],[3,2]],  // curve 2 — side 2 of all hexes
-    [[0,4],[1,4],[2,4],[3,4]]   // curve 3 — side 4 of all hexes
+    [[0,0],[1,0],[2,0],[3,0]],  // curve 1 (brown) — side 0 of all hexes, length L1
+    [[0,4],[1,4],[2,4],[3,4]],  // curve 2 (purple) — side 4 of all hexes, length L2
+    [[0,2],[1,2],[2,2],[3,2]]   // curve 3 (grey)   — side 2 of all hexes, length L3
   ];
 
   g.pairings=new Array(4);
@@ -285,30 +285,30 @@ function createGluingNonseparatingS2(){
   g.pairings[0][0]={type:'twisted',primaryTgtHex:2,primaryTgtSide:0,secondaryTgtHex:3,secondaryTgtSide:0,
     srcVtx:[0,1],primaryVtx:[0,1],secondaryVtx:[1,0],twistParamIndex:0,twistSign:1};
   g.pairings[0][2]={type:'twisted',primaryTgtHex:2,primaryTgtSide:2,secondaryTgtHex:3,secondaryTgtSide:2,
-    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:1,twistSign:1};
+    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:2,twistSign:1};
   g.pairings[0][4]={type:'twisted',primaryTgtHex:2,primaryTgtSide:4,secondaryTgtHex:3,secondaryTgtSide:4,
-    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:2,twistSign:1};
+    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:1,twistSign:1};
   // Hex 1
   g.pairings[1][0]={type:'twisted',primaryTgtHex:3,primaryTgtSide:0,secondaryTgtHex:2,secondaryTgtSide:0,
     srcVtx:[0,1],primaryVtx:[0,1],secondaryVtx:[1,0],twistParamIndex:0,twistSign:-1};
   g.pairings[1][2]={type:'twisted',primaryTgtHex:3,primaryTgtSide:2,secondaryTgtHex:2,secondaryTgtSide:2,
-    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:1,twistSign:-1};
+    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:2,twistSign:-1};
   g.pairings[1][4]={type:'twisted',primaryTgtHex:3,primaryTgtSide:4,secondaryTgtHex:2,secondaryTgtSide:4,
-    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:2,twistSign:-1};
+    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:1,twistSign:-1};
   // Hex 2
   g.pairings[2][0]={type:'twisted',primaryTgtHex:0,primaryTgtSide:0,secondaryTgtHex:1,secondaryTgtSide:0,
     srcVtx:[0,1],primaryVtx:[0,1],secondaryVtx:[1,0],twistParamIndex:0,twistSign:-1};
   g.pairings[2][2]={type:'twisted',primaryTgtHex:0,primaryTgtSide:2,secondaryTgtHex:1,secondaryTgtSide:2,
-    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:1,twistSign:-1};
+    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:2,twistSign:-1};
   g.pairings[2][4]={type:'twisted',primaryTgtHex:0,primaryTgtSide:4,secondaryTgtHex:1,secondaryTgtSide:4,
-    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:2,twistSign:-1};
+    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:1,twistSign:-1};
   // Hex 3
   g.pairings[3][0]={type:'twisted',primaryTgtHex:1,primaryTgtSide:0,secondaryTgtHex:0,secondaryTgtSide:0,
     srcVtx:[0,1],primaryVtx:[0,1],secondaryVtx:[1,0],twistParamIndex:0,twistSign:1};
   g.pairings[3][2]={type:'twisted',primaryTgtHex:1,primaryTgtSide:2,secondaryTgtHex:0,secondaryTgtSide:2,
-    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:1,twistSign:1};
+    srcVtx:[2,3],primaryVtx:[2,3],secondaryVtx:[3,2],twistParamIndex:2,twistSign:1};
   g.pairings[3][4]={type:'twisted',primaryTgtHex:1,primaryTgtSide:4,secondaryTgtHex:0,secondaryTgtSide:4,
-    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:2,twistSign:1};
+    srcVtx:[4,5],primaryVtx:[4,5],secondaryVtx:[5,4],twistParamIndex:1,twistSign:1};
 
   // Style lookup (0-indexed, from MATLAB 1-indexed: 9→8, 3→2, 8→7, 1→0, 7→6, 2→1, 6→5, 4→3, 5→4)
   g.styleLookup=[
