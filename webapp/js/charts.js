@@ -102,9 +102,11 @@ function svgBarcodeChart(blueTicks,redTicks){
   const W=600,H=80;
   const pad={l:50,r:15,t:12,b:20};
   const pw=W-pad.l-pad.r;
+  const ph=H-pad.t-pad.b;
   const tx=v=>pad.l+Math.min(v,xMax)/xMax*pw;
-  const midY=(H-pad.t-pad.b)/2+pad.t;
-  const halfH=(H-pad.t-pad.b)/2*0.72;
+  const midY=pad.t+ph/2;
+  // ty maps data y in [-1,1] to pixel coordinates: y=1→pad.t, y=-1→H-pad.b
+  const ty=v=>midY-v*(ph/2);
 
   let svg=`<rect width="${W}" height="${H}" fill="#0a0a1a"/>`;
 
@@ -115,21 +117,21 @@ function svgBarcodeChart(blueTicks,redTicks){
   for(let gx=0;gx<=xMax;gx+=5)
     svg+=`<text x="${tx(gx)}" y="${H-pad.b+12}" fill="#888" font-size="10" text-anchor="middle">${gx}</text>`;
 
-  // Baseline
+  // Baseline at y=0
   svg+=`<line x1="${pad.l}" y1="${midY}" x2="${pad.l+pw}" y2="${midY}" stroke="#2a3a5a" stroke-width="0.8"/>`;
 
-  // Blue barcode ticks (almost-perpendicular arc lengths)
+  // Blue ticks: from (p,0) up to (p,1)
   for(const p of blueTicks){
     if(!isFinite(p)||p<0)continue;
     const x=tx(p);
-    svg+=`<line x1="${x}" y1="${midY-halfH}" x2="${x}" y2="${midY+halfH}" stroke="#4488ff" stroke-width="1" opacity="0.8"/>`;
+    svg+=`<line x1="${x}" y1="${ty(0)}" x2="${x}" y2="${ty(1)}" stroke="#4488ff" stroke-width="1" opacity="0.8"/>`;
   }
 
-  // Red ticks (orthospectrum elements — full height)
+  // Red ticks: from (q,0) down to (q,-1)
   for(const p of redTicks){
     if(!isFinite(p)||p<0)continue;
     const x=tx(Math.min(p,xMax));
-    svg+=`<line x1="${x}" y1="${pad.t}" x2="${x}" y2="${H-pad.b}" stroke="#ff4444" stroke-width="2"/>`;
+    svg+=`<line x1="${x}" y1="${ty(0)}" x2="${x}" y2="${ty(-1)}" stroke="#ff4444" stroke-width="2"/>`;
   }
 
   return svg;
