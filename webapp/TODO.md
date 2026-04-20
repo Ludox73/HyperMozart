@@ -8,4 +8,3 @@ Disable Fast mode by default.
 
 Orange to blue in sum CDF
 
-03-comparing.md must be in right panel

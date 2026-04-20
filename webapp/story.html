@@ -276,6 +276,8 @@ body { align-items: stretch; }
         <canvas id="surface3d-canvas" width="600" height="400" style="width:100%;height:auto;border-radius:8px;border:1px solid #0f3460;display:block"></canvas>
       </div>
 
+      <div id="surface-mid-text" class="step-content" style="padding:12px 0 4px"></div>
+
       <!-- Run geodesic and save musical data -->
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a3060">
         <div class="controls-group" style="margin-bottom:10px">
@@ -369,6 +371,7 @@ body { align-items: stretch; }
           <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
+          <div id="surface-listen-text" class="step-content" style="padding:0 0 10px"></div>
           <div class="controls-row" style="margin-bottom:12px">
             <div class="controls-group">
               <label>Speed multiplier <span class="val" id="v-story-speed">10.0</span></label>
@@ -556,9 +559,7 @@ body { align-items: stretch; }
   <div class="step-body">
     <div class="step-controls">
 
-      <p style="font-size:.9rem;color:#a0b0c0;margin:0 0 14px">
-        Configure two surfaces independently, generate a melody for each by running a geodesic in fast mode, then listen to both side by side. Use this panel to explore how changing the decomposition type or Fenchel–Nielsen parameters affects the resulting music.
-      </p>
+      <div id="content-compare" class="step-content" style="padding:0 0 14px"></div>
 
       <div class="cmp-columns">
 
@@ -866,6 +867,8 @@ body { align-items: stretch; }
   <div class="step-body">
     <div class="step-controls">
 
+      <div id="content-iso-intro" class="step-content" style="padding:0 0 12px"></div>
+
       <div style="padding:0 0 12px;font-size:.88rem;color:#c9a96e">
         <strong>Fixed parameters:</strong> L1 = 5 &nbsp;|&nbsp; L2 = L3 = 3 &nbsp;|&nbsp; T1 = T2 = T3 = 0 &nbsp;|&nbsp; MaxLength = 25
       </div>
@@ -1096,6 +1099,7 @@ body { align-items: stretch; }
         <button id="btn-dist" onclick="drawDistribution()" disabled>Draw Distribution</button>
       </div>
       <canvas id="dist-canvas" width="900" height="420" style="width:100%;height:auto;border-radius:6px;border:1px solid #0f3460;margin-top:8px"></canvas>
+      <div id="dist-mid-text" class="step-content" style="padding:10px 0 4px"></div>
       <canvas id="dist-theta-canvas" width="700" height="280" style="width:100%;height:auto;border-radius:6px;border:1px solid #0f3460;margin-top:8px"></canvas>
       <div class="status" id="dist-status"></div>
     </div>
@@ -1199,16 +1203,21 @@ body { align-items: stretch; }
 // ===== Markdown loading =====
 // Map from element id to markdown file path
 const mdMap = {
-  'intro-text':         'story/01-introduction.md',
-  'content-1':          'story/02-surface.md',
-  'after-panel1-text':  'story/03-after-panel1.md',
-  'content-motif':      'story/04-motifs.md',
-  'after-motifs-text':  'story/05-after-motifs.md',
-  'after-compare-text': 'story/06-after-compare.md',
-  'after-iso-text':     'story/07-after-iso.md',
-  'content-5':          'story/06-orthospectrum.md',
-  'after-ortho-text':   'story/08-after-ortho.md',
-  'content-4':          'story/05-distribution.md',
+  'intro-text':           'story/01-introduction.md',
+  'content-1':            'story/02-surface.md',
+  'surface-mid-text':     'story/02-surface-mid.md',
+  'surface-listen-text':  'story/02-surface-listen.md',
+  'after-panel1-text':    'story/03-after-panel1.md',
+  'content-motif':        'story/04-motifs.md',
+  'content-compare':      'story/03-comparing.md',
+  'after-motifs-text':    'story/05-after-motifs.md',
+  'after-compare-text':   'story/06-after-compare.md',
+  'content-iso-intro':    'story/09-iso-intro.md',
+  'after-iso-text':       'story/07-after-iso.md',
+  'content-5':            'story/06-orthospectrum.md',
+  'after-ortho-text':     'story/08-after-ortho.md',
+  'content-4':            'story/05-distribution.md',
+  'dist-mid-text':        'story/05-distribution-mid.md',
 };
 
 function renderMd(container, text) {
@@ -2238,8 +2247,10 @@ async function startIsomelodic() {
 
   document.getElementById('iso-btn-run').disabled = true;
   document.getElementById('iso-btn-stop').disabled = false;
-  document.getElementById('iso-btn-play-sep').disabled = true;
-  document.getElementById('iso-btn-play-non').disabled = true;
+  const _isoPlaySep = document.getElementById('iso-btn-play-sep');
+  const _isoPlayNon = document.getElementById('iso-btn-play-non');
+  if (_isoPlaySep) _isoPlaySep.disabled = true;
+  if (_isoPlayNon) _isoPlayNon.disabled = true;
   document.getElementById('iso-sep-stats').textContent = '';
   document.getElementById('iso-non-stats').textContent = '';
   document.getElementById('iso-progress').style.width = '0%';
@@ -2810,8 +2821,8 @@ async function startIsomelodic() {
 
   document.getElementById('iso-btn-run').disabled = false;
   document.getElementById('iso-btn-stop').disabled = true;
-  if (sepMusic.length > 0) document.getElementById('iso-btn-play-sep').disabled = false;
-  if (nonMusic.length > 0) document.getElementById('iso-btn-play-non').disabled = false;
+  if (sepMusic.length > 0 && _isoPlaySep) _isoPlaySep.disabled = false;
+  if (nonMusic.length > 0 && _isoPlayNon) _isoPlayNon.disabled = false;
 }
 
 // ===== Shared helpers for iso2 and iso3 =====
