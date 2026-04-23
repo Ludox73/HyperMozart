@@ -29,6 +29,8 @@ body { align-items: stretch; }
 }
 .story-header h1 { font-size: 2rem; margin-bottom: 6px; }
 .story-header .subtitle { font-size: 1rem; margin-bottom: 0; }
+.story-header .subtitle a { color: #c9a96e; text-decoration: none; }
+.story-header .subtitle a:hover { text-decoration: underline; }
 
 /* Step sections */
 .step {
@@ -193,6 +195,43 @@ body { align-items: stretch; }
 /* Compare columns */
 .cmp-columns { display: flex; gap: 16px; flex-wrap: wrap; }
 .cmp-columns .cmp-surface-box { flex: 1; min-width: 260px; }
+
+/* Run-geodesic inline row */
+.geo-run-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.geo-run-row > button { white-space: nowrap; padding: 2px 7px; font-size: .75rem; flex: 0 0 auto; }
+.geo-run-row > .geo-progress-line { flex-basis: 100%; display: flex; align-items: center; gap: 6px; }
+.geo-run-row > .geo-progress-line .progress-bar { flex: 1; }
+.geo-run-row > .geo-progress-line .status { font-size: .75rem; margin: 0; padding: 0; }
+.geo-settings-box {
+  flex: 1; min-width: 120px;
+  border: 1px solid #1a3a6a; border-radius: 6px; overflow: hidden;
+}
+.geo-settings-header {
+  padding: 4px 10px; background: #0d2040; cursor: pointer; user-select: none;
+  display: flex; align-items: center; gap: 4px; font-size: .8rem; color: #888;
+}
+.geo-settings-header:hover { color: #c9a96e; }
+.geo-settings-body {
+  display: none; padding: 8px 10px;
+  background: #0a1628; font-size: .82rem;
+}
+.geo-settings-box.geo-open .geo-settings-body { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.geo-settings-box.geo-open .geo-settings-header .iso-sub-toggle { transform: rotate(180deg); }
+.geo-settings-body label { color: #a0b0c0; white-space: nowrap; font-size: .8rem; }
+.geo-settings-body input[type="number"], .geo-settings-body select {
+  background: #0d2040; color: #e8d5b7; border: 1px solid #2a4a7a; border-radius: 4px;
+  padding: 1px 4px; width: 46px; font-size: .8rem;
+}
+.geo-settings-body input.geo-input-length { width: 93px; }
+.geo-settings-body select { width: auto; }
+.geo-settings-body input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+.geo-settings-body input[type="number"]::-webkit-outer-spin-button,
+.geo-settings-body input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.geo-btn-group { display: flex; gap: 4px; flex: 0 0 auto; }
+.geo-range-info {
+  display: none; font-size: .75rem; color: #e8a040; margin-top: 4px;
+  padding: 3px 8px; background: #1a2a40; border-radius: 4px;
+}
 </style>
 </head>
 <body>
@@ -201,7 +240,7 @@ body { align-items: stretch; }
 
 <div class="story-header">
   <h1>HyperMarimba</h1>
-  <p class="subtitle">Accompanying software for "..."</p>
+  <p class="subtitle"><a href="https://ludox73.github.io/">Ludovico Battista</a> and <a href="https://juan.perlora.eu">Juan Souto</a></p>
   <!-- <a href="index.html" class="back-link">← Back to full app</a> -->
 </div>
 
@@ -280,17 +319,12 @@ body { align-items: stretch; }
 
       <!-- Run geodesic and save musical data -->
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid #1a3060">
-        <div class="controls-group" style="margin-bottom:10px">
-          <label>Max length <span class="val" id="v-save-maxlen">1.00M</span></label>
-          <input type="range" id="save-maxlen" min="0" max="100" step="1" value="50">
-        </div>
         <div class="controls-actions">
           <button id="btn-save-run" onclick="runGeodesicSave()">Run geodesic and save musical data</button>
           <button id="btn-save-stop" class="stop" onclick="stopGeodesicSave()" disabled>Stop</button>
         </div>
         <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
         <div class="status" id="status">Ready</div>
-        <div class="audio-info" id="stats"></div>
       </div>
 
       <!-- Hidden elements required by computation.js / audio.js -->
@@ -335,7 +369,7 @@ body { align-items: stretch; }
       <div class="substep substep-locked" id="viz-geodesic-panel" style="margin-top:12px">
         <div class="substep-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none"
              onclick="if(!this.parentElement.classList.contains('substep-locked'))this.parentElement.classList.toggle('iso-sub-open')">
-          <span>Visualize Geodesic</span>
+          <span>Listen and Visualize Geodesic</span>
           <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
@@ -367,7 +401,7 @@ body { align-items: stretch; }
       <div class="substep substep-locked" id="listen-music-panel" style="margin-top:12px">
         <div class="substep-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none"
              onclick="if(!this.parentElement.classList.contains('substep-locked'))this.parentElement.classList.toggle('iso-sub-open')">
-          <span>Listen to Music</span>
+          <span>Listen and Read Score</span>
           <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
@@ -405,13 +439,41 @@ body { align-items: stretch; }
 <!-- ==================== STEP MOTIF: Motif Frequency Estimation ==================== -->
 <div class="step" id="step-motif">
   <div class="step-header" onclick="toggleStep('motif')">
-    <div class="step-number">★</div>
+    <div class="step-number">2</div>
     <div class="step-title">Motif Frequency Estimation</div>
     <div class="step-toggle">▼</div>
   </div>
   <div class="step-body">
     <div class="step-content" id="content-motif"></div>
     <div class="step-controls">
+
+      <!-- Run geodesic for this panel -->
+      <div class="geo-run-row">
+        <div class="geo-btn-group">
+          <button id="btn-geo-motif" onclick="runPanelGeodesic('motif')">Run</button>
+          <button id="btn-geo-motif-stop" class="stop" onclick="stopPanelGeodesic('motif')" disabled>Stop</button>
+        </div>
+        <div class="geo-settings-box" id="geo-settings-motif" onclick="if(event.target===this||event.target.closest('.geo-settings-header'))this.classList.toggle('geo-open')">
+          <div class="geo-settings-header">
+            Surface parameters <span class="iso-sub-toggle" style="font-size:.9rem">▼</span>
+          </div>
+          <div class="geo-settings-body" onclick="event.stopPropagation()">
+            <label>Type <select id="geo-motif-gluing" onchange="syncGeoParam(this,'gluing-type')"><option value="separating">Sep</option><option value="nonseparating">Nonsep</option></select></label>
+            <label>L1 <input type="number" id="geo-motif-l1" min="1" max="7" step="0.01" value="2.00" onchange="syncGeoParam(this,'l1')"></label>
+            <label>L2 <input type="number" id="geo-motif-l2" min="1" max="7" step="0.01" value="3.00" onchange="syncGeoParam(this,'l2')"></label>
+            <label>L3 <input type="number" id="geo-motif-l3" min="1" max="7" step="0.01" value="4.00" onchange="syncGeoParam(this,'l3')"></label>
+            <label>T1% <input type="number" id="geo-motif-t1" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t1')"></label>
+            <label>T2% <input type="number" id="geo-motif-t2" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t2')"></label>
+            <label>T3% <input type="number" id="geo-motif-t3" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t3')"></label>
+            <label>Length <input type="number" id="geo-motif-maxlen" class="geo-input-length" min="1000" max="10000000" step="1000" value="250000"></label>
+            <div class="geo-range-info" id="geo-range-info-motif"></div>
+          </div>
+        </div>
+        <div class="geo-progress-line">
+          <div class="progress-bar"><div class="progress-fill" id="geo-progress-motif"></div></div>
+          <span class="status" id="geo-status-motif">Ready</span>
+        </div>
+      </div>
 
       <!-- ── 2-motif sub-panel ── -->
       <div style="border:1px solid #1a3a6a;border-radius:8px;overflow:hidden;margin-bottom:12px">
@@ -421,21 +483,19 @@ body { align-items: stretch; }
           <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
-          <div id="smotif2-note-btns" style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:10px">
-            <span id="smotif2-note-btns-placeholder" style="color:#667;font-size:.8rem;font-style:italic">Run geodesic to enable note buttons.</span>
-          </div>
+          <div style="font-weight:600;color:#c9a96e;margin-bottom:6px;font-size:.9rem">Select <em>motif</em></div>
           <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
             Minimum inter-note interval: <strong id="smotif2-min" style="color:#e8d5b7">— (run geodesic first)</strong>
-            <span style="color:#667"> — values of a smaller than this will find no 2-motifs</span>
+            <span style="color:#667"> — gap values smaller than this will find no 2-motifs</span>
           </div>
           <div class="controls-row">
             <div class="controls-group">
-              <label>a &nbsp;<input type="range" id="smotif2-a" min="0" max="5" step="0.01" value="0.50"
+              <label>Gap between notes &nbsp;<input type="range" id="smotif2-a" min="0" max="5" step="0.01" value="0.50"
                 oninput="document.getElementById('smotif2-v-a').textContent=parseFloat(this.value).toFixed(2)">
                 <span class="val" id="smotif2-v-a">0.50</span></label>
             </div>
             <div class="controls-group">
-              <label>ε &nbsp;<input type="range" id="smotif2-eps" min="0" max="0.5" step="0.001" value="0.050"
+              <label>Tolerance &nbsp;<input type="range" id="smotif2-eps" min="0" max="0.5" step="0.001" value="0.050"
                 oninput="document.getElementById('smotif2-v-eps').textContent=parseFloat(this.value).toFixed(3)">
                 <span class="val" id="smotif2-v-eps">0.050</span></label>
             </div>
@@ -458,8 +518,17 @@ body { align-items: stretch; }
               </select></label>
             </div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+            <span style="color:#a0b0c0;font-size:.85rem">Preselected motifs</span>
+            <div id="smotif2-note-btns" style="display:flex;flex-wrap:nowrap;gap:3px">
+              <span id="smotif2-note-btns-placeholder" style="color:#667;font-size:.8rem;font-style:italic">Run geodesic first.</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:.85rem;color:#a0b0c0;font-style:italic">
+            Pressing <em>Estimate frequency</em> you get the numerical estimate of the <em>frequency</em> of the chosen <em>motif</em>, and a diagram showing how this estimate varies over time.
+          </div>
           <div class="controls-actions" style="margin-top:10px">
-            <button onclick="runStoryMotif2()">Run</button>
+            <button onclick="runStoryMotif2()">Estimate frequency</button>
           </div>
           <div class="status" id="smotif2-status">Ready</div>
           <div id="smotif2-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
@@ -478,26 +547,24 @@ body { align-items: stretch; }
           <span class="iso-sub-toggle" style="color:#888;font-size:1.1rem">▼</span>
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
-          <div id="smotif3-note-btns" style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:10px">
-            <span id="smotif3-note-btns-placeholder" style="color:#667;font-size:.8rem;font-style:italic">Run geodesic to enable note buttons.</span>
-          </div>
+          <div style="font-weight:600;color:#c9a96e;margin-bottom:6px;font-size:.9rem">Select <em>motif</em></div>
           <div style="margin-bottom:10px;padding:8px 12px;background:#0a1628;border-radius:6px;font-size:.85rem;color:#a0b0c0">
             Minimum inter-note interval: <strong id="smotif3-min" style="color:#e8d5b7">— (run geodesic first)</strong>
-            <span style="color:#667"> — values of a or b smaller than this will find no 3-motifs</span>
+            <span style="color:#667"> — gap values smaller than this will find no 3-motifs</span>
           </div>
           <div class="controls-row">
             <div class="controls-group">
-              <label>a &nbsp;<input type="range" id="smotif3-a" min="0" max="5" step="0.01" value="0.50"
+              <label>First gap &nbsp;<input type="range" id="smotif3-a" min="0" max="5" step="0.01" value="0.50"
                 oninput="document.getElementById('smotif3-v-a').textContent=parseFloat(this.value).toFixed(2)">
                 <span class="val" id="smotif3-v-a">0.50</span></label>
             </div>
             <div class="controls-group">
-              <label>b &nbsp;<input type="range" id="smotif3-b" min="0" max="5" step="0.01" value="0.50"
+              <label>Second gap &nbsp;<input type="range" id="smotif3-b" min="0" max="5" step="0.01" value="0.50"
                 oninput="document.getElementById('smotif3-v-b').textContent=parseFloat(this.value).toFixed(2)">
                 <span class="val" id="smotif3-v-b">0.50</span></label>
             </div>
             <div class="controls-group">
-              <label>ε &nbsp;<input type="range" id="smotif3-eps" min="0" max="0.5" step="0.001" value="0.050"
+              <label>Tolerance &nbsp;<input type="range" id="smotif3-eps" min="0" max="0.5" step="0.001" value="0.050"
                 oninput="document.getElementById('smotif3-v-eps').textContent=parseFloat(this.value).toFixed(3)">
                 <span class="val" id="smotif3-v-eps">0.050</span></label>
             </div>
@@ -528,8 +595,17 @@ body { align-items: stretch; }
               </select></label>
             </div>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+            <span style="color:#a0b0c0;font-size:.85rem">Preselected motifs</span>
+            <div id="smotif3-note-btns" style="display:flex;flex-wrap:nowrap;gap:3px">
+              <span id="smotif3-note-btns-placeholder" style="color:#667;font-size:.8rem;font-style:italic">Run geodesic first.</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:.85rem;color:#a0b0c0;font-style:italic">
+            Pressing <em>Estimate frequency</em> you get the numerical estimate of the <em>frequency</em> of the chosen <em>motif</em>, and a diagram showing how this estimate varies over time.
+          </div>
           <div class="controls-actions" style="margin-top:10px">
-            <button onclick="runStoryMotif3()">Run</button>
+            <button onclick="runStoryMotif3()">Estimate frequency</button>
           </div>
           <div class="status" id="smotif3-status">Ready</div>
           <div id="smotif3-results" style="display:none;margin-top:10px;font-size:.88rem;color:#ccc;padding:10px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></div>
@@ -551,7 +627,7 @@ body { align-items: stretch; }
 <!-- ==================== STEP COMPARE: Compare Two Surfaces ==================== -->
 <div class="step" id="step-compare">
   <div class="step-header" onclick="toggleStep('compare')">
-    <div class="step-number">★</div>
+    <div class="step-number">3</div>
     <div class="step-title">Compare Two Surfaces</div>
     <div class="step-toggle">▼</div>
   </div>
@@ -859,7 +935,7 @@ body { align-items: stretch; }
 <!-- ==================== STEP ISO: Indistinguishable Example ==================== -->
 <div class="step" id="step-iso">
   <div class="step-header" onclick="toggleStep('iso')">
-    <div class="step-number">★</div>
+    <div class="step-number">4</div>
     <div class="step-title">Indistinguishable example, separating and nonseparating curve</div>
     <div class="step-toggle">▼</div>
   </div>
@@ -1041,6 +1117,35 @@ body { align-items: stretch; }
   <div class="step-body">
     <div class="step-content" id="content-5"></div>
     <div class="step-controls">
+
+      <!-- Run geodesic for this panel -->
+      <div class="geo-run-row">
+        <div class="geo-btn-group">
+          <button id="btn-geo-orth" onclick="runPanelGeodesic('orth')">Run</button>
+          <button id="btn-geo-orth-stop" class="stop" onclick="stopPanelGeodesic('orth')" disabled>Stop</button>
+        </div>
+        <div class="geo-settings-box" id="geo-settings-orth" onclick="if(event.target===this||event.target.closest('.geo-settings-header'))this.classList.toggle('geo-open')">
+          <div class="geo-settings-header">
+            Surface parameters <span class="iso-sub-toggle" style="font-size:.9rem">▼</span>
+          </div>
+          <div class="geo-settings-body" onclick="event.stopPropagation()">
+            <label>Type <select id="geo-orth-gluing" onchange="syncGeoParam(this,'gluing-type')"><option value="separating">Sep</option><option value="nonseparating">Nonsep</option></select></label>
+            <label>L1 <input type="number" id="geo-orth-l1" min="1" max="7" step="0.01" value="2.00" onchange="syncGeoParam(this,'l1')"></label>
+            <label>L2 <input type="number" id="geo-orth-l2" min="1" max="7" step="0.01" value="3.00" onchange="syncGeoParam(this,'l2')"></label>
+            <label>L3 <input type="number" id="geo-orth-l3" min="1" max="7" step="0.01" value="4.00" onchange="syncGeoParam(this,'l3')"></label>
+            <label>T1% <input type="number" id="geo-orth-t1" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t1')"></label>
+            <label>T2% <input type="number" id="geo-orth-t2" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t2')"></label>
+            <label>T3% <input type="number" id="geo-orth-t3" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t3')"></label>
+            <label>Length <input type="number" id="geo-orth-maxlen" class="geo-input-length" min="1000" max="10000000" step="1000" value="5000000"></label>
+            <div class="geo-range-info" id="geo-range-info-orth"></div>
+          </div>
+        </div>
+        <div class="geo-progress-line">
+          <div class="progress-bar"><div class="progress-fill" id="geo-progress-orth"></div></div>
+          <span class="status" id="geo-status-orth">Ready</span>
+        </div>
+      </div>
+
       <div class="controls-row">
         <div class="controls-group" style="min-width:100px;flex:0">
           <label>Samples <select id="orth-samples" style="width:100px">
@@ -1080,7 +1185,7 @@ body { align-items: stretch; }
 <!-- ==================== STEP 4: Distribution ==================== -->
 <div class="step" id="step-4">
   <div class="step-header" onclick="toggleStep(4)">
-    <div class="step-number">4</div>
+    <div class="step-number">6</div>
     <div class="step-title">Intersection Distribution</div>
     <div class="step-toggle">▼</div>
   </div>
@@ -1313,7 +1418,6 @@ const sliderConfigs = {
   speed:           {display: 'v-speed',           fmt: v => v.toFixed(1)},
   audiospeed:      {display: 'v-audiospeed',      fmt: v => v.toFixed(1)},
   maxdur:          {display: 'v-maxdur',          fmt: v => Math.round(v).toString()},
-  'save-maxlen':   {display: 'v-save-maxlen',     fmt: v => saveMaxlenFmt(v)},
   'viz-speed':     {display: 'v-viz-speed',       fmt: v => v.toFixed(1)},
   'story-speed':   {display: 'v-story-speed',     fmt: v => v.toFixed(1)},
   'story-maxtime': {display: 'v-story-maxtime',   fmt: v => Math.round(v).toString()},
@@ -1677,6 +1781,8 @@ function buildMotifNoteButtons() {
     for (let i = 0; i < count2; i++) {
       c2.appendChild(makeBtn(String(i + 1), `Prefill 2-motif from note ${i + 1}`, () => selectMotifFromNote2(i)));
     }
+    // Default to first preselected motif
+    if (count2 > 0) selectMotifFromNote2(0);
   }
 
   // ── 3-motif buttons (need i+2) ──
@@ -1689,6 +1795,8 @@ function buildMotifNoteButtons() {
     for (let i = 0; i < count3; i++) {
       c3.appendChild(makeBtn(String(i + 1), `Prefill 3-motif from note ${i + 1}`, () => selectMotifFromNote3(i)));
     }
+    // Default to first preselected motif
+    if (count3 > 0) selectMotifFromNote3(0);
   }
 }
 
@@ -1718,6 +1826,7 @@ function selectMotifFromNote3(i) {
   _setSlider('smotif3-eps', 'smotif3-v-eps', 0.1, 3);
 }
 function _motifResultsHtml(label, result, noteCount) {
+  const pct = (result.freq * 100).toFixed(5);
   return `
     <div style="color:#c9a96e;font-weight:600;margin-bottom:8px">${label}</div>
     <table style="border-collapse:collapse;width:100%;font-family:monospace;font-size:.85rem">
@@ -1726,20 +1835,8 @@ function _motifResultsHtml(label, result, noteCount) {
         <th style="text-align:right;padding:4px 8px">Value</th>
       </tr>
       <tr style="color:#e8d5b7">
-        <td style="padding:4px 8px">Total geodesic length</td>
-        <td style="text-align:right;padding:4px 8px">${result.totalDist.toFixed(1)}</td>
-      </tr>
-      <tr style="color:#e8d5b7">
-        <td style="padding:4px 8px">Note count</td>
-        <td style="text-align:right;padding:4px 8px">${noteCount.toLocaleString()}</td>
-      </tr>
-      <tr style="color:#e8d5b7">
-        <td style="padding:4px 8px">Motif count</td>
-        <td style="text-align:right;padding:4px 8px">${result.count.toLocaleString()}</td>
-      </tr>
-      <tr style="color:#e8d5b7">
         <td style="padding:4px 8px">Frequency (per unit length)</td>
-        <td style="text-align:right;padding:4px 8px">${result.freq.toExponential(4)}</td>
+        <td style="text-align:right;padding:4px 8px">${pct} %</td>
       </tr>
     </table>`;
 }
@@ -1761,7 +1858,7 @@ function runStoryMotif2() {
   const res = document.getElementById('smotif2-results');
   res.style.display = '';
   res.innerHTML = _motifResultsHtml(
-    `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}, notes=[${_storyNoteLabel(note1)},${_storyNoteLabel(note2)}]`,
+    `2-Motif: gap=${a.toFixed(2)}, tolerance=${eps.toFixed(3)}, notes=[${_storyNoteLabel(note1)},${_storyNoteLabel(note2)}]`,
     result, toMusic.length);
   document.getElementById('smotif2-plot-wrap').style.display = '';
   drawMotifFreqGraph('smotif2-canvas', [{ samples: result.samples, color: '#c9a96e' }]);
@@ -1784,7 +1881,7 @@ function runStoryMotif3() {
   const res = document.getElementById('smotif3-results');
   res.style.display = '';
   res.innerHTML = _motifResultsHtml(
-    `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}, notes=[${_storyNoteLabel(note1)},${_storyNoteLabel(note2)},${_storyNoteLabel(note3)}]`,
+    `3-Motif: gaps=${a.toFixed(2)}/${b.toFixed(2)}, tolerance=${eps.toFixed(3)}, notes=[${_storyNoteLabel(note1)},${_storyNoteLabel(note2)},${_storyNoteLabel(note3)}]`,
     result, toMusic.length);
   document.getElementById('smotif3-plot-wrap').style.display = '';
   drawMotifFreqGraph('smotif3-canvas', [{ samples: result.samples, color: '#ff7744' }]);
@@ -3687,6 +3784,245 @@ function _surf3dDrawCurves(ctx) {
   }
 }
 
+// ===== Panel-level "Run geodesic" (motif / orth panels) =====
+
+// Parameter IDs that are synced between panel 1 sliders and panel sub-inputs
+const _geoParamIds = ['l1','l2','l3','t1','t2','t3'];
+const _geoPanelPrefixes = ['motif','orth'];
+
+// Sync: when a sub-panel input changes, push to panel-1 slider + all other sub-panels
+// Range limits for validated parameters
+const _geoParamRanges = {
+  l1: [1, 7], l2: [1, 7], l3: [1, 7],
+  t1: [0, 100], t2: [0, 100], t3: [0, 100],
+};
+
+function _geoShowRangeInfo(srcEl, msg) {
+  // find the geo-range-info sibling in the same settings body
+  const body = srcEl.closest('.geo-settings-body');
+  if (!body) return;
+  const info = body.querySelector('.geo-range-info');
+  if (!info) return;
+  info.textContent = msg;
+  info.style.display = 'block';
+  clearTimeout(info._hideTimer);
+  info._hideTimer = setTimeout(() => { info.style.display = 'none'; }, 3000);
+}
+
+function syncGeoParam(srcEl, mainId) {
+  const mainEl = document.getElementById(mainId);
+  if (!mainEl) return;
+
+  // Validate numeric ranges
+  const range = _geoParamRanges[mainId];
+  if (range) {
+    const v = parseFloat(srcEl.value);
+    if (isNaN(v) || v < range[0] || v > range[1]) {
+      // restore previous value from the main slider
+      srcEl.value = mainEl.value;
+      const label = mainId.startsWith('t') ? 'Twist' : 'Length';
+      _geoShowRangeInfo(srcEl, `${label} values must be between ${range[0]} and ${range[1]}.`);
+      return;
+    }
+  }
+
+  const val = srcEl.value;
+  if (mainEl.tagName === 'SELECT') {
+    mainEl.value = val;
+  } else {
+    mainEl.value = val;
+    // update display span
+    const dispId = 'v-' + mainId;
+    const disp = document.getElementById(dispId);
+    if (disp) {
+      if (mainId.startsWith('t')) disp.textContent = Math.round(parseFloat(val)) + '%';
+      else disp.textContent = parseFloat(val).toFixed(2);
+    }
+  }
+  // propagate to all other sub-panel copies
+  for (const pfx of _geoPanelPrefixes) {
+    const el = document.getElementById('geo-' + pfx + '-' + mainId.replace('gluing-type','gluing'));
+    if (el && el !== srcEl) el.value = val;
+  }
+  // rebuild surface if slider changed
+  if (typeof buildSurface === 'function') buildSurface();
+}
+
+// Sync: when panel-1 sliders change, push to all sub-panel inputs
+function _syncFromPanel1() {
+  const gluingVal = document.getElementById('gluing-type').value;
+  for (const pfx of _geoPanelPrefixes) {
+    const sel = document.getElementById('geo-' + pfx + '-gluing');
+    if (sel) sel.value = gluingVal;
+    for (const id of _geoParamIds) {
+      const src = document.getElementById(id);
+      const dst = document.getElementById('geo-' + pfx + '-' + id);
+      if (src && dst) dst.value = src.value;
+    }
+  }
+}
+// Hook into panel-1 slider input events
+for (const id of _geoParamIds) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', _syncFromPanel1);
+}
+document.getElementById('gluing-type').addEventListener('change', _syncFromPanel1);
+
+// Per-panel stop flags
+var _panelGeoStop = {};
+var _panelGeoRunning = {};
+
+function stopPanelGeodesic(prefix) { _panelGeoStop[prefix] = true; }
+
+async function runPanelGeodesic(prefix) {
+  if (_panelGeoRunning[prefix]) return;
+  _panelGeoRunning[prefix] = true;
+  _panelGeoStop[prefix] = false;
+
+  const btnRun  = document.getElementById('btn-geo-' + prefix);
+  const btnStop = document.getElementById('btn-geo-' + prefix + '-stop');
+  const progress = document.getElementById('geo-progress-' + prefix);
+  const status  = document.getElementById('geo-status-' + prefix);
+  btnRun.disabled = true; btnStop.disabled = false;
+  progress.style.width = '0%';
+  status.textContent = 'Building surface...';
+
+  // Read params from this panel's inputs
+  const gluingType = document.getElementById('geo-' + prefix + '-gluing').value;
+  const l1 = parseFloat(document.getElementById('geo-' + prefix + '-l1').value);
+  const l2 = parseFloat(document.getElementById('geo-' + prefix + '-l2').value);
+  const l3 = parseFloat(document.getElementById('geo-' + prefix + '-l3').value);
+  const t1 = parseFloat(document.getElementById('geo-' + prefix + '-t1').value) / 100 * 2 * Math.PI;
+  const t2 = parseFloat(document.getElementById('geo-' + prefix + '-t2').value) / 100 * 2 * Math.PI;
+  const t3 = parseFloat(document.getElementById('geo-' + prefix + '-t3').value) / 100 * 2 * Math.PI;
+  const maxLen = parseInt(document.getElementById('geo-' + prefix + '-maxlen').value) || 500000;
+  const twists = [t1, t2, t3];
+
+  const gluing = gluingType === 'nonseparating' ? createGluingNonseparatingS2() : createGluingSeparatingS2();
+  const polytopes = buildPolytopes(gluing, [l1, l2, l3]);
+  const circles = buildCircles(polytopes);
+
+  let bx = 0, by = 0;
+  for (let k = 0; k < 6; k++) { bx += polytopes[0][k][0]; by += polytopes[0][k][1]; }
+  bx /= 6; by /= 6;
+  if (Math.abs(bx) < 1e-6 && Math.abs(by) < 1e-6) { bx += 1e-4; by += 1e-4; }
+  const np2 = bx * bx + by * by;
+  const a = Math.random() * 2 * Math.PI;
+  const tgScale = 20 * (2 / (1 - np2)) ** (-2);
+  let curPoint = [bx, by], curTgVec = [tgScale * Math.sin(a), tgScale * Math.cos(a)];
+  let polyIdx = 0, toAvoid = 6, stepCount = 0;
+
+  // Warmup
+  status.textContent = 'Warming up...';
+  let warmupAccum = 0;
+  while (warmupAccum < 1000) {
+    if (_panelGeoStop[prefix]) break;
+    const inter = firstIntersection(curPoint, curTgVec, circles[polyIdx], toAvoid);
+    if (!inter) break;
+    warmupAccum += distanceTwoPoints(curPoint, inter.point);
+    const pr = applyPairing(inter.point, inter.tgVec, polyIdx, inter.side, gluing, twists, polytopes);
+    curPoint = pr.point; curTgVec = pr.tgVec; polyIdx = pr.polyIdx; toAvoid = pr.toAvoid;
+    if (++stepCount % 500 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+
+  if (_panelGeoStop[prefix]) {
+    _panelGeoRunning[prefix] = false;
+    btnRun.disabled = false; btnStop.disabled = true;
+    status.textContent = 'Stopped.'; return;
+  }
+
+  const curveCombinations = gluing.curveCombinations.map((cc, i) =>
+    document.getElementById('curve' + (i + 1) + '-active').checked ? cc : [[-1, -1]]
+  );
+
+  status.textContent = 'Computing...';
+  const toMusicLocal = [];
+  const distLocal = [];
+  const curveLen1 = 2 * distanceTwoPoints(polytopes[0][0], polytopes[0][1]);
+  let travelledDist = 0, travelledSinceLast = 0, firstCycle = true;
+  stepCount = 0;
+
+  // Arc tracking
+  const arcSaveIAMin = parseFloat(document.getElementById('arc-save-iamin').value) || 0;
+  const arcSaveIAMax = parseFloat(document.getElementById('arc-save-iamax').value) || Math.PI;
+  const arcSaveFAMin = parseFloat(document.getElementById('arc-save-famin').value) || 0;
+  const arcSaveFAMax = parseFloat(document.getElementById('arc-save-famax').value) || Math.PI;
+  const arcLengthsLocal = [];
+  let arcInitAngle = NaN, arcTracking = false;
+
+  function angleAtSide(pt, tgv, hexIdx, side) {
+    const hv = [pt[0] - circles[hexIdx][side].center[0], pt[1] - circles[hexIdx][side].center[1]];
+    const vca = [-hv[1], hv[0]];
+    return angleCW2D(vca, tgv) % Math.PI;
+  }
+
+  while (travelledDist < maxLen) {
+    if (_panelGeoStop[prefix]) break;
+    if (toAvoid === 0) {
+      const hv = [curPoint[0]-circles[polyIdx][0].center[0], curPoint[1]-circles[polyIdx][0].center[1]];
+      const vca = [-hv[1], hv[0]];
+      let pos, angle;
+      if (polyIdx === 0) { pos = distanceTwoPoints(curPoint, polytopes[0][0]); angle = angleCW2D(vca, curTgVec); }
+      else if (polyIdx === 1) { pos = curveLen1/2 + distanceTwoPoints(curPoint, polytopes[1][1]); angle = angleCW2D(curTgVec, vca) - Math.PI; }
+      else if (polyIdx === 2) { pos = (twists[0]/(2*Math.PI)*curveLen1 + distanceTwoPoints(curPoint, polytopes[2][0])) % curveLen1; if (pos < 0) pos += curveLen1; angle = -angleCW2D(vca, curTgVec); }
+      else if (polyIdx === 3) { pos = (twists[0]/(2*Math.PI)*curveLen1 + curveLen1/2 + distanceTwoPoints(curPoint, polytopes[3][1])) % curveLen1; if (pos < 0) pos += curveLen1; angle = -(angleCW2D(curTgVec, vca) - Math.PI); }
+      if (pos !== undefined) distLocal.push([pos, angle, 0]);
+    }
+    if (!arcTracking) {
+      let onCurve = false;
+      for (let c = 0; c < 3; c++) { if (isRow([polyIdx, toAvoid], curveCombinations[c])) { onCurve = true; break; } }
+      if (onCurve && !firstCycle) {
+        arcInitAngle = angleAtSide(curPoint, curTgVec, polyIdx, toAvoid);
+        arcTracking = arcInitAngle >= arcSaveIAMin && arcInitAngle <= arcSaveIAMax;
+      }
+    }
+    const inter = firstIntersection(curPoint, curTgVec, circles[polyIdx], toAvoid);
+    if (!inter) break;
+    const dtp = distanceTwoPoints(curPoint, inter.point);
+    travelledDist += dtp; travelledSinceLast += dtp;
+    const pr = applyPairing(inter.point, inter.tgVec, polyIdx, inter.side, gluing, twists, polytopes);
+    let hit = -1;
+    for (let c = 0; c < 3; c++) { if (isRow([polyIdx, inter.side], curveCombinations[c])) { hit = c; break; } }
+    if (hit >= 0) {
+      if (!firstCycle) {
+        toMusicLocal.push([travelledSinceLast, hit + 1]);
+        if (distLocal.length > 0 && distLocal[distLocal.length-1][2] === 0) distLocal[distLocal.length-1][2] = travelledSinceLast;
+        if (arcTracking) {
+          const fa = angleAtSide(inter.point, inter.tgVec, polyIdx, inter.side);
+          if (fa >= arcSaveFAMin && fa <= arcSaveFAMax) arcLengthsLocal.push(travelledSinceLast);
+          arcTracking = false;
+        }
+      }
+      travelledSinceLast = 0; firstCycle = false;
+    }
+    curPoint = pr.point; curTgVec = pr.tgVec; polyIdx = pr.polyIdx; toAvoid = pr.toAvoid;
+    if (++stepCount % 2000 === 0) {
+      const pct = Math.min(100, travelledDist / maxLen * 100);
+      progress.style.width = pct.toFixed(1) + '%';
+      status.textContent = `Computing... ${Math.floor(pct)}% (${toMusicLocal.length} notes)`;
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+
+  // Store results globally
+  progress.style.width = '100%';
+  _panelGeoRunning[prefix] = false;
+  btnRun.disabled = false; btnStop.disabled = true;
+
+  if (toMusicLocal.length > 0) {
+    toMusic = toMusicLocal;
+    storyArcLengths = arcLengthsLocal;
+    const distFiltered = distLocal.filter(d => d[2] > 0);
+    pointsDistribution = distFiltered;
+    const btnDist = document.getElementById('btn-dist');
+    if (btnDist) btnDist.disabled = pointsDistribution.length === 0;
+    status.textContent = `Done — ${toMusicLocal.length} notes`;
+    unlockGeodesicSteps();
+  } else {
+    status.textContent = _panelGeoStop[prefix] ? 'Stopped.' : 'No data generated.';
+  }
+}
+
 // ===== Story panel: Run geodesic and save musical data =====
 
 function saveMaxlenFromSlider(v) {
@@ -3712,7 +4048,6 @@ async function runGeodesicSave() {
   document.getElementById('btn-save-stop').disabled = false;
   document.getElementById('progress').style.width = '0%';
   document.getElementById('status').textContent = 'Building surface...';
-  document.getElementById('stats').textContent = '';
   document.getElementById('viz-geodesic-panel').classList.add('substep-locked');
   document.getElementById('listen-music-panel').classList.add('substep-locked');
 
@@ -3723,7 +4058,7 @@ async function runGeodesicSave() {
   const t1 = parseFloat(document.getElementById('t1').value) / 100 * 2 * Math.PI;
   const t2 = parseFloat(document.getElementById('t2').value) / 100 * 2 * Math.PI;
   const t3 = parseFloat(document.getElementById('t3').value) / 100 * 2 * Math.PI;
-  const maxLen = saveMaxlenFromSlider(parseFloat(document.getElementById('save-maxlen').value));
+  const maxLen = 10000;
   const twists = [t1, t2, t3];
 
   const gluing = gluingType === 'nonseparating' ? createGluingNonseparatingS2() : createGluingSeparatingS2();
@@ -3851,7 +4186,7 @@ async function runGeodesicSave() {
     if (++stepCount % 2000 === 0) {
       const pct = Math.min(100, travelledDist / maxLen * 100);
       document.getElementById('progress').style.width = pct.toFixed(1) + '%';
-      document.getElementById('status').textContent = `Computing... ${Math.floor(pct)}% (${toMusicLocal.length} notes, ${arcLengthsLocal.length} perp arcs)`;
+      document.getElementById('status').textContent = `Computing... ${Math.floor(pct)}% (${toMusicLocal.length} notes)`;
       await new Promise(r => setTimeout(r, 0));
     }
   }
@@ -3873,8 +4208,7 @@ function _finishGeodesicSave(music, totalDist, distLocal, arcLengths) {
     const distFiltered = (distLocal || []).filter(d => d[2] > 0);
     pointsDistribution = distFiltered;
     document.getElementById('btn-dist').disabled = pointsDistribution.length === 0;
-    document.getElementById('status').textContent = `Done — ${music.length} notes, ${storyArcLengths.length} perp arcs`;
-    document.getElementById('stats').textContent = `Geodesic length: ${totalDist.toFixed(0)} | Notes: ${music.length} | Perp arcs: ${storyArcLengths.length}`;
+    document.getElementById('status').textContent = `Done — ${music.length} notes`;
     document.getElementById('viz-geodesic-panel').classList.remove('substep-locked');
     document.getElementById('listen-music-panel').classList.remove('substep-locked');
     storyPlayer.setMusic(music);
@@ -3902,7 +4236,7 @@ async function startVisualization() {
   document.getElementById('viz-status').textContent = 'Drawing...';
 
   const { point, tgVec, polyIdx: ip, toAvoid: ia, gluing, polytopes, circles, twists } = vizSavedState;
-  const maxLen = saveMaxlenFromSlider(parseFloat(document.getElementById('save-maxlen').value));
+  const maxLen = 10000;
   const drawSpeed = parseFloat(document.getElementById('viz-speed').value);
 
   // Active curve combinations
