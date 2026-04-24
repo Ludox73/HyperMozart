@@ -641,7 +641,7 @@ body { align-items: stretch; }
         <!-- Surface A (collapsible, closed by default) -->
         <div class="cmp-surface-box" id="cmp-box-a">
           <div class="cmp-surface-header" onclick="this.parentElement.classList.toggle('cmp-box-open')">
-            <div style="font-size:1rem;font-weight:700;color:#c9a96e">Surface A</div>
+            <div style="font-size:1rem;font-weight:700;color:#c9a96e">Marimba A</div>
             <span class="cmp-surface-toggle" style="color:#888;font-size:1.1rem;transition:transform .2s">▼</span>
           </div>
           <div class="cmp-surface-body">
@@ -670,11 +670,6 @@ body { align-items: stretch; }
               <label>T3 <span class="val" id="cmp-v-a-t3">0%</span></label>
               <input type="range" id="cmp-a-t3" min="0" max="100" step="0.5" value="0">
             </div>
-            <div class="controls-group" style="margin-bottom:8px">
-              <div class="group-title">Max Length</div>
-              <label>Max length <span class="val" id="cmp-v-a-maxlen">1.0k</span></label>
-              <input type="range" id="cmp-a-maxlen" min="0" max="100" step="1" value="0">
-            </div>
             <div class="controls-group">
               <div class="group-title">Detect Curves</div>
               <div style="display:flex;gap:12px;margin-top:4px">
@@ -698,7 +693,7 @@ body { align-items: stretch; }
         <!-- Surface B (collapsible, closed by default) -->
         <div class="cmp-surface-box" id="cmp-box-b">
           <div class="cmp-surface-header" onclick="this.parentElement.classList.toggle('cmp-box-open')">
-            <div style="font-size:1rem;font-weight:700;color:#c9a96e">Surface B</div>
+            <div style="font-size:1rem;font-weight:700;color:#c9a96e">Marimba B</div>
             <span class="cmp-surface-toggle" style="color:#888;font-size:1.1rem;transition:transform .2s">▼</span>
           </div>
           <div class="cmp-surface-body">
@@ -726,11 +721,6 @@ body { align-items: stretch; }
               <input type="range" id="cmp-b-t2" min="0" max="100" step="0.5" value="0">
               <label>T3 <span class="val" id="cmp-v-b-t3">33%</span></label>
               <input type="range" id="cmp-b-t3" min="0" max="100" step="0.5" value="33">
-            </div>
-            <div class="controls-group" style="margin-bottom:8px">
-              <div class="group-title">Max Length</div>
-              <label>Max length <span class="val" id="cmp-v-b-maxlen">1.0k</span></label>
-              <input type="range" id="cmp-b-maxlen" min="0" max="100" step="1" value="0">
             </div>
             <div class="controls-group">
               <div class="group-title">Detect Curves</div>
@@ -774,7 +764,7 @@ body { align-items: stretch; }
 
       <!-- Playback section -->
       <div style="margin-top:20px;padding:14px;border:1px solid #1a3a6a;border-radius:8px;background:#0d2040">
-        <div style="font-size:1rem;font-weight:700;color:#c9a96e;margin-bottom:12px">Playback</div>
+        <div style="font-size:1rem;font-weight:700;color:#c9a96e;margin-bottom:12px">Listen and Read Scores</div>
         <div class="controls-row" style="margin-bottom:12px">
           <div class="controls-group">
             <label>Speed multiplier <span class="val" id="cmp-v-speed">10.0</span></label>
@@ -827,7 +817,7 @@ body { align-items: stretch; }
         <div class="iso-sub-body" style="display:none;padding:16px">
 
           <!-- Step 1: Run geodesics (1M, uses current surface A and B settings) -->
-          <div class="group-title" style="margin-bottom:8px">Step 1 — Run Geodesics (length 1M)</div>
+          <div class="group-title" style="margin-bottom:8px">Step 1 — Run Geodesics (length 500k)</div>
           <div class="controls-actions">
             <button id="cmp2-btn-geo" onclick="runCmp2Geodesics()">Run Both Geodesics</button>
             <button id="cmp2-btn-geo-stop" class="stop" onclick="cmp2StopRequested=true" disabled>Stop</button>
@@ -851,15 +841,15 @@ body { align-items: stretch; }
 
             <!-- Parameters -->
             <div class="controls-group" style="margin-bottom:10px">
-              <label>a <span class="val" id="cmp2-v-a">0.50</span></label>
+              <label><span id="cmp2-a-label">Gap between notes</span> <span class="val" id="cmp2-v-a">0.50</span></label>
               <input type="range" id="cmp2-a" min="0" max="5" step="0.01" value="0.50"
                 oninput="document.getElementById('cmp2-v-a').textContent=parseFloat(this.value).toFixed(2)">
               <div id="cmp2-b-row" style="display:none">
-                <label>b <span class="val" id="cmp2-v-b">0.50</span></label>
+                <label>Second gap <span class="val" id="cmp2-v-b">0.50</span></label>
                 <input type="range" id="cmp2-b" min="0" max="5" step="0.01" value="0.50"
                   oninput="document.getElementById('cmp2-v-b').textContent=parseFloat(this.value).toFixed(2)">
               </div>
-              <label>ε <span class="val" id="cmp2-v-eps">0.050</span></label>
+              <label>Tolerance <span class="val" id="cmp2-v-eps">0.050</span></label>
               <input type="range" id="cmp2-eps" min="0" max="0.5" step="0.001" value="0.050"
                 oninput="document.getElementById('cmp2-v-eps').textContent=parseFloat(this.value).toFixed(3)">
             </div>
@@ -894,13 +884,13 @@ body { align-items: stretch; }
 
             <!-- Note preset buttons: first 5 from A and B -->
             <div style="margin-bottom:10px">
-              <div style="font-size:.8rem;color:#a0b0c0;margin-bottom:4px">Prefill from Surface A (first 5 notes):</div>
+              <div style="font-size:.8rem;color:#a0b0c0;margin-bottom:4px">Prefill from Marimba A (first 5 notes):</div>
               <div id="cmp2-note-btns-a" style="display:flex;flex-wrap:nowrap;gap:4px">
                 <span style="color:#667;font-size:.8rem;font-style:italic">Run geodesics first.</span>
               </div>
             </div>
             <div style="margin-bottom:12px">
-              <div style="font-size:.8rem;color:#a0b0c0;margin-bottom:4px">Prefill from Surface B (first 5 notes):</div>
+              <div style="font-size:.8rem;color:#a0b0c0;margin-bottom:4px">Prefill from Marimba B (first 5 notes):</div>
               <div id="cmp2-note-btns-b" style="display:flex;flex-wrap:nowrap;gap:4px">
                 <span style="color:#667;font-size:.8rem;font-style:italic">Run geodesics first.</span>
               </div>
@@ -914,8 +904,8 @@ body { align-items: stretch; }
             <div id="cmp2-plot-wrap" style="margin-top:12px;display:none">
               <div style="font-size:.75rem;color:#a0a0c0;margin-bottom:4px">
                 Motif frequency over geodesic length &nbsp;
-                <span style="color:#ff7744">&#9644; Surface A</span> &nbsp;
-                <span style="color:#44aaff">&#9644; Surface B</span>
+                <span style="color:#ff7744">&#9644; Marimba A</span> &nbsp;
+                <span style="color:#44aaff">&#9644; Marimba B</span>
               </div>
               <canvas id="cmp2-freq-plot" width="900" height="240" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></canvas>
             </div>
@@ -1439,14 +1429,12 @@ const cmpSliderConfigs = {
   'cmp-a-t1':    {display: 'cmp-v-a-t1',    fmt: v => Math.round(v) + '%'},
   'cmp-a-t2':    {display: 'cmp-v-a-t2',    fmt: v => Math.round(v) + '%'},
   'cmp-a-t3':    {display: 'cmp-v-a-t3',    fmt: v => Math.round(v) + '%'},
-  'cmp-a-maxlen':{display: 'cmp-v-a-maxlen', fmt: v => maxlenFmt(v)},
   'cmp-b-l1':    {display: 'cmp-v-b-l1',    fmt: v => v.toFixed(2)},
   'cmp-b-l2':    {display: 'cmp-v-b-l2',    fmt: v => v.toFixed(2)},
   'cmp-b-l3':    {display: 'cmp-v-b-l3',    fmt: v => v.toFixed(2)},
   'cmp-b-t1':    {display: 'cmp-v-b-t1',    fmt: v => Math.round(v) + '%'},
   'cmp-b-t2':    {display: 'cmp-v-b-t2',    fmt: v => Math.round(v) + '%'},
   'cmp-b-t3':    {display: 'cmp-v-b-t3',    fmt: v => Math.round(v) + '%'},
-  'cmp-b-maxlen':{display: 'cmp-v-b-maxlen', fmt: v => maxlenFmt(v)},
   'cmp-speed':   {display: 'cmp-v-speed',    fmt: v => v.toFixed(1)},
   'cmp-maxtime': {display: 'cmp-v-maxtime',   fmt: v => Math.round(v).toString()},
 };
@@ -1650,8 +1638,7 @@ async function generateCompare(id) {
   const t1 = parseFloat(document.getElementById(prefix + 't1').value) / 100 * 2 * Math.PI;
   const t2 = parseFloat(document.getElementById(prefix + 't2').value) / 100 * 2 * Math.PI;
   const t3 = parseFloat(document.getElementById(prefix + 't3').value) / 100 * 2 * Math.PI;
-  const maxLenRaw = parseFloat(document.getElementById(prefix + 'maxlen').value);
-  const maxLen = maxlenFromSlider(maxLenRaw);
+  const maxLen = 2000;
 
   const statusEl = document.getElementById('cmp-status-' + id);
   const progressEl = document.getElementById('cmp-progress-' + id);
@@ -1804,7 +1791,7 @@ function selectMotifFromNote2(i) {
   if (!toMusic || i + 1 >= toMusic.length) return;
   const c1 = toMusic[i][1];
   const c2 = toMusic[i + 1][1];
-  const a  = toMusic[i + 1][0] - 0.001;
+  const a  = Math.floor(toMusic[i + 1][0] * 100) / 100;
   _setSelect('smotif2-n1', c1);
   _setSelect('smotif2-n2', c2);
   _setSlider('smotif2-a',   'smotif2-v-a',   a,   2);
@@ -1816,8 +1803,8 @@ function selectMotifFromNote3(i) {
   const c1 = toMusic[i][1];
   const c2 = toMusic[i + 1][1];
   const c3 = toMusic[i + 2][1];
-  const a  = toMusic[i + 1][0] - 0.001;
-  const b  = toMusic[i + 2][0];
+  const a  = Math.floor(toMusic[i + 1][0] * 100) / 100;
+  const b  = Math.floor(toMusic[i + 2][0] * 100) / 100;
   _setSelect('smotif3-n1', c1);
   _setSelect('smotif3-n2', c2);
   _setSelect('smotif3-n3', c3);
@@ -1920,7 +1907,7 @@ async function runCmp2Geodesics() {
   document.getElementById('cmp2-results').style.display = 'none';
   document.getElementById('cmp2-plot-wrap').style.display = 'none';
 
-  const maxLen = 1e6;
+  const maxLen = 500000;
   const surfA = _cmpSurfaceFromId('a');
   const surfB = _cmpSurfaceFromId('b');
 
@@ -2006,19 +1993,22 @@ function buildCmp2NoteButtons() {
         `Note ${i+1} from ${surfLabel}: ${pattern}`,
         () => {
           const is3 = document.getElementById('cmp2-type-3').checked;
-          const a = music[i+1][0] - 0.001;
+          const a = Math.floor(music[i+1][0] * 100) / 100;
           document.getElementById('cmp2-a').value = a.toFixed(2);
           document.getElementById('cmp2-v-a').textContent = a.toFixed(2);
           document.getElementById('cmp2-n1').value = String(c1);
           document.getElementById('cmp2-n2').value = String(c2);
           if (is3 && has3) {
-            const b = music[i+2][0];
+            const b = Math.floor(music[i+2][0] * 100) / 100;
             document.getElementById('cmp2-b').value = b.toFixed(2);
             document.getElementById('cmp2-v-b').textContent = b.toFixed(2);
             document.getElementById('cmp2-n3').value = String(c3);
+            document.getElementById('cmp2-eps').value = '0.500';
+            document.getElementById('cmp2-v-eps').textContent = '0.500';
+          } else {
+            document.getElementById('cmp2-eps').value = '0.100';
+            document.getElementById('cmp2-v-eps').textContent = '0.100';
           }
-          document.getElementById('cmp2-eps').value = '0.100';
-          document.getElementById('cmp2-v-eps').textContent = '0.100';
         }
       ));
     }
@@ -2026,6 +2016,9 @@ function buildCmp2NoteButtons() {
 
   fillBtns('cmp2-note-btns-a', cmp2AMusicFull, 'A');
   fillBtns('cmp2-note-btns-b', cmp2BMusicFull, 'B');
+  // Auto-select first A preset
+  const firstABtn = document.getElementById('cmp2-note-btns-a')?.querySelector('button');
+  if (firstABtn) firstABtn.click();
 }
 
 function runCmp2MotifAnalysis() {
@@ -2088,8 +2081,8 @@ function runCmp2MotifAnalysis() {
     ? `, notes=[${noteLabel(note1)},${noteLabel(note2)},${noteLabel(note3)}]`
     : `, notes=[${noteLabel(note1)},${noteLabel(note2)}]`;
   const motifLabel = is3
-    ? `3-Motif: a=${a.toFixed(2)}, b=${b.toFixed(2)}, ε=${eps.toFixed(3)}${notePart}`
-    : `2-Motif: a=${a.toFixed(2)}, ε=${eps.toFixed(3)}${notePart}`;
+    ? `3-Motif: first gap=${a.toFixed(2)}, second gap=${b.toFixed(2)}, tolerance=${eps.toFixed(3)}${notePart}`
+    : `2-Motif: gap=${a.toFixed(2)}, tolerance=${eps.toFixed(3)}${notePart}`;
 
   document.getElementById('cmp2-analysis-status').textContent = 'Done.';
 
@@ -2103,21 +2096,21 @@ function runCmp2MotifAnalysis() {
         <th style="text-align:right;padding:4px 8px">Length</th>
         <th style="text-align:right;padding:4px 8px">Notes</th>
         <th style="text-align:right;padding:4px 8px">Motif count</th>
-        <th style="text-align:right;padding:4px 8px">Frequency (per unit length)</th>
+        <th style="text-align:right;padding:4px 8px">Frequency %</th>
       </tr>
       <tr style="color:#e8d5b7">
-        <td style="padding:4px 8px">Surface A</td>
+        <td style="padding:4px 8px">Marimba A</td>
         <td style="text-align:right;padding:4px 8px">${rA.dist.toFixed(1)}</td>
         <td style="text-align:right;padding:4px 8px">${musicA.length.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${rA.count.toLocaleString()}</td>
-        <td style="text-align:right;padding:4px 8px">${(rA.dist > 0 ? rA.count / rA.dist : 0).toExponential(4)}</td>
+        <td style="text-align:right;padding:4px 8px">${(rA.dist > 0 ? (rA.count / rA.dist * 100).toFixed(5) : '0.00000') + ' %'}</td>
       </tr>
       <tr style="color:#e8d5b7">
-        <td style="padding:4px 8px">Surface B</td>
+        <td style="padding:4px 8px">Marimba B</td>
         <td style="text-align:right;padding:4px 8px">${rB.dist.toFixed(1)}</td>
         <td style="text-align:right;padding:4px 8px">${musicB.length.toLocaleString()}</td>
         <td style="text-align:right;padding:4px 8px">${rB.count.toLocaleString()}</td>
-        <td style="text-align:right;padding:4px 8px">${(rB.dist > 0 ? rB.count / rB.dist : 0).toExponential(4)}</td>
+        <td style="text-align:right;padding:4px 8px">${(rB.dist > 0 ? (rB.count / rB.dist * 100).toFixed(5) : '0.00000') + ' %'}</td>
       </tr>
     </table>`;
 
@@ -2249,6 +2242,10 @@ document.querySelectorAll('input[name="cmp2-type"]').forEach(el => {
     const is3 = document.getElementById('cmp2-type-3').checked;
     document.getElementById('cmp2-b-row').style.display = is3 ? '' : 'none';
     document.getElementById('cmp2-n3-group').style.display = is3 ? '' : 'none';
+    document.getElementById('cmp2-a-label').textContent = is3 ? 'First gap' : 'Gap between notes';
+    // Auto-fill from A1 whenever switching motif type
+    const firstABtn = document.getElementById('cmp2-note-btns-a')?.querySelector('button');
+    if (firstABtn) firstABtn.click();
   });
 });
 
