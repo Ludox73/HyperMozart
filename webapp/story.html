@@ -261,13 +261,13 @@ body { align-items: stretch; }
       <!-- Surface parameters -->
       <div class="controls-row">
         <div class="controls-group">
-          <div class="group-title">Decomposition</div>
+          <div class="group-title">Type of Pants Decomposition</div>
           <select id="gluing-type" style="width:100%">
-            <option value="separating">Separating S2</option>
-            <option value="nonseparating">Nonseparating S2</option>
+            <option value="separating">With Separating Component</option>
+            <option value="nonseparating">No Separating Component</option>
           </select>
           <div style="margin-top:10px">
-            <div class="group-title" style="margin-bottom:6px">Active Curves</div>
+            <div class="group-title" style="margin-bottom:6px">Components of &#915;</div>
             <div class="checkbox-row">
               <input type="checkbox" id="curve1-active" checked>
               <span style="display:inline-block;width:11px;height:11px;background:#964;border-radius:2px;vertical-align:middle;margin:0 5px 0 3px"></span>
@@ -646,10 +646,10 @@ body { align-items: stretch; }
           </div>
           <div class="cmp-surface-body">
             <div class="controls-group" style="margin-bottom:8px">
-              <div class="group-title">Decomposition</div>
+              <div class="group-title">Type of Pants Decomposition</div>
               <select id="cmp-a-gluing" style="width:100%">
-                <option value="separating" selected>Separating S2</option>
-                <option value="nonseparating">Nonseparating S2</option>
+                <option value="separating" selected>With Separating Component</option>
+                <option value="nonseparating">No Separating Component</option>
               </select>
             </div>
             <div class="controls-group" style="margin-bottom:8px">
@@ -698,10 +698,10 @@ body { align-items: stretch; }
           </div>
           <div class="cmp-surface-body">
             <div class="controls-group" style="margin-bottom:8px">
-              <div class="group-title">Decomposition</div>
+              <div class="group-title">Type of Pants Decomposition</div>
               <select id="cmp-b-gluing" style="width:100%">
-                <option value="separating" selected>Separating S2</option>
-                <option value="nonseparating">Nonseparating S2</option>
+                <option value="separating" selected>With Separating Component</option>
+                <option value="nonseparating">No Separating Component</option>
               </select>
             </div>
             <div class="controls-group" style="margin-bottom:8px">
@@ -943,7 +943,7 @@ body { align-items: stretch; }
           <label>Drawing speed <span class="val" id="iso-v-speed">2.0</span></label>
           <input type="range" id="iso-speed" min="0.1" max="20" step="0.1" value="2">
           <div class="checkbox-row">
-            <input type="checkbox" id="iso-fast-mode" checked><label for="iso-fast-mode">Fast mode</label>
+            <input type="checkbox" id="iso-fast-mode" checked><label for="iso-fast-mode">Score only</label>
           </div>
         </div>
       </div>
@@ -983,7 +983,7 @@ body { align-items: stretch; }
 
       <!-- Partiture -->
       <div style="margin-top:14px">
-        <div class="group-title" style="margin-bottom:4px">Partiture</div>
+        <div class="group-title" style="margin-bottom:4px">Score</div>
         <canvas id="iso-partiture" width="1200" height="150" style="width:100%;height:auto;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460"></canvas>
       </div>
 
@@ -1300,16 +1300,16 @@ const mdMap = {
   'surface-mid-text':     'story/02-surface-mid.md',
   'surface-listen-text':  'story/02-surface-listen.md',
   'after-panel1-text':    'story/03-after-panel1.md',
-  'content-motif':        'story/04-motifs.md',
-  'content-compare':      'story/03-comparing.md',
-  'after-motifs-text':    'story/05-after-motifs.md',
-  'after-compare-text':   'story/06-after-compare.md',
-  'content-iso-intro':    'story/09-iso-intro.md',
-  'after-iso-text':       'story/07-after-iso.md',
+  'content-motif':        'story/03-motifs.md',
+  'after-motifs-text':    'story/04-after-motifs.md',
+  'content-compare':      'story/04-comparing.md',
+  'after-compare-text':   'story/05-after-compare.md',
+  'content-iso-intro':    'story/05-iso-intro.md',
+  'after-iso-text':       'story/06-after-iso.md',
   'content-5':            'story/06-orthospectrum.md',
-  'after-ortho-text':     'story/08-after-ortho.md',
-  'content-4':            'story/05-distribution.md',
-  'dist-mid-text':        'story/05-distribution-mid.md',
+  'after-ortho-text':     'story/07-after-ortho.md',
+  'content-4':            'story/07-distribution.md',
+  'dist-mid-text':        'story/07-distribution-mid.md',
 };
 
 function renderMd(container, text) {
@@ -3557,7 +3557,7 @@ function isoStopAudio(which) {
   const container = document.getElementById('iso-error-md-content');
   if (!container) return;
   try {
-    const resp = await fetch('story/iso-error.md');
+    const resp = await fetch('story/05-iso-error.md');
     if (resp.ok) { renderMd(container, await resp.text()); return; }
   } catch(e) {}
   container.innerHTML = '<p style="color:#888;font-style:italic">TODO</p>';
