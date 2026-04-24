@@ -943,7 +943,7 @@ body { align-items: stretch; }
           <label>Drawing speed <span class="val" id="iso-v-speed">2.0</span></label>
           <input type="range" id="iso-speed" min="0.1" max="20" step="0.1" value="2">
           <div class="checkbox-row">
-            <input type="checkbox" id="iso-fast-mode" checked><label for="iso-fast-mode">Score only</label>
+            <input type="checkbox" id="iso-fast-mode"><label for="iso-fast-mode">Score only</label>
           </div>
         </div>
       </div>
@@ -1034,6 +1034,8 @@ body { align-items: stretch; }
         </div>
         <div class="iso-sub-body" style="display:none;padding:16px">
 
+          <div id="iso-frequency-md-content" style="font-size:.9rem;line-height:1.7;color:#ccc;margin-bottom:16px"></div>
+
           <div class="group-title" style="margin-bottom:8px">Step 1 — Compute Geodesics</div>
           <div class="controls-group" style="margin-bottom:10px">
             <label>Max length <span class="val" id="iso3-v-maxlen">1.0M</span></label>
@@ -1105,37 +1107,48 @@ body { align-items: stretch; }
     <div class="step-toggle">▼</div>
   </div>
   <div class="step-body">
-    <div class="step-content" id="content-5"></div>
-    <div class="step-controls">
-
+    <div class="step-content" style="padding-bottom:12px">
+      <p style="margin:0 0 12px">To improve the precision of this step, we need to run again the computation of a random geodesic; this time for even more time.</p>
       <!-- Run geodesic for this panel -->
-      <div class="geo-run-row">
-        <div class="geo-btn-group">
-          <button id="btn-geo-orth" onclick="runPanelGeodesic('orth')">Run</button>
-          <button id="btn-geo-orth-stop" class="stop" onclick="stopPanelGeodesic('orth')" disabled>Stop</button>
+      <div class="geo-run-row" style="margin-bottom:0">
+      <div class="geo-btn-group">
+        <button id="btn-geo-orth" onclick="runPanelGeodesic('orth')">Run</button>
+        <button id="btn-geo-orth-stop" class="stop" onclick="stopPanelGeodesic('orth')" disabled>Stop</button>
+      </div>
+      <div class="geo-settings-box" id="geo-settings-orth" onclick="if(event.target===this||event.target.closest('.geo-settings-header'))this.classList.toggle('geo-open')">
+        <div class="geo-settings-header">
+          Surface parameters <span class="iso-sub-toggle" style="font-size:.9rem">▼</span>
         </div>
-        <div class="geo-settings-box" id="geo-settings-orth" onclick="if(event.target===this||event.target.closest('.geo-settings-header'))this.classList.toggle('geo-open')">
-          <div class="geo-settings-header">
-            Surface parameters <span class="iso-sub-toggle" style="font-size:.9rem">▼</span>
-          </div>
-          <div class="geo-settings-body" onclick="event.stopPropagation()">
-            <label>Type <select id="geo-orth-gluing" onchange="syncGeoParam(this,'gluing-type')"><option value="separating">Sep</option><option value="nonseparating">Nonsep</option></select></label>
-            <label>L1 <input type="number" id="geo-orth-l1" min="1" max="7" step="0.01" value="2.00" onchange="syncGeoParam(this,'l1')"></label>
-            <label>L2 <input type="number" id="geo-orth-l2" min="1" max="7" step="0.01" value="3.00" onchange="syncGeoParam(this,'l2')"></label>
-            <label>L3 <input type="number" id="geo-orth-l3" min="1" max="7" step="0.01" value="4.00" onchange="syncGeoParam(this,'l3')"></label>
-            <label>T1% <input type="number" id="geo-orth-t1" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t1')"></label>
-            <label>T2% <input type="number" id="geo-orth-t2" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t2')"></label>
-            <label>T3% <input type="number" id="geo-orth-t3" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t3')"></label>
-            <label>Length <input type="number" id="geo-orth-maxlen" class="geo-input-length" min="1000" max="10000000" step="1000" value="5000000"></label>
-            <div class="geo-range-info" id="geo-range-info-orth"></div>
-          </div>
-        </div>
-        <div class="geo-progress-line">
-          <div class="progress-bar"><div class="progress-fill" id="geo-progress-orth"></div></div>
-          <span class="status" id="geo-status-orth">Ready</span>
+        <div class="geo-settings-body" onclick="event.stopPropagation()">
+          <label>Type <select id="geo-orth-gluing" onchange="syncGeoParam(this,'gluing-type')"><option value="separating">Sep</option><option value="nonseparating">Nonsep</option></select></label>
+          <label>L1 <input type="number" id="geo-orth-l1" min="1" max="7" step="0.01" value="2.00" onchange="syncGeoParam(this,'l1')"></label>
+          <label>L2 <input type="number" id="geo-orth-l2" min="1" max="7" step="0.01" value="3.00" onchange="syncGeoParam(this,'l2')"></label>
+          <label>L3 <input type="number" id="geo-orth-l3" min="1" max="7" step="0.01" value="4.00" onchange="syncGeoParam(this,'l3')"></label>
+          <label>T1% <input type="number" id="geo-orth-t1" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t1')"></label>
+          <label>T2% <input type="number" id="geo-orth-t2" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t2')"></label>
+          <label>T3% <input type="number" id="geo-orth-t3" min="0" max="100" step="0.5" value="0" onchange="syncGeoParam(this,'t3')"></label>
+          <label>Length <input type="number" id="geo-orth-maxlen" class="geo-input-length" min="1000" max="10000000" step="1000" value="5000000"></label>
+          <div class="geo-range-info" id="geo-range-info-orth"></div>
         </div>
       </div>
+      <div class="geo-progress-line">
+        <div class="progress-bar"><div class="progress-fill" id="geo-progress-orth"></div></div>
+        <span class="status" id="geo-status-orth">Ready</span>
+      </div>
+    </div>
+    </div>
 
+    <div class="step-content" id="content-5-top"></div>
+
+    <!-- Static initial CDF figure (populated after geodesic run) -->
+    <div style="padding:0 24px;margin-bottom:8px">
+      <svg id="orth-initial-cdf" class="cdf-canvas" viewBox="0 0 600 250" preserveAspectRatio="xMidYMid meet"
+           style="width:100%;height:auto;min-height:220px;background:#0a0a1a;border-radius:6px;border:1px solid #0f3460;display:block"></svg>
+    </div>
+
+    <div class="step-content" id="content-5-bottom"></div>
+
+    <div class="step-controls">
       <div class="controls-row">
         <div class="controls-group" style="min-width:100px;flex:0">
           <label>Samples <select id="orth-samples" style="width:100px">
@@ -1306,7 +1319,8 @@ const mdMap = {
   'after-compare-text':   'story/05-after-compare.md',
   'content-iso-intro':    'story/05-iso-intro.md',
   'after-iso-text':       'story/06-after-iso.md',
-  'content-5':            'story/06-orthospectrum.md',
+  'content-5-top':        'story/06-orthospectrum-top.md',
+  'content-5-bottom':     'story/06-orthospectrum-bottom.md',
   'after-ortho-text':     'story/07-after-ortho.md',
   'content-4':            'story/07-distribution.md',
   'dist-mid-text':        'story/07-distribution-mid.md',
@@ -2479,7 +2493,7 @@ async function startIsomelodic() {
       if (isRow([state.polyIdx, inter.side], curves[c])) { curve = c; break; }
     }
     if (curve >= 0) {
-      if (!first) music.push([since, curve + 1]);
+      music.push([since, curve + 1]);
       since = 0; first = false;
     }
     state.point = pr.point; state.tgVec = pr.tgVec; state.polyIdx = pr.polyIdx; state.toAvoid = pr.toAvoid;
@@ -2827,6 +2841,12 @@ async function startIsomelodic() {
     }
   } else {
     // ===== VISUAL MODE =====
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const isoNotes = [440.00, 554.37, 659.25].map(f => createMarimbaNote(f, 1.5));
+    function isoPlayNote(curveIdx) {
+      try { const src = audioCtx.createBufferSource(); src.buffer = isoNotes[curveIdx]; src.connect(audioCtx.destination); src.start(); } catch(e) {}
+    }
+
     const sepDS = createDrawState(sepCanvases);
     const nonDS = createDrawState(nonCanvases);
 
@@ -2871,6 +2891,9 @@ async function startIsomelodic() {
         }
         await new Promise(r => setTimeout(r, chunkPauseMs));
       }
+
+      // Play note when curve is crossed (including first crossing, unlike other panels)
+      if (sepR && sepR.curve >= 0) isoPlayNote(sepR.curve);
 
       step++;
       // Update partiture live every 50 steps
@@ -3552,6 +3575,17 @@ function isoStopAudio(which) {
   drawHexagons([0,1,2,3].map(i => document.getElementById('iso2-non-c' + i)), nonP, nonG);
 })();
 
+// Load iso-frequency.md for Motif Frequency subpanel
+(async function() {
+  const container = document.getElementById('iso-frequency-md-content');
+  if (!container) return;
+  try {
+    const resp = await fetch('story/05-iso-frequency.md');
+    if (resp.ok) { renderMd(container, await resp.text()); return; }
+  } catch(e) {}
+  container.innerHTML = '<p style="color:#888;font-style:italic">TODO</p>';
+})();
+
 // Load iso-error.md for Part 2
 (async function() {
   const container = document.getElementById('iso-error-md-content');
@@ -4014,6 +4048,19 @@ async function runPanelGeodesic(prefix) {
     const btnDist = document.getElementById('btn-dist');
     if (btnDist) btnDist.disabled = pointsDistribution.length === 0;
     status.textContent = `Done — ${toMusicLocal.length} notes`;
+
+    // Draw static initial CDF figure
+    const initialCdfSvg = document.getElementById('orth-initial-cdf');
+    if (initialCdfSvg) {
+      const ecdf = computeCumufunFromToMusic(toMusicLocal);
+      const cfg = svgCdfSetup(15, 0, 1.0);
+      const d = downsampleForViz(ecdf.x, ecdf.f, 1000000);
+      initialCdfSvg.innerHTML = buildSvgChart(
+        [{x: d.x, f: d.f, color: '#cccccc', label: 'Initial ECDF'}],
+        'Initial CDF of inter-note gaps', cfg
+      );
+    }
+
     unlockGeodesicSteps();
   } else {
     status.textContent = _panelGeoStop[prefix] ? 'Stopped.' : 'No data generated.';
