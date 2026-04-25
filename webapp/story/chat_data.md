@@ -33,7 +33,7 @@ Sister: ~~Shut up~~ [Deleted from moderator]
 
 
 Toti: Y a ti te pagan por hacer esto??? No hay justicia en el mundo.
-Being: Papá, que tengo hambre... Deja de tocar las marimbas. 😻😻🤠👌
+Being: Papá, que tengo hambre... Mama dice que dejes de tocar las marimbas. 😻😻🤠👌
 Stefano: Tu hija tiene razón. Ademas, que malos que sois... lo vuestro es tocar la tammorra y las castañuelas...
 Juan ✔️: Stefano, deja de tocarme las marimbas.
 Mama: Por que no contestas nunca al telefono? Visto en lo que estas metido, me estoy preocupando...
